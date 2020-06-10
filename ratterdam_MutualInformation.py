@@ -46,19 +46,19 @@ def createNeuralSymbols(symbolType):
         symbolBins = list(itertools.product([0,1],repeat=3))
         return symbolBins
 
-def convertActivitytoSymbols(unit, alley, symbolType, symbolBins, extent):
+def convertActivitytoSymbols(unit, alley, symbolType, symbolBins):
     
     if symbolType == 'mean':
         vec  = np.empty((0,1))
         for i,visit in enumerate(unit.alleys[alley]):
-            c = bisect.bisect_left(symbolBins, np.nanmean(visit['ratemap1d'][extent[0]:extent[1]]))
+            c = bisect.bisect_left(symbolBins, np.nanmean(visit['ratemap1d']))
             vec = np.vstack((vec, c))
         return vec
     
     elif symbolType == 'max':
         vec  = np.empty((0,1))
         for i,visit in enumerate(unit.alleys[alley]):
-            c = bisect.bisect_left(symbolBins, np.nanmean(visit['ratemap1d'][extent[0]:extent[1]]))
+            c = bisect.bisect_left(symbolBins, np.nanmean(visit['ratemap1d']))
             vec = np.vstack((vec, c))
         return vec
     
