@@ -12,19 +12,12 @@ from scipy.ndimage import gaussian_filter as gauss # for smoothing ratemaps
 import sys
 from bisect import bisect_left
 
-if socket.gethostname() == 'Tolman':
-    codeDirBase = 'C:\\Users\\whockei1\\Google Drive'
-elif socket.gethostname() == 'DESKTOP-BECTOJ9':
-    codeDirBase = 'C:\\Users\\whock\\Google Drive'
-elif socket.gethostname() == 'DESKTOP-0PH2B0B':
-    codeDirBase = 'C:\\Users\\whock\\Google Drive'
-    
-sys.path.insert(0, codeDirBase + '\\KnierimLab\\Ratterdam\\Code')
-sys.path.insert(0, codeDirBase + '\\Python_Code\\KLab\\mts_analysis')
 import utility_fx as util
 import ratterdam_ParseBehavior as Parse
 import ratterdam_DataFiltering as Filt
 import ratterdam_Defaults as Def
+sys.path.insert(0, 'E:\\UserData\\Documents\\GitHub\\ratterdam\\')
+
 
 class UnitData():
     ''' 

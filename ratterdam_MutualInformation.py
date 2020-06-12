@@ -14,6 +14,8 @@ import scipy
 import bisect
 import csv, sys
 import itertools
+sys.path.insert(0, 'E:\\UserData\\Documents\\GitHub\\ratterdam\\')
+
 
 import ratterdam_CoreDataStructures as Core
 import ratterdam_ParseBehavior as Parse
@@ -47,6 +49,25 @@ def createNeuralSymbols(symbolType):
         return symbolBins
 
 def convertActivitytoSymbols(unit, alley, symbolType, symbolBins, extent):
+    """
+    Convert each ratemap into a neural symbol. Find which of the possible
+    neural symbols (stored in symbolBins) this is and convert it to that index.
+    This is done because the symbols are defined as ranges. E.g. if your neural symbol
+    is 4.5 hz and the symbols are 0,2,4,6,... Then the end result is '2' because
+    4 is in the third bin and we count zero indexed.
+    
+    Options: 
+        mean - the average firing rate of the ratemap
+        max - the max firing of the rate map
+        3binMeanComp - This is a bitstring symbol. Divide rm into three chunks
+        and for each say whether the mean/max (pick in code) is above (1) or below (0) overall session
+        mean for that bin. Returns len 3 bitstring. 
+        
+    Extent is a two element iterable that gives the extent in spatial bins over the 
+    ratemap that will be included in the analysis. For a MI analysis on the whole alley
+    at once it should be [0, Def.singleAlleyBins[0]-1]. For a sliding window analysis
+    it will be a slice of the overall range. 
+    """
     
     if symbolType == 'mean':
         vec  = np.empty((0,1))
@@ -70,7 +91,7 @@ def convertActivitytoSymbols(unit, alley, symbolType, symbolBins, extent):
         for visit in unit.alleys[alley]:
             data = visit['ratemap1d']
             means = np.nanmean(np.nanmean(rmstack[:,:4],axis=0)), np.nanmean(np.nanmean(rmstack[:,4:8],axis=0)), np.nanmean(np.nanmean(rmstack[:,8:],axis=0))
-            bindata = np.nanmean(data[:4]), np.nanmean(data[4:8]), np.nanmean(data[8:])
+            bindata = np.nanmax(data[:4]), np.nanmax(data[4:8]), np.nanmax(data[8:])
             symbol = np.greater(bindata, means)*1 # i think its arbitrary whether we say greater or less than
             mat = np.vstack((mat, symbol))
         return mat
@@ -126,9 +147,16 @@ figurePath = f'E:\\Ratterdam\\{rat}\\mutual_information\\{expCode}\\'
 alleyTracking, alleyVisits,  txtVisits, p_sess, ts_sess = Parse.getDaysBehavioralData(datafile, expCode)
 population = {}
 allRealIs = {i:[] for i in Def.beltwayAlleys}
+colors = ['b','r','g','purple','orange','teal','navy','firebrick'] # some colors for each window
 stamp = util.genTimestamp()
 n=1000 # num shuffles
-symbolType = '3binMeanComp' # Options: "Mean", "Max", "3binMeanComp"
+symbolType = 'max' # Options: "Mean", "Max", "3binMeanComp"
+intervals = [[0,4],
+             [2,6],
+             [4,8],
+             [6,10],
+             [8,12]   
+            ] # If doing a sliding window MI analysis across the alley, store window edges here. If not, just have one sublist [0,Def.single_alley_bins[0]-1]
 for subdir, dirs, fs in os.walk(datafile):
     for f in fs:
         if 'cl-maze1' in f and 'OLD' not in f and 'Undefined' not in f:
@@ -150,46 +178,49 @@ for subdir, dirs, fs in os.walk(datafile):
                 multCompFactor = sum(validalleys) # we will adjust for multiple comparisons by considering the # alleys where there is 
                                                 # appreciable activity (avg 1Hz overall) and therefore a valid test to even attempt
                 if multCompFactor >= 1:
-                    thresh = round((0.05/multCompFactor),2)*n
+                    thresh = round((0.05/(multCompFactor*len(intervals))),2)*n
 
 
-                    fig, ax = plt.subplots(3,3,figsize=(8,8))
-                    for i, alley in enumerate(Def.beltwayAlleys):
-                        axis = fig.axes[i]
-                        if  validalleys[i] == True:
+#                    fig = plt.figure(figsize=(8,8))
+                    for a, alley in enumerate(Def.beltwayAlleys):
+                        if  validalleys[a] == True:
                             print(f"Alley {alley}")
-                            stimulus_symbols = ['A','B','C']
-                            neural_symbols_set = createNeuralSymbols(symbolType)
-                            converted_array = convertActivitytoSymbols(unit, alley, symbolType, neural_symbols_set)
-                            neural_symbols_set = range(len(neural_symbols_set)) 
-                            realI = calculateMutualInformation(neural_symbols_set, converted_array, False)
-                            allRealIs[alley].append(realI)
-
-                            nulls = []
-                            for i in range(n):
-                                nullI = calculateMutualInformation(neural_symbols_set, converted_array, True)
-                                nulls.append(nullI)
-                            nulls = sorted(nulls)
-
+                            realPct_list = []
+                            for e,extent in enumerate(intervals):
+                                stimulus_symbols = ['A','B','C']
+                                neural_symbols_set = createNeuralSymbols(symbolType)
+                                converted_array = convertActivitytoSymbols(unit, alley, symbolType, neural_symbols_set,extent)
+                                neural_symbols_set = range(len(neural_symbols_set)) 
+                                realI = calculateMutualInformation(neural_symbols_set, converted_array, False)
+                                allRealIs[alley].append(realI)
+    
+                                nulls = []
+                                for i in range(n):
+                                    nullI = calculateMutualInformation(neural_symbols_set, converted_array, True)
+                                    nulls.append(nullI)
+                                nulls = sorted(nulls)
+    
+                                    
+                                # check if the alley passes and save if so.
+                                realPct = round(scipy.stats.percentileofscore(nulls,realI, kind='strict'),2) # what percentile of nulls is real mi score?
+                                realPct_list.append(realPct)
+                                if realPct > (1-(0.05/(multCompFactor*len(intervals))))*100:
+                                    passFlag = True
+                                    passingalleys.append([alley, realPct])
                                 
-                            # check if the alley passes and save if so.
-                            realPct = round(scipy.stats.percentileofscore(nulls,realI, kind='strict'),2) # what percentile of nulls is real mi score?
-                            if realPct > (1-(0.05/multCompFactor))*100:
-                                passFlag = True
-                                passingalleys.append([alley, realPct])
-                            
-                            
-                            axis.hist(nulls,50)
-                            axis.vlines(realI,0,150,'r')
-                            axis.vlines(nulls[int(-1*thresh)],0,150,'grey')
-                            axis.set_title(f"Alley {Def.beltwayAlleyLookup[alley]}, {realPct}")
+                                
+#                                plt.hist(nulls,50,colors[e],alpha=0.5)
+#                                plt.vlines(realI,0,150,colors[e])
+#                                plt.vlines(nulls[int(-1*thresh)],0,150,'grey')
+#                                if i == len(intervals)-1:
+#                                    plt.title(f"Alley {Def.beltwayAlleyLookup[alley]}, {realPct_list}")
                         else:
-                             axis.set_title(f"Insufficient Activity Alley {Def.beltwayAlleyLookup[alley]}")
+#                             plt.set_title(f"Insufficient Activity Alley {Def.beltwayAlleyLookup[alley]}")
                              print(f"{Def.beltwayAlleyLookup[alley]} not included in MI calc")
 
-                    plt.suptitle(f"Whole Alley MI Unit {expCode} {unit.name}")
-                    plt.savefig(figurePath+f"{stamp}_{unit.name}_MIPlot_{passFlag}.png", format='png',dpi=300)
-                    plt.close()
+#                    plt.suptitle(f"Whole Alley MI Unit {expCode} {unit.name}")
+#                    plt.savefig(figurePath+f"{stamp}_{unit.name}_MIPlot_{passFlag}.png", format='png',dpi=300)
+#                    plt.close()
                         
                         
                         

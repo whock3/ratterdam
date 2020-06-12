@@ -2,6 +2,8 @@
 This file contains default parameters for main ratterdam scripts.
 Values can be changed to alter analysis pipeline behavior
 """
+import sys
+sys.path.insert(0, 'E:\\UserData\\Documents\\GitHub\\ratterdam\\')
 
 alleyBounds_byEye = {0:[[150, 250],[350, 400]],
                1:[[150, 250],[215, 250]],
@@ -203,7 +205,7 @@ ptsCm_macaulay = 4.72
 ptsCm = ptsCm_macaulay
 
 #old bins = 15,30
-singleAlleyBins = [7,5]
+singleAlleyBins = [13,9]
 wholeAlleyBins = [round(int(480/ptsCm)),int(round(640/ptsCm))]
 
 # Smoothing values to use

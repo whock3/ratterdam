@@ -8,9 +8,10 @@ from matplotlib import pyplot as plt
 import ratterdam_Defaults as Def
 import  datetime, os, pickle
 import sys
+
+sys.path.insert(0, 'E:\\UserData\\Documents\\GitHub\\ratterdam\\')
 import statistics as stats
 from difflib import SequenceMatcher
-sys.path.insert(0, 'C:\\Users\\whock\\Google Drive\\KnierimLab\\Ratterdam\\Code')
 import utility_fx as util
 from bisect import bisect_left
 import matplotlib.path as mplPath
