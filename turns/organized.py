@@ -210,7 +210,7 @@ def classifyTurns(b1, b2, position, min_angle1=np.pi/12, min_angle2=np.pi/4, tur
     turn_range = angles within x cm of each "turn" shouldn't add up to be a circle
     """
     RList = RDP4(position[b1:b2], epsilon).ResultList
-    idx3, theta_sum2, idx2_1 = turn3(RList, min_angle1, min_angle2, turn_range_start, vCutoff, vIncrease)
+    idx3, theta_sum2, idx2_1, idx3_2 = turn3(RList, min_angle1, min_angle2, turn_range_start, vCutoff, vIncrease)
     
     ego_turns = np.empty(len(idx3))
     for i in range(len(idx3)):
@@ -237,7 +237,7 @@ def classifyTurns(b1, b2, position, min_angle1=np.pi/12, min_angle2=np.pi/4, tur
     allo_turns = np.reshape(allo_turns, (len(idx3), 1))
     
     times = np.reshape(RList[idx3, 0], (len(idx3), 1))
-    return np.hstack((times, ego_turns, allo_turns))
+    return np.hstack((times, ego_turns, allo_turns)), RList[idx3_2,0]
 
 
 def writeToCsv(TimeAndTurns, title): 
@@ -281,6 +281,7 @@ def turnsInOutFields(visits, position, subfield):
 
 
 #from 061220: historical, 3D histogram and 2D histogram with heatmap
+#from 061220: historical, velSegments turn2 vs turn3
     
 
 def makeCustomColormap(nb=100,name='mymap',c=[]):
@@ -310,7 +311,7 @@ def graphRM(position, spikes, title, percentile=95, perim=[], mycm="jet"):
     cb.set_label("Rate (Hz)")
 
 
-def adjustPosCamera(datafile, pos):
+def adjustPosCamera(pos, datafile="C:/Users/Ruo-Yah Lai/Desktop/My folder/College/Junior/K lab research/R859 OD3/"):
     """
     Camera can be oriented differently w.r.t track across days/rats
     if things get rotated. This reads in a .txt file that should be 
@@ -342,18 +343,18 @@ def adjustPosCamera(datafile, pos):
 
 
 #from 061820: historical, bar graphs of firing rates before and after turns
+#from 061820: historical, polar plot of firing rate based on turn angle
     
 
 def shiftPos(pos, timeAndTurns, spikes, RMrange=7*4.72):
     """
     pos: [ts,x,y] before RDP
-    Rpos: [ts,x,y] after RDP
-    idx: index of the first point of a turn
+    timeAndTurns: [ts, ego turn direction, allo turn direction] from classifyTurns
     spikes: after getPosFromTs
     RMrange: +/- n unit distance of the 1st point of turns to make rate map
     
-    Returns: pos (before RDP) and spikes within RMrange of the 1st point of 
-    turns, shifted based on the 1st point of turns
+    Returns: list of 8 arrays, pos (before RDP) and spikes within RMrange 
+    of the 1st point of turns, shifted based on the 1st point of turns
     """
     shifted_pos = [np.empty((0,3)) for _ in range(8)]
     shifted_s = [np.empty((0,3)) for _ in range(8)]
@@ -383,18 +384,9 @@ def shiftPos(pos, timeAndTurns, spikes, RMrange=7*4.72):
                 break
             dist = np.sqrt((pos[k, 1]-pos[j, 1])**2 + (pos[k, 2]-pos[j, 2])**2)
         
-        shiftedP = np.subtract(pos[int(idx2_start):int(idx2_end)], np.array([0,pos[k,1],pos[k,2]]))
-        #i_s = np.empty((len(shiftedP),1))
-        #i_s.fill(i)
-        #shiftedP = np.hstack((shiftedP, i_s))
-        #shifted_pos = np.vstack((shifted_pos, shiftedP))
-        
+        shiftedP = np.subtract(pos[int(idx2_start):int(idx2_end)], np.array([0,pos[k,1],pos[k,2]]))     
         spike_idx = np.where(np.logical_and(spikes>pos[idx2_start,0], spikes<pos[idx2_end,0]))[0]
         shiftedS = np.subtract(spikes[spike_idx], np.array([0,pos[k,1],pos[k,2]]))
-        #i_s = np.empty((len(shiftedS),1))
-        #i_s.fill(i)
-        #shiftedS = np.hstack((shiftedS, i_s))
-        #shifted_s = np.vstack((shifted_s, shiftedS))
         
         shifted_pos[0] = np.vstack((shifted_pos[0], shiftedP))
         shifted_s[0] = np.vstack((shifted_s[0], shiftedS))
@@ -425,7 +417,7 @@ def shiftPos(pos, timeAndTurns, spikes, RMrange=7*4.72):
     return shifted_pos, shifted_s
 
 
-def makeRM2(spikes, position, smoothing_2d_sigma=2):
+def makeRM2(spikes, position):
     """ makeRM adapted for avg RM for turns"""
     #camXMax, camXMin = [round(np.max(position[:,1])), round(np.min(position[:,1]))]
     #camYMax, camYMin = [round(np.max(position[:,2])), round(np.min(position[:,2]))]
@@ -436,30 +428,200 @@ def makeRM2(spikes, position, smoothing_2d_sigma=2):
     ho = np.histogram2d(position[:,2],position[:,1],bins=[rows, cols])[0]
     n = (hs*np.reciprocal(ho))*30 #adjust for camera 30 frames/sec to get Hz
     n[np.where(ho==0)] = np.nan
-    n = weird_smooth(n,smoothing_2d_sigma)
-    n[np.where(ho==0)] = np.nan
     #cam = [floor(camXMin/4.72),ceil(camXMax/4.72),floor(camYMin/4.72),ceil(camYMax/4.72)]
     return n
 
-def graphRM2(position, spikes, suptitle, percentile=95, mycm="jet"):
+
+def graphRM2(position, spikes, suptitle, percentile=95, mycm="jet", smoothing_2d_sigma=1):
     """ 
     graphRM adapted for avg RM for turns
-    position and spikes from shiftPos
+    position and spikes from shiftPosP and shiftPosS
     """
+    y, x = np.ogrid[:14, :14]
+    dist = np.sqrt((x-6.5)**2 + (y-6.5)**2)
+    mask = dist > 7.5
     n = []
+    titles2 = []
     for i in range(8):
-        n.append(makeRM2(spikes[i], position[i]))
+        n1 = []
+        for j in range(len(position[i])):
+            #print("i and j = ", i, j)
+            n1.append(makeRM2(spikes[i][j], position[i][j]))
+        n2 = np.nanmean(n1, axis=0)
+        n2 = weird_smooth(n2,smoothing_2d_sigma)
+        n2[mask] = np.nan
+        n.append(n2)
+        titles2.append(f"n = {len(n1)}")
     
     fig, axs = plt.subplots(2,4)
     vmax = np.nanpercentile(n[0], percentile)
     fig.suptitle(suptitle + "\n" + f"Cutoff = {percentile}th percentile, {round(vmax,1)} Hz", y=1.08)
     titles = ["All turns", "Left", "Back", "Right", "North", "East", "South", "West"]
+
     ims = []
     for i in range(2):
         for j in range(4):
-            axs[i][j].set_title(titles[i*4+j])
-            ims.append(axs[i][j].imshow(n[i*4+j], cmap=mycm, origin="lower", vmin=0, vmax=vmax))
+            axs[i][j].set_title(titles[i*4+j] + "\n" + titles2[i*4+j])
+            ims.append(axs[i][j].imshow(n[i*4+j], cmap=mycm, origin="lower", vmin=0, vmax=vmax, extent=(-7,7,-7,7)))
             axs[i][j].axis("equal")
     cb = fig.colorbar(ims[0])
     cb.set_label("Rate (Hz)")
     fig.tight_layout()
+
+
+def shiftPosP(pos, timeAndTurns, ts1, RMrange=7*4.72):
+    """
+    Position part of shiftPos
+    
+    pos: [ts,x,y] before RDP
+    timeAndTurns: [ts, ego turn direction, allo turn direction] from classifyTurns
+    ts1 from turnsInField: 1 pt before 1st pt of each turn
+    RMrange: +/- n unit distance of the 1st point of turns to make rate map
+    
+    Returns: list of 8 lists each with arrays where each array is 1 turn
+    pos (before RDP) within RMrange of the 1st point of turns, 
+    shifted based on the 1st point of turns
+    """
+    shifted_pos = [[] for _ in range(8)]
+    idxs = np.empty((0,2)) #which pts are within range of 1st pt of turns, in pos frame
+    for i in range(len(timeAndTurns)): #adapted from turn3
+        k = np.where(pos == timeAndTurns[i,0])[0] #1st point of the turn, in pos frame
+        j = deepcopy(k)
+        dist = 0
+        while dist < RMrange: #checking points after the turn
+            idx_end = deepcopy(j)
+            j += 1
+            if j > len(pos)-1:
+                break
+            dist = np.sqrt((pos[k, 1]-pos[j, 1])**2 + (pos[k, 2]-pos[j, 2])**2)
+        
+        j = k - 1 #one point before the turn
+        if j >= 0:
+            dist = np.sqrt((pos[k, 1]-pos[j, 1])**2 + (pos[k, 2]-pos[j, 2])**2)
+            idx_start = j+1
+        else:
+            dist = RMrange+10
+            idx_start = 0
+        while dist < RMrange: #checking points before the turn
+            idx_start = deepcopy(j)
+            j -= 1
+            if j < 0:
+                break
+            dist = np.sqrt((pos[k, 1]-pos[j, 1])**2 + (pos[k, 2]-pos[j, 2])**2)
+        
+        idxs = np.vstack((idxs, np.reshape(np.array([idx_start,idx_end]),(1,2))))
+        shiftedP = np.subtract(pos[int(idx_start):int(idx_end)], np.array([0,pos[k,1],pos[k,2]]))
+        pt1idx = bisect(shiftedP[:,0], ts1[i])
+        srP = rotate(shiftedP, shiftedP[pt1idx])
+        
+        shifted_pos[0].append(shiftedP)
+        #ego turns
+        if timeAndTurns[i,1] == 0:
+            shifted_pos[1].append(srP)
+        elif timeAndTurns[i,1] == 1:
+            shifted_pos[2].append(srP)
+        elif timeAndTurns[i,1] == 2:
+            shifted_pos[3].append(srP)
+        
+        #allo turns
+        if timeAndTurns[i,2] == 0:
+            shifted_pos[4].append(shiftedP)
+        elif timeAndTurns[i,2] == 1:
+            shifted_pos[5].append(shiftedP)
+        elif timeAndTurns[i,2] == 2:
+            shifted_pos[6].append(shiftedP)
+        elif timeAndTurns[i,2] == 3:
+            shifted_pos[7].append(shiftedP)
+    return shifted_pos, idxs
+
+
+def shiftPosS(pos, spikes, timeAndTurns, idxs, ts1):
+    """
+    Spikes part of shiftPos
+    
+    pos: [ts,x,y] before RDP
+    spikes: after getPosFromTs
+    timeAndTurns: [ts, ego turn direction, allo turn direction] from classifyTurns
+    idxs: from shiftPosP
+    pt2 from turnsInField: 2nd pt of each turn
+    
+    Returns: list of 8 lists each with arrays where each array is 1 turn
+    spikes within RMrange of the 1st point of turns, 
+    shifted based on the 1st point of turns
+    """
+    shifted_s = [[] for _ in range(8)]
+    for i in range(len(timeAndTurns)):
+        k = np.where(pos == timeAndTurns[i,0])[0] #1st point of the turn, in pos frame
+        spike_idx = np.where(np.logical_and(spikes>pos[int(idxs[i,0]),0], spikes<pos[int(idxs[i,1]),0]))[0]
+        shiftedS = np.subtract(spikes[spike_idx], np.array([0,pos[k,1],pos[k,2]]))
+        
+        pt1idx = bisect(shiftedS[:,0], ts1[i])
+        if pt1idx == len(shiftedS):
+            pt1idx = pt1idx-1
+        if len(shiftedS) > 0:
+            srS = rotate(shiftedS, shiftedS[pt1idx])
+        else:
+            srS = np.empty((0,3))
+        
+        shifted_s[0].append(shiftedS)
+        #ego turns
+        if timeAndTurns[i,1] == 0:
+            shifted_s[1].append(srS)
+        elif timeAndTurns[i,1] == 1:
+            shifted_s[2].append(srS)
+        elif timeAndTurns[i,1] == 2:
+            shifted_s[3].append(srS)
+        
+        #allo turns
+        if timeAndTurns[i,2] == 0:
+            shifted_s[4].append(shiftedS)
+        elif timeAndTurns[i,2] == 1:
+            shifted_s[5].append(shiftedS)
+        elif timeAndTurns[i,2] == 2:
+            shifted_s[6].append(shiftedS)
+        elif timeAndTurns[i,2] == 3:
+            shifted_s[7].append(shiftedS)
+    return shifted_s
+
+
+def turnsInField(visits, position, subfield): #adapted from 061220
+    """
+    Finds the turn directions inside a subfield
+    position: before RDP
+    Returns [ts, ego, allo]
+    """
+    ranges = np.empty((0,2))
+    for i in range(len(visits[subfield])): #the ith visit
+        #start and end are indexes of the start and end of visit
+        start = bisect(position[:,0], visits[subfield][i][0])
+        end = bisect(position[:,0], visits[subfield][i][-1])
+        if end-start > 0:
+            ranges = np.vstack((ranges, np.reshape([start, end],(1,2))))
+    
+    turns = np.empty((0, 3)) #columns: ts, ego, allo
+    ts1 = np.empty(0) #ts of 1 pt before 1st pt of turns
+    for i in range(len(ranges)): #the ith visit
+        turns1, ts1_1 = classifyTurns(int(ranges[i,0]), int(ranges[i,1]), position)
+        turns = np.vstack((turns, turns1))
+        ts1 = np.hstack((ts1, ts1_1))
+    return turns, ts1
+
+
+def rotate(position, pt2):
+    """
+    position: [ts,x,y]
+    pt2 from turnsInField: [ts,x,y], 2nd pt of the turn
+    """
+    theta = 3/2*np.pi - np.arctan2(pt2[2], pt2[1])
+    x = position[:, 1]
+    y = position[:, 2]
+    rx = x*np.cos(theta) - y*np.sin(theta)
+    ry = x*np.sin(theta) + y*np.cos(theta)
+    ts = position[:, 0].reshape((len(position),1))
+    rx = rx.reshape((len(position),1))
+    ry = ry.reshape((len(position),1))
+    return np.hstack((ts,rx,ry))
+
+
+#from 062320: historical, turn3 vs turn4
+#from 062320: historical, plotting trajectories after shifting and rotating

@@ -37,6 +37,7 @@ def turn3(position, min_angle1, min_angle2, turn_range_start=5, vCutoff=15, trIn
     theta_sum2 = np.empty(0) #[0, 2pi]
     idx2_1 = np.empty(0)
     idx_1 = np.empty(0)
+    idx_2 = np.empty(0)
     while True:
         if len(idx) < 1:
             break
@@ -83,7 +84,7 @@ def turn3(position, min_angle1, min_angle2, turn_range_start=5, vCutoff=15, trIn
         idx_1 = np.hstack([idx_1, np.min(idx2)+1])
         theta_sum2 = np.hstack([theta_sum2, np.sum(theta2[idx2]) % (2*np.pi)])
         idx2_1 = np.hstack([idx2_1, np.max(idx2)+1]) #last point in each group of "turns", in RList frame
-        
+        idx_2 = np.hstack([idx_2, np.min(idx2)]) #1 pt before 1st pt of turn
         #print(idx_1[-1]-1, idx2, round(turn_range/4.72,1), round(v[i]/4.72,1), round(theta_sum2[-1]/np.pi*180,1))
         
                 
@@ -96,4 +97,4 @@ def turn3(position, min_angle1, min_angle2, turn_range_start=5, vCutoff=15, trIn
                         
     idx3 = np.where(theta_sum>min_angle2)[0]
         
-    return idx_1[idx3].astype(int), theta_sum2[idx3], idx2_1[idx3].astype(int)
+    return idx_1[idx3].astype(int), theta_sum2[idx3], idx2_1[idx3].astype(int), idx_2[idx3].astype(int)
