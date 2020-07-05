@@ -9,6 +9,7 @@ from turn4 import turn4
 from turn3 import turn3
 import matplotlib.pyplot as plt
 
+
 #from 061220: velSegments, turn3 vs turn4
 #RList in camera units after RDP
 RList = []
@@ -65,20 +66,3 @@ ax[1].set_title("turn4 \n" + f"{len(idx4)} turns")
 plt.legend() #bbox_to_anchor=(0.05, 0.55), loc="center left"
 #ax[1].axis("equal")
 plt.show()
-
-
-
-#graphing trajectories after shifting and rotating them
-fig,axs = plt.subplots(2,4)
-titles = ["All turns", "Left", "Back", "Right", "North", "East", "South", "West"]
-fig.suptitle("R859 D3 T6 1.1 subfield 0", y=1.04)
-srP = 
-    
-for i in range(2):
-    for j in range(4):
-        axs[i][j].set_title(titles[i*4+j] + "\n" + f"n = {len(srP[i*4+j])}")
-        for k in range(len(srP[i*4+j])):
-            axs[i][j].plot(srP[i*4+j][k][:,1], srP[i*4+j][k][:,2])
-            axs[i][j].axis("equal")
-fig.tight_layout()
-

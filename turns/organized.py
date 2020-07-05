@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 from RDP4_class import RDP4
 from matplotlib.collections import LineCollection
 from turn3 import turn3
-from bisect import bisect
+from bisect import bisect, bisect_left
 from matplotlib.colors import LinearSegmentedColormap
 from RateMap import makeRM, weird_smooth
 from math import ceil, floor
@@ -180,18 +180,19 @@ def velSegments(RList, idx, title=""):
     fig, ax = plt.subplots(1, 1) #1, 3, figsize = (19, 5), gridspec_kw={'width_ratios': [6, 6, 7]})
     ax.set_xlim(0, 120) #np.min(RList[:, 1])-3, np.max(RList[:, 1])+3)
     ax.set_ylim(0, 100) #np.min(RList[:, 2])-3, np.max(RList[:, 2])+3)
-    ax.scatter(RList[0,1], RList[0,2], marker = "+", color = "r", label = "first")
-    ax.scatter(RList[-1,1], RList[-1,2], marker = "x", color = "r", label = "last")
-     
-    ax.scatter(RList[idx,1], RList[idx,2], s = 16, color = "r", label='turning points')
-    
+        
     RList2 = np.reshape(RList[:, 1:3], (len(RList), 1, 2))
     segments = np.concatenate([RList2[0:-1], RList2[1:]], axis=1)
-    lc = LineCollection(segments)
+    lc = LineCollection(segments, zorder=1)
     lc.set_array(v)
     ax.add_collection(lc)
     axcb = fig.colorbar(lc)
     axcb.set_label('Instantaneous velocity (cm/s)')
+    
+    ax.scatter(RList[0,1], RList[0,2], marker = "+", color = "r", label = "first", zorder=2)
+    ax.scatter(RList[-1,1], RList[-1,2], marker = "x", color = "r", label = "last", zorder=2)
+    ax.scatter(RList[idx,1], RList[idx,2], s = 16, color = "r", label='turning points', zorder=2)
+    
     ax.set_title(title)
     ax.axis("equal")
     ax.legend()
@@ -210,7 +211,7 @@ def classifyTurns(b1, b2, position, min_angle1=np.pi/12, min_angle2=np.pi/4, tur
     turn_range = angles within x cm of each "turn" shouldn't add up to be a circle
     """
     RList = RDP4(position[b1:b2], epsilon).ResultList
-    idx3, theta_sum2, idx2_1, idx3_2 = turn3(RList, min_angle1, min_angle2, turn_range_start, vCutoff, vIncrease)
+    idx3, theta_sum2, idx2, idx3_2 = turn3(RList, min_angle1, min_angle2, turn_range_start, vCutoff, vIncrease)
     
     ego_turns = np.empty(len(idx3))
     for i in range(len(idx3)):
@@ -223,7 +224,7 @@ def classifyTurns(b1, b2, position, min_angle1=np.pi/12, min_angle2=np.pi/4, tur
     ego_turns = np.reshape(ego_turns, (len(idx3), 1))
             
     directions = np.diff(RList[:, 1:3], axis=0)
-    allo = np.arctan2(directions[idx2_1, 1], directions[idx2_1, 0]) #in RList frame, length of idx3
+    allo = np.arctan2(directions[idx2, 1], directions[idx2, 0]) #in RList frame, length of idx3
     allo_turns = np.empty(len(idx3))
     for i in range(len(idx3)):
         if (np.pi/4) <= allo[i] < (3/4*np.pi):
@@ -237,7 +238,7 @@ def classifyTurns(b1, b2, position, min_angle1=np.pi/12, min_angle2=np.pi/4, tur
     allo_turns = np.reshape(allo_turns, (len(idx3), 1))
     
     times = np.reshape(RList[idx3, 0], (len(idx3), 1))
-    return np.hstack((times, ego_turns, allo_turns)), RList[idx3_2,0]
+    return np.hstack((times, ego_turns, allo_turns)), RList[idx3_2,0], RList[idx2,0]
 
 
 def writeToCsv(TimeAndTurns, title): 
@@ -432,24 +433,22 @@ def makeRM2(spikes, position):
     return n
 
 
-def graphRM2(position, spikes, suptitle, percentile=95, mycm="jet", smoothing_2d_sigma=1):
+def graphRM2(position, pos2, spikes, suptitle, percentile=95, mycm="jet", smoothing_2d_sigma=1):
     """ 
     graphRM adapted for avg RM for turns
-    position and spikes from shiftPosP and shiftPosS
+    position, pos2, and spikes from shiftPosP and shiftPosS
     """
-    y, x = np.ogrid[:14, :14]
-    dist = np.sqrt((x-6.5)**2 + (y-6.5)**2)
-    mask = dist > 7.5
+    rows, cols = np.linspace(-7*4.72, 7*4.72, 15), np.linspace(-7*4.72, 7*4.72, 15)
     n = []
     titles2 = []
     for i in range(8):
         n1 = []
+        ho = np.histogram2d(pos2[i][:,2], pos2[i][:,1], bins=[rows,cols])[0]
         for j in range(len(position[i])):
-            #print("i and j = ", i, j)
             n1.append(makeRM2(spikes[i][j], position[i][j]))
         n2 = np.nanmean(n1, axis=0)
         n2 = weird_smooth(n2,smoothing_2d_sigma)
-        n2[mask] = np.nan
+        n2[np.where(ho==0)] = np.nan
         n.append(n2)
         titles2.append(f"n = {len(n1)}")
     
@@ -478,11 +477,14 @@ def shiftPosP(pos, timeAndTurns, ts1, RMrange=7*4.72):
     ts1 from turnsInField: 1 pt before 1st pt of each turn
     RMrange: +/- n unit distance of the 1st point of turns to make rate map
     
-    Returns: list of 8 lists each with arrays where each array is 1 turn
+    Returns: 
+        shifted_pos: list of 8 lists each with arrays where each array is 1 turn
     pos (before RDP) within RMrange of the 1st point of turns, 
     shifted based on the 1st point of turns
+        shifted_pos2: list of 8 arrays
     """
     shifted_pos = [[] for _ in range(8)]
+    shifted_pos2 = [np.empty((0,3)) for _ in range(8)]
     idxs = np.empty((0,2)) #which pts are within range of 1st pt of turns, in pos frame
     for i in range(len(timeAndTurns)): #adapted from turn3
         k = np.where(pos == timeAndTurns[i,0])[0] #1st point of the turn, in pos frame
@@ -510,29 +512,38 @@ def shiftPosP(pos, timeAndTurns, ts1, RMrange=7*4.72):
             dist = np.sqrt((pos[k, 1]-pos[j, 1])**2 + (pos[k, 2]-pos[j, 2])**2)
         
         idxs = np.vstack((idxs, np.reshape(np.array([idx_start,idx_end]),(1,2))))
-        shiftedP = np.subtract(pos[int(idx_start):int(idx_end)], np.array([0,pos[k,1],pos[k,2]]))
-        pt1idx = bisect(shiftedP[:,0], ts1[i])
-        srP = rotate(shiftedP, shiftedP[pt1idx])
+        shiftedP = np.subtract(pos[int(idx_start):int(idx_end+1)], np.array([0,pos[k,1],pos[k,2]]))
+        pt1idx = bisect_left(pos[:,0], ts1[i])
+        pt1 = np.subtract(pos[pt1idx], np.array([0,pos[k,1],pos[k,2]])) #1 pt before the turn
+        srP = rotate(shiftedP, pt1)
         
         shifted_pos[0].append(shiftedP)
+        shifted_pos2[0] = np.vstack((shifted_pos2[0],shiftedP))
         #ego turns
         if timeAndTurns[i,1] == 0:
             shifted_pos[1].append(srP)
+            shifted_pos2[1] = np.vstack((shifted_pos2[1],srP))
         elif timeAndTurns[i,1] == 1:
             shifted_pos[2].append(srP)
+            shifted_pos2[2] = np.vstack((shifted_pos2[2],srP))
         elif timeAndTurns[i,1] == 2:
             shifted_pos[3].append(srP)
+            shifted_pos2[3] = np.vstack((shifted_pos2[3],srP))
         
         #allo turns
         if timeAndTurns[i,2] == 0:
             shifted_pos[4].append(shiftedP)
+            shifted_pos2[4] = np.vstack((shifted_pos2[4],shiftedP))
         elif timeAndTurns[i,2] == 1:
             shifted_pos[5].append(shiftedP)
+            shifted_pos2[5] = np.vstack((shifted_pos2[5],shiftedP))
         elif timeAndTurns[i,2] == 2:
             shifted_pos[6].append(shiftedP)
+            shifted_pos2[6] = np.vstack((shifted_pos2[6],shiftedP))
         elif timeAndTurns[i,2] == 3:
             shifted_pos[7].append(shiftedP)
-    return shifted_pos, idxs
+            shifted_pos2[7] = np.vstack((shifted_pos2[7],shiftedP))
+    return shifted_pos, shifted_pos2, idxs
 
 
 def shiftPosS(pos, spikes, timeAndTurns, idxs, ts1):
@@ -552,14 +563,13 @@ def shiftPosS(pos, spikes, timeAndTurns, idxs, ts1):
     shifted_s = [[] for _ in range(8)]
     for i in range(len(timeAndTurns)):
         k = np.where(pos == timeAndTurns[i,0])[0] #1st point of the turn, in pos frame
-        spike_idx = np.where(np.logical_and(spikes>pos[int(idxs[i,0]),0], spikes<pos[int(idxs[i,1]),0]))[0]
+        spike_idx = np.where(np.logical_and(spikes>pos[int(idxs[i,0]),0], spikes<pos[int(idxs[i,1]+1),0]))[0]
         shiftedS = np.subtract(spikes[spike_idx], np.array([0,pos[k,1],pos[k,2]]))
+        pt1idx = bisect_left(pos[:,0], ts1[i])
+        pt1 = np.subtract(pos[pt1idx], np.array([0,pos[k,1],pos[k,2]])) #1 pt before the turn
         
-        pt1idx = bisect(shiftedS[:,0], ts1[i])
-        if pt1idx == len(shiftedS):
-            pt1idx = pt1idx-1
         if len(shiftedS) > 0:
-            srS = rotate(shiftedS, shiftedS[pt1idx])
+            srS = rotate(shiftedS, pt1)
         else:
             srS = np.empty((0,3))
         
@@ -607,12 +617,12 @@ def turnsInField(visits, position, subfield): #adapted from 061220
     return turns, ts1
 
 
-def rotate(position, pt2):
+def rotate(position, pt):
     """
     position: [ts,x,y]
-    pt2 from turnsInField: [ts,x,y], 2nd pt of the turn
+    pt from turnsInField: [ts,x,y], 1 pt before the 1st pt of the turn
     """
-    theta = 3/2*np.pi - np.arctan2(pt2[2], pt2[1])
+    theta = 3/2*np.pi - np.arctan2(pt[2], pt[1])
     x = position[:, 1]
     y = position[:, 2]
     rx = x*np.cos(theta) - y*np.sin(theta)
@@ -624,4 +634,57 @@ def rotate(position, pt2):
 
 
 #from 062320: historical, turn3 vs turn4
-#from 062320: historical, plotting trajectories after shifting and rotating
+
+
+def trajectories(position, suptitle=""):
+    """
+    graph trajectories after shifting and rotating them
+    """
+    fig,axs = plt.subplots(2,4)
+    titles = ["All turns", "Left", "Back", "Right", "North", "East", "South", "West"]
+    fig.suptitle(suptitle, y=1.04)
+        
+    for i in range(2):
+        for j in range(4):
+            axs[i][j].set_title(titles[i*4+j] + "\n" + f"n = {len(position[i*4+j])}")
+            for k in range(len(position[i*4+j])):
+                axs[i][j].plot(position[i*4+j][k][:,1]/4.72, position[i*4+j][k][:,2]/4.72)
+                axs[i][j].axis("equal")
+    fig.tight_layout()
+
+
+def turnsInField2(visits, position, subfield):
+    """
+    Finds the directions of turns where at least 1 point is inside the subfield
+    position: before RDP
+    Returns [ts, ego, allo]
+    """
+    
+    turns, ts1, ts2 = classifyTurns(0, len(position), position)
+    #turns columns: ts, ego, allo
+    #ts1: ts of 1 pt before 1st pt of turns
+    #ts2: ts of last pt of each turn
+    j = 0
+    js = np.array([])
+    a = np.array([]) #before, during, or after the visit
+    for i in range(len(visits[subfield])): #the ith visit
+        while True:
+            #print(j)
+            if turns[j,0] > visits[subfield][i][-1]:
+                #print("breaking")
+                break
+            if visits[subfield][i][0] <= turns[j,0] <= visits[subfield][i][-1] and ts2[j] <= visits[subfield][i][-1]:
+                js = np.hstack((js,j))
+                a = np.hstack((a,1))
+            elif visits[subfield][i][0] <= turns[j,0] <= visits[subfield][i][-1] and ts2[j] > visits[subfield][i][-1]:
+                js = np.hstack((js,j))
+                a = np.hstack((a,2))
+            elif visits[subfield][i][0] <= ts2[j] <= visits[subfield][i][-1]:
+                js = np.hstack((js,j))
+                a = np.hstack((a,0))
+            elif turns[j,0] < visits[subfield][i][0] and visits[subfield][i][-1] <= ts2[j]:
+                js = np.hstack((js,j))
+                a = np.hstack((a,3))
+            j += 1
+
+    return turns[js.astype(int)], ts1[js.astype(int)], a

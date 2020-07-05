@@ -70,11 +70,13 @@ def turn4(position, min_angle1=np.pi/12, min_angle2=np.pi/4):
             j += 1
             if j > len(position)-3:
                 break
-            dist = np.sqrt((position[i, 1]-position[j+1, 1])**2 + (position[i, 2]-position[j+1, 2])**2)
+            dist = dist + np.sqrt((position[i, 1]-position[j+1, 1])**2 + 
+                                  (position[i, 2]-position[j+1, 2])**2)
         
         j = i-2 #one point before the "turn", in theta frame
         if j >= 0:
-            dist = np.sqrt((position[i, 1]-position[j+1, 1])**2 + (position[i, 2]-position[j+1, 2])**2)
+            dist = np.sqrt((position[i, 1]-position[j+1, 1])**2 + 
+                           (position[i, 2]-position[j+1, 2])**2)
         else:
             dist = turn_range+10
         while dist < turn_range: #checking points before the "turn"
@@ -82,8 +84,9 @@ def turn4(position, min_angle1=np.pi/12, min_angle2=np.pi/4):
             j -= 1
             if j < 0:
                 break
-            dist = np.sqrt((position[i, 1]-position[j+1, 1])**2 + (position[i, 2]-position[j+1, 2])**2)
-        
+            dist = dist + np.sqrt((position[i, 1]-position[j+1, 1])**2 + 
+                                  (position[i, 2]-position[j+1, 2])**2)
+            
         idx2 = idx2.astype(int)
         for k in idx2:
             if k+1 in idx:
