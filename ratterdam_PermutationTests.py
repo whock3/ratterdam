@@ -52,10 +52,13 @@ def computeTestStatistic_Diffs(groupX, groupY):
     of single trial {RM or avg? decide}. 
     
     Avgs them to a summary trace and returns their bin-wise diff
-    """
-    avgX, avgY = np.nanmean(groupX, axis=0), np.nanmean(groupY, axis=0)
-    return util.weird_smooth(avgX - avgY, Def.smoothing_1d_sigma)
-
+    """    
+    
+    maskX= np.ma.masked_invalid(groupX)
+    avgX = maskX.mean(axis=0) # ignores inf and nan
+    maskY= np.ma.masked_invalid(groupY)
+    avgY = maskY.mean(axis=0) # ignores inf and nan
+    return avgX-avgY
 
 def getLabels(unit, alley):
     """
@@ -139,7 +142,7 @@ def global_FWER_alpha(nulls, unit, alpha=0.05): # fwerModifier should be 3 (txts
     else:
         fwerModifier = 3*multCompFactor
         FWERalpha = (alpha / fwerModifier)  # nb this is a proportion (decimal) not a list cutoff (integer)
-        alphaIncrements = [FWERalpha]
+        alphaIncrements = np.linspace(0.017, 1e-6, 50) # start at 0.017 because thats the largest the adj p value could be: 0.05/(3*1)
         fwerSatisfied = False
         for adjustedAlpha in alphaIncrements:
             if not fwerSatisfied:
@@ -339,7 +342,7 @@ def plotPermutationResults(unit, bounds, stat, conditionName, globalCrossings, p
        
 if __name__ == '__main__':
     
-    rat = "R781"
+    rat = "R859"
     expCode = "BRD3"
     datafile = f"E:\\Ratterdam\\{rat}\\{rat}{expCode}\\"
     fpath = f"E:\\Ratterdam\{rat}\\permutation_tests\\{expCode}\\"
@@ -356,13 +359,12 @@ if __name__ == '__main__':
         for f in fs:
             if 'cl-maze1' in f and 'OLD' not in f and 'Undefined' not in f:
                 clustname = subdir[subdir.index("TT"):] + "\\" + f
-                if clustname == 'TT6\\cl-maze1.1':
-                    unit = Core.UnitData(clustname, datafile, expCode, Def.alleyBounds, alleyVisits, txtVisits, p_sess, ts_sess)
-                    unit.loadData_raw()
-                    rm = util.makeRM(unit.spikes, unit.position)            
-                    if np.nanpercentile(rm,Def.wholetrack_imshow_pct_cutoff) >= .2:
-                        print(clustname)
-                        unitPermutationTest_AllPairsAllAlleys(unit, 5000, fpath)
+                unit = Core.UnitData(clustname, datafile, expCode, Def.alleyBounds, alleyVisits, txtVisits, p_sess, ts_sess)
+                unit.loadData_raw()
+                rm = util.makeRM(unit.spikes, unit.position)            
+                if np.nanpercentile(rm,Def.wholetrack_imshow_pct_cutoff) >= 0.75:
+                    print(clustname)
+                    unitPermutationTest_AllPairsAllAlleys(unit, 5000, fpath)
 
 
 

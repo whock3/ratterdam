@@ -3,6 +3,7 @@ from numpy.linalg import norm as npNorm
 import scipy.ndimage
 from scipy.interpolate import interp1d
 import datetime
+from collections import Counter
 from bisect import bisect_left
 import scipy.ndimage
 from matplotlib.colors import LinearSegmentedColormap
@@ -117,18 +118,20 @@ def read_pos(datafile):
 
 def load_position(datafile):
     """ Returns np array ts,x,y. Not to be confused with
-    util.read_pos which just loads the raw dict"""
+    util.read_pos which just loads the raw dict. Adjusts the 
+    orientation of the track based on cameraOrientationInfo.txt in same dir"""
+    
     pos = read_pos(datafile)
-    
     ts = np.asarray(sorted(list(pos.keys())))
-    posx = [pos[i][0] for i in ts]
-    posy = [pos[i][1] for i in ts]
-    position = np.column_stack((ts,posx,posy))
-    
+    posx, posy = Parse.adjustPosCamera(datafile, pos, ts)
+    position = np.column_stack((ts,posx,posy))    
     return position
 
 
 def makeLinTrack():
+    """
+    Creates an interpolated skeletal representation of Tmaze for R735
+    """
     
     fstem = interp1d([630,189],[215,215])
     fleft = interp1d([220,208],[415,215])
@@ -335,7 +338,7 @@ def getClustList(datafile):
     clustList = []
     for subdir, dirs, fs in os.walk(datafile):
         for f in fs:
-            if 'cl-maze' in f and 'OLD' not in f and 'Undefined' not in f:
+            if 'cl-maze1' in f and 'OLD' not in f and 'Undefined' not in f:
                 clustname = subdir[subdir.index("TT"):] + "\\" + f
                 clustList.append(clustname)
     return clustList
@@ -609,3 +612,16 @@ def genTimestamp(form='l'):
     else:
         return "Keyword Error"
     
+    
+def experimentCellInventory(df,ret=False):
+    clustlist = getClustList(df)
+    print(f"{len(clustlist)} total cells recorded")
+    ttlist = [i.split("\\")[0] for i in clustlist]
+    count = Counter(ttlist)
+    print("Tetrode breakdown:")
+    k = list(count.keys())
+    sk = sorted(k,key=lambda x: int(x[2:]))
+    for k in sk:
+        print(f"{k}: {count[k]}")
+    if ret:
+        return count

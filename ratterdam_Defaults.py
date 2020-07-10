@@ -205,7 +205,7 @@ ptsCm_macaulay = 4.72
 ptsCm = ptsCm_macaulay
 
 #old bins = 15,30
-singleAlleyBins = [13,9]
+singleAlleyBins = [13,8]
 wholeAlleyBins = [round(int(480/ptsCm)),int(round(640/ptsCm))]
 
 # Smoothing values to use

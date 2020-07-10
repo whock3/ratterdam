@@ -85,16 +85,12 @@ class UnitData():
         
         
         for alley in Def.beltwayAlleys:
-            
             for visit in range(len(self.alleyVisits[alley-1])):
-                
                 #visitsOcc = util.getVisitPos(alley-1, visit, self.ts, self.alleyVisits, self.position)
                 #visitsSpk = util.getVisitPos(alley-1, visit, self.spikes[:,0], self.alleyVisits, self.position)
-                
                 visitsOcc = self.position[(self.position[:,0]>self.alleyVisits[alley-1][visit][0])&(self.position[:,0]<=self.alleyVisits[alley-1][visit][1])]
                                               
                 visitsSpk = self.spikes[(self.spikes[:,0]>self.alleyVisits[alley-1][visit][0])&(self.spikes[:,0]<=self.alleyVisits[alley-1][visit][1])]
-                
                 
                 #The above gets all spikes and occs within a lap. WH EDit 5/29/20 and see Analysis&Code notebook for more info
                 # Now I will use the txt file with lap starts I create to set lap time bounds and get EVERYTHING in that for all alleys
@@ -104,7 +100,6 @@ class UnitData():
                 # but it turned out to be not perfect
                 visitsOcc = util.checkInAlley(visitsOcc, alley)
                 visitsSpk = util.checkInAlley(visitsSpk, alley)
-                
                 
                 # If flag includeRewards==False, check if trial is one that was
                 # rewarded and exclude it. This is to prevent reward-related
@@ -232,3 +227,17 @@ class BehavioralData():
             position = Filt.velocity_filtering(position)
         alleyTracking, alleyVisits,  txtVisits = Parse.getDaysBehavioralData(self.datafile, self.experimentCode)
         return ts, position, alleyTracking, alleyVisits,  txtVisits
+    
+    
+if __name__ == '__main__':
+    
+    rat = "R859"
+    expCode = "BRD1"
+    datafile = f"E:\\Ratterdam\\{rat}\\{rat}{expCode}\\"
+    clustname = 'TT3\\cl-maze1.1'
+      
+    print(f"Beginning {rat} {expCode} {clustname}")
+    alleyTracking, alleyVisits,  txtVisits, p_sess, ts_sess = Parse.getDaysBehavioralData(datafile, expCode)
+    unit = UnitData(clustname, datafile, expCode, Def.alleyBounds, alleyVisits, txtVisits, p_sess, ts_sess)
+    unit.loadData_raw()
+    print(f"{rat} {expCode} {clustname} loaded")
