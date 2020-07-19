@@ -1,17 +1,19 @@
 # -*- coding: utf-8 -*-
 """
-Created on Tue Jun 23 17:22:35 2020
+Created on Mon Jul 13 2020
 
 @author: Ruo-Yah Lai
 
 1. idx = Points that are > min_angle1
 2. idx2 = Points within turn_range of a point in idx
       a. While taking out points in idx2 from idx
-      b. NEW Turn range depends on how instantaneous velocity and 
-      many pts are removed with RDP
+      b. Turn range depends on instantaneous velocity and how
+      many pts are removed with RDP (min turn range = 2cm)
 3. theta_sum = Add up angles of groups of points in idx2
 4. idx3 = where theta_sum > min_angle2
-      a. Returns first point in a group
+5. NEW - If there is back and forth movement both before and after the 
+   possible turn, then it's not a turn
+6. Returns first point in a group
 """
 
 import numpy as np
@@ -51,9 +53,7 @@ def turn4(position, min_angle1=np.pi/12, min_angle2=np.pi/4):
     idx_1 = np.empty(0)
     trs = np.empty(0)
     percents = np.empty(0)
-    while True:
-        if len(idx) < 1:
-            break
+    while len(idx) > 0:
         i = idx[0] #in Rpos frame
         #percentage of points kept after RDP
         a = bisect(position[:,0], (position[i,0] + sAhead*1e6))
@@ -100,7 +100,7 @@ def turn4(position, min_angle1=np.pi/12, min_angle2=np.pi/4):
                 idx2.remove(k)
                 idx2 = np.array(idx2)
         
-        idx_1 = np.hstack([idx_1, np.min(idx2)+1])
+        idx_1 = np.hstack([idx_1, np.min(idx2)+1]) #1st pt in each "turn"
         theta_sum2 = np.hstack([theta_sum2, np.sum(theta2[idx2]) % (2*np.pi)])
         idx2_1 = np.hstack([idx2_1, np.max(idx2)+1]) #last point in each group of "turns", in Rpos frame
         trs = np.hstack((trs, turn_range))
@@ -114,7 +114,46 @@ def turn4(position, min_angle1=np.pi/12, min_angle2=np.pi/4):
             theta_sum[i] = 2*np.pi - theta_sum2[i] #[0, pi]
         else:
             theta_sum[i] = theta_sum2[i]
-                        
     idx3 = np.where(theta_sum>min_angle2)[0]
+    
+    window = 20*4.72
+    bTheta_sum, aTheta_sum = np.empty(0), np.empty(0)
+    for i in idx3: #checking for back and forth movements
+        j = idx2_1[i] #the 1st pt after the last pt of "turn" in question, in theta frame
+        if j < len(position)-2:
+            dist = np.sqrt((position[idx2_1[i], 1]-position[j+1, 1])**2 + 
+                           (position[idx2_1[i], 2]-position[j+1, 2])**2)
+        else:
+            dist = window+10
+        aidx2 = np.array([]) #which pts are within window of and after "turn", in theta frame
+        while dist < window: #checking points after the "turn"
+            aidx2 = np.concatenate((aidx2, np.array([j])))
+            j += 1
+            if j > len(position)-3:
+                break
+            dist = np.sqrt((position[idx2_1[i], 1]-position[j+1, 1])**2 + 
+                           (position[idx2_1[i], 2]-position[j+1, 2])**2)
+        
+        
+        j = idx_1[i]-2 #the 1st pt before the 1st pt of "turn", in theta frame
+        if j >= 0:
+            dist = np.sqrt((position[idx_1[i], 1]-position[j+1, 1])**2 + 
+                           (position[idx_1[i], 2]-position[j+1, 2])**2)
+        else:
+            dist = window+10
+        bidx2 = np.array([]) #which pts are within window of and before "turn", in theta frame
+        while dist < window: #checking points before the "turn"
+            bidx2 = np.concatenate((bidx2, np.array([j])))
+            j -= 1
+            if j < 0:
+                break
+            dist = np.sqrt((position[idx_1[i], 1]-position[j+1, 1])**2 + 
+                           (position[idx_1[i], 2]-position[j+1, 2])**2)
+        
+        bTheta_sum = np.hstack([bTheta_sum, np.sum(theta[bidx2])])
+        aTheta_sum = np.hstack([aTheta_sum, np.sum(theta[aidx2])])
+    
+    #large angles both before and after, in idx frame
+    widx = idx3[np.where(np.logical_and(bTheta_sum > np.pi, aTheta_sum > np.pi))[0]] 
         
     return idx_1[idx3].astype(int), theta_sum2[idx3], idx2_1[idx3].astype(int), trs[idx3], percents

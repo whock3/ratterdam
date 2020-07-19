@@ -14,8 +14,8 @@ from turn3 import turn3
 from bisect import bisect, bisect_left
 from matplotlib.colors import LinearSegmentedColormap
 from RateMap import makeRM, weird_smooth
-from math import ceil, floor
 from copy import deepcopy
+from RateMap1D import classifyTurns2
 
 
 def velocity_filtering(position, threshold = 3, winsz=50):
@@ -563,7 +563,10 @@ def shiftPosS(pos, spikes, timeAndTurns, idxs, ts1):
     shifted_s = [[] for _ in range(8)]
     for i in range(len(timeAndTurns)):
         k = np.where(pos == timeAndTurns[i,0])[0] #1st point of the turn, in pos frame
-        spike_idx = np.where(np.logical_and(spikes>pos[int(idxs[i,0]),0], spikes<pos[int(idxs[i,1]+1),0]))[0]
+        if idxs[i,1] < len(pos)-1:
+            spike_idx = np.where(np.logical_and(spikes>pos[int(idxs[i,0]),0], spikes<pos[int(idxs[i,1]+1),0]))[0]
+        else:
+            spike_idx = np.where(np.logical_and(spikes>pos[int(idxs[i,0]),0], spikes<pos[int(idxs[i,1]),0]))[0]
         shiftedS = np.subtract(spikes[spike_idx], np.array([0,pos[k,1],pos[k,2]]))
         pt1idx = bisect_left(pos[:,0], ts1[i])
         pt1 = np.subtract(pos[pt1idx], np.array([0,pos[k,1],pos[k,2]])) #1 pt before the turn
@@ -668,10 +671,8 @@ def turnsInField2(visits, position, subfield):
     js = np.array([])
     a = np.array([]) #before, during, or after the visit
     for i in range(len(visits[subfield])): #the ith visit
-        while True:
-            #print(j)
-            if turns[j,0] > visits[subfield][i][-1]:
-                #print("breaking")
+        while j < len(turns):
+            if turns[j,0]-400000 > visits[subfield][i][-1]:
                 break
             if visits[subfield][i][0] <= turns[j,0] <= visits[subfield][i][-1] and ts2[j] <= visits[subfield][i][-1]:
                 js = np.hstack((js,j))
@@ -685,6 +686,12 @@ def turnsInField2(visits, position, subfield):
             elif turns[j,0] < visits[subfield][i][0] and visits[subfield][i][-1] <= ts2[j]:
                 js = np.hstack((js,j))
                 a = np.hstack((a,3))
+            elif visits[subfield][i][0] <= turns[j,0]-400000 <= visits[subfield][i][-1]:
+                js = np.hstack((js,j))
+                a = np.hstack((a,4))
+            elif turns[j,0]-400000 < visits[subfield][i][0] and visits[subfield][i][-1] < ts2[j]:
+                js = np.hstack((js,j))
+                a = np.hstack((a,5))
             j += 1
 
     return turns[js.astype(int)], ts1[js.astype(int)], a
