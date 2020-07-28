@@ -122,7 +122,7 @@ def linearize(pos, spikes, timeAndThetas, turnBinSize = 1/4*np.pi, RMrange=7*4.7
     Linearize 2D turns
     
     pos: [ts,x,y] before RDP
-    timeAndTurns: [ts, ego turn direction, allo turn direction] from classifyTurns2
+    timeAndThetas: [ts, theta, theta] from turnsInField3
     RMrange: +/- n unit distance of the 1st point of turns to make rate map
     
     Returns: 

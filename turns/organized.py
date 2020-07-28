@@ -347,77 +347,6 @@ def adjustPosCamera(pos, datafile="C:/Users/Ruo-Yah Lai/Desktop/My folder/Colleg
 #from 061820: historical, polar plot of firing rate based on turn angle
     
 
-def shiftPos(pos, timeAndTurns, spikes, RMrange=7*4.72):
-    """
-    pos: [ts,x,y] before RDP
-    timeAndTurns: [ts, ego turn direction, allo turn direction] from classifyTurns
-    spikes: after getPosFromTs
-    RMrange: +/- n unit distance of the 1st point of turns to make rate map
-    
-    Returns: list of 8 arrays, pos (before RDP) and spikes within RMrange 
-    of the 1st point of turns, shifted based on the 1st point of turns
-    """
-    shifted_pos = [np.empty((0,3)) for _ in range(8)]
-    shifted_s = [np.empty((0,3)) for _ in range(8)]
-    for i in range(len(timeAndTurns)): #adapted from turn3
-        k = np.where(pos == timeAndTurns[i,0])[0] #1st point of the turn, in pos frame
-        j = deepcopy(k)
-        dist = 0
-        #idx2: which pts are within range of 1st pt of turns, in pos frame
-        while dist < RMrange: #checking points after the turn
-            idx2_end = deepcopy(j)
-            j += 1
-            if j > len(pos)-1:
-                break
-            dist = np.sqrt((pos[k, 1]-pos[j, 1])**2 + (pos[k, 2]-pos[j, 2])**2)
-        
-        j = k - 1 #one point before the turn
-        if j >= 0:
-            dist = np.sqrt((pos[k, 1]-pos[j, 1])**2 + (pos[k, 2]-pos[j, 2])**2)
-            idx2_start = j+1
-        else:
-            dist = RMrange+10
-            idx2_start = 0
-        while dist < RMrange: #checking points before the turn
-            idx2_start = deepcopy(j)
-            j -= 1
-            if j < 0:
-                break
-            dist = np.sqrt((pos[k, 1]-pos[j, 1])**2 + (pos[k, 2]-pos[j, 2])**2)
-        
-        shiftedP = np.subtract(pos[int(idx2_start):int(idx2_end)], np.array([0,pos[k,1],pos[k,2]]))     
-        spike_idx = np.where(np.logical_and(spikes>pos[idx2_start,0], spikes<pos[idx2_end,0]))[0]
-        shiftedS = np.subtract(spikes[spike_idx], np.array([0,pos[k,1],pos[k,2]]))
-        
-        shifted_pos[0] = np.vstack((shifted_pos[0], shiftedP))
-        shifted_s[0] = np.vstack((shifted_s[0], shiftedS))
-        #ego turns
-        if timeAndTurns[i,1] == 0:
-            shifted_pos[1] = np.vstack((shifted_pos[1], shiftedP))
-            shifted_s[1] = np.vstack((shifted_s[1], shiftedS))
-        elif timeAndTurns[i,1] == 1:
-            shifted_pos[2] = np.vstack((shifted_pos[2], shiftedP))
-            shifted_s[2] = np.vstack((shifted_s[2], shiftedS))
-        elif timeAndTurns[i,1] == 2:
-            shifted_pos[3] = np.vstack((shifted_pos[3], shiftedP))
-            shifted_s[3] = np.vstack((shifted_s[3], shiftedS))
-        
-        #allo turns
-        if timeAndTurns[i,2] == 0:
-            shifted_pos[4] = np.vstack((shifted_pos[4], shiftedP))
-            shifted_s[4] = np.vstack((shifted_s[4], shiftedS))
-        elif timeAndTurns[i,2] == 1:
-            shifted_pos[5] = np.vstack((shifted_pos[5], shiftedP))
-            shifted_s[5] = np.vstack((shifted_s[5], shiftedS))
-        elif timeAndTurns[i,2] == 2:
-            shifted_pos[6] = np.vstack((shifted_pos[6], shiftedP))
-            shifted_s[6] = np.vstack((shifted_s[6], shiftedS))
-        elif timeAndTurns[i,2] == 3:
-            shifted_pos[7] = np.vstack((shifted_pos[7], shiftedP))
-            shifted_s[7] = np.vstack((shifted_s[7], shiftedS))
-    return shifted_pos, shifted_s
-
-
 def makeRM2(spikes, position):
     """ makeRM adapted for avg RM for turns"""
     #camXMax, camXMin = [round(np.max(position[:,1])), round(np.min(position[:,1]))]
@@ -430,13 +359,13 @@ def makeRM2(spikes, position):
     n = (hs*np.reciprocal(ho))*30 #adjust for camera 30 frames/sec to get Hz
     n[np.where(ho==0)] = np.nan
     #cam = [floor(camXMin/4.72),ceil(camXMax/4.72),floor(camYMin/4.72),ceil(camYMax/4.72)]
-    return n
+    return n, ho
 
 
 def graphRM2(position, pos2, spikes, suptitle, percentile=95, mycm="jet", smoothing_2d_sigma=1):
     """ 
     graphRM adapted for avg RM for turns
-    position, pos2, and spikes from shiftPosP and shiftPosS
+    position, pos2, and spikes from shiftPos
     """
     rows, cols = np.linspace(-7*4.72, 7*4.72, 15), np.linspace(-7*4.72, 7*4.72, 15)
     n = []
@@ -445,7 +374,7 @@ def graphRM2(position, pos2, spikes, suptitle, percentile=95, mycm="jet", smooth
         n1 = []
         ho = np.histogram2d(pos2[i][:,2], pos2[i][:,1], bins=[rows,cols])[0]
         for j in range(len(position[i])):
-            n1.append(makeRM2(spikes[i][j], position[i][j]))
+            n1.append(makeRM2(spikes[i][j], position[i][j])[0])
         n2 = np.nanmean(n1, axis=0)
         n2 = weird_smooth(n2,smoothing_2d_sigma)
         n2[np.where(ho==0)] = np.nan
@@ -468,10 +397,8 @@ def graphRM2(position, pos2, spikes, suptitle, percentile=95, mycm="jet", smooth
     fig.tight_layout()
 
 
-def shiftPosP(pos, timeAndTurns, ts1, RMrange=7*4.72):
+def shiftPos(pos, spikes, timeAndTurns, ts1, RMrange=7*4.72):
     """
-    Position part of shiftPos
-    
     pos: [ts,x,y] before RDP
     timeAndTurns: [ts, ego turn direction, allo turn direction] from classifyTurns
     ts1 from turnsInField: 1 pt before 1st pt of each turn
@@ -482,10 +409,11 @@ def shiftPosP(pos, timeAndTurns, ts1, RMrange=7*4.72):
     pos (before RDP) within RMrange of the 1st point of turns, 
     shifted based on the 1st point of turns
         shifted_pos2: list of 8 arrays
+        shifted_s: list of 8 lists of spikes
     """
     shifted_pos = [[] for _ in range(8)]
     shifted_pos2 = [np.empty((0,3)) for _ in range(8)]
-    idxs = np.empty((0,2)) #which pts are within range of 1st pt of turns, in pos frame
+    shifted_s = [[] for _ in range(8)]
     for i in range(len(timeAndTurns)): #adapted from turn3
         k = np.where(pos == timeAndTurns[i,0])[0] #1st point of the turn, in pos frame
         j = deepcopy(k)
@@ -511,90 +439,56 @@ def shiftPosP(pos, timeAndTurns, ts1, RMrange=7*4.72):
                 break
             dist = np.sqrt((pos[k, 1]-pos[j, 1])**2 + (pos[k, 2]-pos[j, 2])**2)
         
-        idxs = np.vstack((idxs, np.reshape(np.array([idx_start,idx_end]),(1,2))))
         shiftedP = np.subtract(pos[int(idx_start):int(idx_end+1)], np.array([0,pos[k,1],pos[k,2]]))
         pt1idx = bisect_left(pos[:,0], ts1[i])
         pt1 = np.subtract(pos[pt1idx], np.array([0,pos[k,1],pos[k,2]])) #1 pt before the turn
         srP = rotate(shiftedP, pt1)
         
-        shifted_pos[0].append(shiftedP)
-        shifted_pos2[0] = np.vstack((shifted_pos2[0],shiftedP))
-        #ego turns
-        if timeAndTurns[i,1] == 0:
-            shifted_pos[1].append(srP)
-            shifted_pos2[1] = np.vstack((shifted_pos2[1],srP))
-        elif timeAndTurns[i,1] == 1:
-            shifted_pos[2].append(srP)
-            shifted_pos2[2] = np.vstack((shifted_pos2[2],srP))
-        elif timeAndTurns[i,1] == 2:
-            shifted_pos[3].append(srP)
-            shifted_pos2[3] = np.vstack((shifted_pos2[3],srP))
-        
-        #allo turns
-        if timeAndTurns[i,2] == 0:
-            shifted_pos[4].append(shiftedP)
-            shifted_pos2[4] = np.vstack((shifted_pos2[4],shiftedP))
-        elif timeAndTurns[i,2] == 1:
-            shifted_pos[5].append(shiftedP)
-            shifted_pos2[5] = np.vstack((shifted_pos2[5],shiftedP))
-        elif timeAndTurns[i,2] == 2:
-            shifted_pos[6].append(shiftedP)
-            shifted_pos2[6] = np.vstack((shifted_pos2[6],shiftedP))
-        elif timeAndTurns[i,2] == 3:
-            shifted_pos[7].append(shiftedP)
-            shifted_pos2[7] = np.vstack((shifted_pos2[7],shiftedP))
-    return shifted_pos, shifted_pos2, idxs
-
-
-def shiftPosS(pos, spikes, timeAndTurns, idxs, ts1):
-    """
-    Spikes part of shiftPos
-    
-    pos: [ts,x,y] before RDP
-    spikes: after getPosFromTs
-    timeAndTurns: [ts, ego turn direction, allo turn direction] from classifyTurns
-    idxs: from shiftPosP
-    pt2 from turnsInField: 2nd pt of each turn
-    
-    Returns: list of 8 lists each with arrays where each array is 1 turn
-    spikes within RMrange of the 1st point of turns, 
-    shifted based on the 1st point of turns
-    """
-    shifted_s = [[] for _ in range(8)]
-    for i in range(len(timeAndTurns)):
-        k = np.where(pos == timeAndTurns[i,0])[0] #1st point of the turn, in pos frame
-        if idxs[i,1] < len(pos)-1:
-            spike_idx = np.where(np.logical_and(spikes>pos[int(idxs[i,0]),0], spikes<pos[int(idxs[i,1]+1),0]))[0]
+        if idx_end < len(pos)-1:
+            spike_idx = np.where(np.logical_and(spikes>pos[int(idx_start),0], spikes<pos[int(idx_end+1),0]))[0]
         else:
-            spike_idx = np.where(np.logical_and(spikes>pos[int(idxs[i,0]),0], spikes<pos[int(idxs[i,1]),0]))[0]
+            spike_idx = np.where(np.logical_and(spikes>pos[int(idx_start),0], spikes<pos[int(idx_end),0]))[0]
         shiftedS = np.subtract(spikes[spike_idx], np.array([0,pos[k,1],pos[k,2]]))
-        pt1idx = bisect_left(pos[:,0], ts1[i])
-        pt1 = np.subtract(pos[pt1idx], np.array([0,pos[k,1],pos[k,2]])) #1 pt before the turn
-        
         if len(shiftedS) > 0:
             srS = rotate(shiftedS, pt1)
         else:
             srS = np.empty((0,3))
         
+        shifted_pos[0].append(shiftedP)
+        shifted_pos2[0] = np.vstack((shifted_pos2[0],shiftedP))
         shifted_s[0].append(shiftedS)
         #ego turns
         if timeAndTurns[i,1] == 0:
+            shifted_pos[1].append(srP)
+            shifted_pos2[1] = np.vstack((shifted_pos2[1],srP))
             shifted_s[1].append(srS)
         elif timeAndTurns[i,1] == 1:
+            shifted_pos[2].append(srP)
+            shifted_pos2[2] = np.vstack((shifted_pos2[2],srP))
             shifted_s[2].append(srS)
         elif timeAndTurns[i,1] == 2:
+            shifted_pos[3].append(srP)
+            shifted_pos2[3] = np.vstack((shifted_pos2[3],srP))
             shifted_s[3].append(srS)
         
         #allo turns
         if timeAndTurns[i,2] == 0:
+            shifted_pos[4].append(shiftedP)
+            shifted_pos2[4] = np.vstack((shifted_pos2[4],shiftedP))
             shifted_s[4].append(shiftedS)
         elif timeAndTurns[i,2] == 1:
+            shifted_pos[5].append(shiftedP)
+            shifted_pos2[5] = np.vstack((shifted_pos2[5],shiftedP))
             shifted_s[5].append(shiftedS)
         elif timeAndTurns[i,2] == 2:
+            shifted_pos[6].append(shiftedP)
+            shifted_pos2[6] = np.vstack((shifted_pos2[6],shiftedP))
             shifted_s[6].append(shiftedS)
         elif timeAndTurns[i,2] == 3:
+            shifted_pos[7].append(shiftedP)
+            shifted_pos2[7] = np.vstack((shifted_pos2[7],shiftedP))
             shifted_s[7].append(shiftedS)
-    return shifted_s
+    return shifted_pos, shifted_pos2, shifted_s
 
 
 def turnsInField(visits, position, subfield): #adapted from 061220

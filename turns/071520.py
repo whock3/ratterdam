@@ -89,34 +89,38 @@ def graphRM3D(position, pos2, spikes, suptitle, percentile=99, mycm="jet", smoot
     fig.tight_layout()
 
 def sigmoid(x):
-    return 80 / (1 + exp(-0.125*(x - 60))) + 20
+    return 100 / (1 + np.exp(-0.1*(x - 50)))
 
-def graphRM2Dt(position, pos2, spikes, suptitle, percentile=95, mycm="jet", smoothing_2d_sigma=1):
+def graphRM2Dt(position, pos2, spikes, suptitle="", percentile=95, mycm="jet", smoothing_2d_sigma=1):
     """ 
-    Avg RM for turns, divided by the number of trajectories
+    Avg RM for turns, divided by the number of trajectories in each bin
     position, pos2, and spikes from shiftPosP and shiftPosS
     """
     rows, cols = np.linspace(-7*4.72, 7*4.72, 15), np.linspace(-7*4.72, 7*4.72, 15)
     n = []
     titles2 = []
     for i in range(8):
-        n1 = []
+        n1s = []
+        ho1s = []
         ho = np.histogram2d(pos2[i][:,2], pos2[i][:,1], bins=[rows,cols])[0]
         for j in range(len(position[i])):
-            n1.append(makeRM2(spikes[i][j], position[i][j]))
-        n2 = np.nanmean(n1, axis=0)
+            n1, ho1 = makeRM2(spikes[i][j], position[i][j])
+            n1s.append(n1)
+            ho1[np.where(ho1 > 1)] = 1
+            ho1[np.where(ho1 != ho1)] = 0
+            ho1s.append(ho1)
+            
+        n2 = np.nanmean(n1s, axis=0)
         n2 = weird_smooth(n2,smoothing_2d_sigma)
+        n2 = n2/sigmoid(np.sum(ho1s, axis=0))
         n2[np.where(ho==0)] = np.nan
-        
-        n2 = n2/sigmoid(len(n1))
-        
         n.append(n2)
-        titles2.append(f"n = {len(n1)}")
+        titles2.append(f"n = {len(n1s)}")
     
     fig, axs = plt.subplots(2,4)
     vmax = np.nanpercentile(n[0], percentile)
-    fig.suptitle(suptitle + "\nNormalized by the number of trajectories\n" 
-                 + f"Cutoff = {percentile}th percentile, {round(vmax,3)} Hz", y=1.12)
+    fig.suptitle(suptitle + "\nNormalized by the number of trajectories per bin\n" 
+                 + f"Cutoff = {percentile}th percentile, {round(vmax,1)} Hz", y=1.12)
     titles = ["All turns", "Left", "Back", "Right", "North", "East", "South", "West"]
 
     ims = []
