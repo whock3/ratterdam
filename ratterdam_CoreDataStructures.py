@@ -88,8 +88,8 @@ class UnitData():
             for visit in range(len(self.alleyVisits[alley-1])):
                 #visitsOcc = util.getVisitPos(alley-1, visit, self.ts, self.alleyVisits, self.position)
                 #visitsSpk = util.getVisitPos(alley-1, visit, self.spikes[:,0], self.alleyVisits, self.position)
+                
                 visitsOcc = self.position[(self.position[:,0]>self.alleyVisits[alley-1][visit][0])&(self.position[:,0]<=self.alleyVisits[alley-1][visit][1])]
-                                              
                 visitsSpk = self.spikes[(self.spikes[:,0]>self.alleyVisits[alley-1][visit][0])&(self.spikes[:,0]<=self.alleyVisits[alley-1][visit][1])]
                 
                 #The above gets all spikes and occs within a lap. WH EDit 5/29/20 and see Analysis&Code notebook for more info
@@ -232,9 +232,9 @@ class BehavioralData():
 if __name__ == '__main__':
     
     rat = "R859"
-    expCode = "BRD1"
+    expCode = "BRD3"
     datafile = f"E:\\Ratterdam\\{rat}\\{rat}{expCode}\\"
-    clustname = 'TT3\\cl-maze1.1'
+    clustname = 'TT7\\cl-maze1.2'
       
     print(f"Beginning {rat} {expCode} {clustname}")
     alleyTracking, alleyVisits,  txtVisits, p_sess, ts_sess = Parse.getDaysBehavioralData(datafile, expCode)
