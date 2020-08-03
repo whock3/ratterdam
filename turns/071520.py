@@ -12,7 +12,6 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from organized import makeRM2, weird_smooth
 import matplotlib.cm as cm
-from math import exp
 
 
 def noVelFilter(path="C:/Users/Ruo-Yah Lai/Desktop/My folder/College/Junior/K lab research/R859 OD3/", pos="pos.p.ascii", to_cm = True):
@@ -23,10 +22,8 @@ def noVelFilter(path="C:/Users/Ruo-Yah Lai/Desktop/My folder/College/Junior/K la
     file_to_open = data_folder / pos
     if to_cm == True:
         a = np.array([1, 4.72, 4.72])
-        ptsCm = 1
     else:
         a = np.array([1,1,1])
-        ptsCm = 4.72
     with open(file_to_open, 'r') as csv_file:
         data_iter = csv.reader(csv_file)
         data = [data for data in data_iter]

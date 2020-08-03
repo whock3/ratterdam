@@ -5,15 +5,11 @@
 import numpy as np
 from bisect import bisect_left
 import scipy.ndimage
-from pathlib import Path
 
 
-
-def read_clust(clustfile):
+def read_clust(clustfile, path="C:/Users/Ruo-Yah Lai/Desktop/My folder/College/Junior/K lab research/R859 OD3/"):
     '''open a cl-mazeX.X file and read spike times into a list'''
-    data_folder = Path("C:/Users/Ruo-Yah Lai/Desktop/My folder/College/Junior/K lab research/R859 OD3/")
-    file_to_open = data_folder / clustfile
-    with open(file_to_open) as clust:
+    with open(path + clustfile) as clust:
         raw_clust_data = clust.read().splitlines()
     spikes = []
     for line in raw_clust_data[13:]:
@@ -37,12 +33,17 @@ def takeClosest(myList, myNumber):
     else:
        return before
 
-def getPosFromTs(yourts,position):
+def getPosFromTs(yourts,position, path="C:/Users/Ruo-Yah Lai/Desktop/My folder/College/Junior/K lab research/R859 OD3/"):
     '''position is the full list of ts, yourts are the times you'd like a pos for '''
     adjTs = [takeClosest(position[:,0],i) for i in yourts]
     target = np.empty((0,3))
     for i in adjTs:
         target = np.vstack((target,position[np.where(position[:,0]==i)][:,0:][0]))
+    with open(path+"sessionEpochInfo.txt", "r") as file:
+        epochs = file.readlines()
+    start = float(epochs[0][:10])
+    end = float(epochs[0][11:21])
+    target = target[np.where(target[:,0] >= start) and target[:,0] < end]
     return target
 
 def weird_smooth(U,sigma):
@@ -70,14 +71,14 @@ def makeRM(spikes, position, bins=[30,50], smoothing_2d_sigma=2):
     return n
 
 ptsCm = 4.72 # This is for Macaulay. The kriger number is 4.85
-wholeAlleyBins = [round(int(480/ptsCm)),int(round(640/ptsCm))]
+wholeAlleyBins = [round(480/ptsCm),round(640/ptsCm)]
 
 """
 #Run from here
-spikes = read_clust("cl-maze1.1")
-target = getPosFromTs(spikes, data_np5) #data_np5 without adjusting from camaera frame to cm
-n = makeRM(target, data_np5)
+pos = adjustPosCamera(read_pos())
+spikes = getPosFromTs(read_clust("cl-maze1.1"), pos)
+n = makeRM(spikes, pos)
 fig, ax = plt.subplots(1, 1)
-ax.set_title("R859  Ratterdam Open Day 3 \n Tetrode 6  cl-maze1.1")
+ax.set_title("R859 D3 T6 1.1")
 plt.imshow(n)
 """

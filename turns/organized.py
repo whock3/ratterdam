@@ -6,7 +6,6 @@ Created on Wed Jun 17 20:06:17 2020
 """
 import csv
 import numpy as np
-from pathlib import Path
 import matplotlib.pyplot as plt
 from RDP4_class import RDP4
 from matplotlib.collections import LineCollection
@@ -16,6 +15,7 @@ from matplotlib.colors import LinearSegmentedColormap
 from RateMap import makeRM, weird_smooth
 from copy import deepcopy
 from RateMap1D import classifyTurns2
+import datetime
 
 
 def velocity_filtering(position, threshold = 3, winsz=50):
@@ -41,22 +41,24 @@ def velocity_filtering(position, threshold = 3, winsz=50):
 
 
 #originally from 041620
-def read_pos(path="C:/Users/Ruo-Yah Lai/Desktop/My folder/College/Junior/K lab research/R859 OD3/", pos="pos.p.ascii", to_cm = True):
-    data_folder = Path(path)
-    file_to_open = data_folder / pos
-    if to_cm == True:
+def read_pos(path="C:/Users/Ruo-Yah Lai/Desktop/My folder/College/Junior/K lab research/R859 OD3/", to_cm = False, file="pos.p.ascii"):
+    if to_cm:
         a = np.array([1, 4.72, 4.72])
         ptsCm = 1
     else:
-        a = np.array([1,1,1])
+        a = np.array([1, 1, 1])
         ptsCm = 4.72
-    with open(file_to_open, 'r') as csv_file:
+    with open(path + file, 'r') as csv_file:
         data_iter = csv.reader(csv_file)
-        data = [data for data in data_iter]
-    data_np1 = np.array(data[50574:-17], dtype = "float64")
-    data_np2 = data_np1[:,0:3]/a[None,:]
-    data_np3 = data_np2[np.all(data_np2 > np.array([0, 0, 0]), axis=1)]
-    return velocity_filtering(data_np3, 3*ptsCm)
+        pos = [data for data in data_iter]
+    with open(path+"sessionEpochInfo.txt", "r") as file:
+        epochs = file.readlines()
+    pos = np.array(pos[25:], dtype = "float64")
+    start = bisect_left(pos[:, 0], float(epochs[0][:10]))
+    end = bisect_left(pos[:, 0], float(epochs[0][11:21]))
+    pos = pos[start:end, 0:3]/a[None,:]
+    pos = pos[np.all(pos > np.array([0, 0, 0]), axis=1)]
+    return velocity_filtering(pos, 3*ptsCm)
 
 
 def angle(dir):
@@ -339,8 +341,12 @@ def adjustPosCamera(pos, datafile="C:/Users/Ruo-Yah Lai/Desktop/My folder/Colleg
     ts = np.reshape(pos[:,0], (len(pos),1))
     posx = np.reshape(posx, (len(pos), 1))
     posy = np.reshape(posy, (len(pos), 1))
-    posTsXY = np.hstack((ts,posx,posy))
-    return posTsXY
+    if pos.shape[1] == 4:
+        hd = np.reshape(pos[:,3], (-1,1))
+        data = np.hstack((ts,posx,posy,hd))
+    else:
+        data = np.hstack((ts,posx,posy))
+    return data
 
 
 #from 061820: historical, bar graphs of firing rates before and after turns
@@ -589,3 +595,24 @@ def turnsInField2(visits, position, subfield):
             j += 1
 
     return turns[js.astype(int)], ts1[js.astype(int)], a
+
+
+#from 070320: multipageTurnRM, making 100 graphs of segments of turn3
+#from 071520: noVelFilter, graphRM3D, sigmoid, graphRM2Dt, stack
+#from 072920: polarRateAngle, thetaDist, makeRM3, graphRM3, read_pos2, 
+    #turnsInField4, shiftPos2, graphRM2_1, trajectories_1
+
+
+def genTimestamp(form='l'):
+    """
+    Return a timestamp string. Default 'l'[longform timestamp]
+    form = 's':  "YYYYMMDD"
+    form = 'l': "YYYYMMDD-HMS"
+    """
+    d = datetime.datetime.now()
+    if form == 's':
+        return f"{d.year}{d.month:02d}{d.day:02d}"
+    elif form =='l':
+        return f"{d.year}{d.month:02d}{d.day:02d}-{d.hour:02d}{d.minute:02d}{d.second:02d}"
+    else:
+        return "Keyword Error"

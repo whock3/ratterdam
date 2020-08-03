@@ -11,10 +11,11 @@ from RateMap import weird_smooth
 from organized import velocity_filtering, makeRM2
 from path import Path
 import csv
+from RateMap import getPosFromTs
 
 
 #adapted from 061820
-def polarRateAngle(pos, spikes, timeAndThetas, elim, alim, eticks, aticks, binsize=np.pi/20, RMrange=7*4.72):
+def polarRateAngle(pos, spikes, timeAndThetas, elim, alim, eticks=[], aticks=[], binsize=np.pi/15, RMrange=7*4.72):
     """
     Makes a polar plot of firing rate based on turn angle
     Colored by number of trajectories
@@ -73,63 +74,59 @@ def polarRateAngle(pos, spikes, timeAndThetas, elim, alim, eticks, aticks, binsi
                                                     timeAndThetas[:,2]<(i+binsize)))))
         if aNs[-1] == 0:
             print(f"0 trajectory in bin {round(i,2)}")
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection="polar")
-    ax.set_title("Egocentric", y=1.14)
-    ax.set_ylim(0,elim)
-    ax.set_rticks(eticks)
-    ego = np.hstack((ebins.reshape((-1,1)), eRates.reshape((-1,1))))
-    ego = ego.reshape((-1,1,2))
-    eSegments = np.concatenate([ego[0:-1], ego[1:]], axis=1)
-    lc = LineCollection(eSegments)
-    lc.set_array(eNs)
-    ax.add_collection(lc)
-    axcb = fig.colorbar(lc)
-    axcb.set_label("Number of trajectories")
-    fig.tight_layout()
     
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection="polar")
-    ax.set_title("Allocentric", y=1.14)
-    ax.set_ylim(0,alim)
-    ax.set_rticks(aticks)
-    allo = np.hstack((abins.reshape((-1,1)), aRates.reshape((-1,1))))
-    allo = allo.reshape((-1,1,2))
-    aSegments = np.concatenate([allo[0:-1], allo[1:]], axis=1)
-    lc = LineCollection(aSegments)
-    lc.set_array(aNs)
-    ax.add_collection(lc)
-    axcb = fig.colorbar(lc)
-    axcb.set_label("Number of trajectories")
-    fig.tight_layout()
-
-
-def angle2(dir):
-    dir2 = dir[1:]
-    dir1 = dir[:-1]
-    return (np.arctan2(dir2[:, 1], dir2[:, 0]) - np.arctan2(dir1[:, 1], dir1[:, 0])) % (2*np.pi)
-
+    titles = ["Egocentric", "Allocentric"]
+    lims = [elim, alim]
+    ticks = [eticks, aticks]
+    bins = [ebins+binsize/2, abins+binsize/2]
+    Rates = [eRates, aRates]
+    Ns = [eNs, aNs]
+    for i in range(2):
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection="polar")
+        ax.set_title(titles[i], y=1.14)
+        ax.set_ylim(0, lims[i])
+        ax.set_rticks(ticks[i])
+        ax.plot(bins[i], Rates[i], color="k")
+        
+        segments = np.zeros((len(bins[i]),1,2))
+        segments = np.concatenate([segments[0:-1], segments[1:]], axis=1)
+        lc = LineCollection(segments)
+        lc.set_array(Ns[i])
+        
+        #circle = np.full(len(cbins[i]), lims[i]*0.9)
+        #circle = np.hstack((cbins[i].reshape((-1,1)), circle.reshape((-1,1))))
+        #circle = circle.reshape((-1,1,2))
+        #segments = np.concatenate([circle[:-1], circle[1:]], axis=1)
+        #lc = LineCollection(segments)
+        #lc.set_array(Ns[i])
+        #ax.add_collection(lc)
+        
+        colors = plt.cm.viridis(Ns[i] / max(Ns[i]))
+        ax.bar(bins[i], lims[i], width=binsize, color=colors, alpha=0.4)
+        axcb = fig.colorbar(lc)
+        axcb.set_label("Number of trajectories")
+        fig.tight_layout()
+        
 
 def thetaDist(pos):
     """
     Calculates theta/s and dist/s between pos points
     """
     directions = np.diff(pos[:,1:3], axis=0)
-    theta2 = angle2(directions) #[0, 2pi]
-    theta = deepcopy(theta2)
-    for i in range(len(theta2)):
-        if theta[i] > np.pi:
-            theta[i] = theta2[i] - 2*np.pi #[-pi, pi]
-    theta = theta / np.diff(pos[:,0])[1:] *1e6 /np.pi*180
     dist = np.linalg.norm(directions, axis=1)[1:] / np.diff(pos[:,0])[1:] *1e6 /4.72
     
-    theta1 = np.diff(pos[1:,3]) / np.diff(pos[:,0])[1:] *1e6
+    theta = np.diff(pos[1:,3])
+    negatives = np.where(theta < -180)
+    positives = np.where(theta > 180)
+    theta[negatives] = theta[negatives] + 360
+    theta[positives] = theta[positives] - 360 #[-180, 180]
+    theta = theta / np.diff(pos[:,0])[1:] *1e6
     
     ts = np.reshape(pos[1:-1,0], (-1,1))
     theta = theta.reshape((-1,1))
     dist = dist.reshape((-1,1))
-    theta1 = theta1.reshape((-1,1))
-    return np.hstack((ts, theta1, dist))
+    return np.hstack((ts, theta, dist))
 
 
 #makeRM from RateMap modified
@@ -174,23 +171,27 @@ def graphRM3(position, spikes, title, percentile=99, mycm="jet", sigma=2):
     
 
 #read_pos from organized modified
-#includes head direction
-def read_pos2(path="C:/Users/Ruo-Yah Lai/Desktop/My folder/College/Junior/K lab research/R859 OD3/", pos="pos.p.ascii", to_cm = False):
-    data_folder = Path(path)
-    file_to_open = data_folder / pos
+def read_pos2(path="C:/Users/Ruo-Yah Lai/Desktop/My folder/College/Junior/K lab research/R859 OD3/", file="pos.p.ascii", to_cm = False):
+    """
+    includes head direction
+    """
     if to_cm:
         a = np.array([1, 4.72, 4.72, 1])
         ptsCm = 1
     else:
         a = np.array([1,1,1,1])
         ptsCm = 4.72
-    with open(file_to_open, 'r') as csv_file:
+    with open(path + file, 'r') as csv_file:
         data_iter = csv.reader(csv_file)
-        data = [data for data in data_iter]
-    data_np1 = np.array(data[50574:-17], dtype = "float64")
-    data_np2 = data_np1[:,0:]/a[None,:]
-    data_np3 = data_np2[np.all(data_np2 > np.array([0, 0, 0, 0]), axis=1)]
-    return velocity_filtering(data_np3, 3*ptsCm)
+        pos = [data for data in data_iter]
+    with open(path+"sessionEpochInfo.txt", "r") as file:
+        epochs = file.readlines()
+    pos = np.array(pos[25:], dtype = "float64")
+    start = bisect_left(pos[:, 0], float(epochs[0][:10]))
+    end = bisect_left(pos[:, 0], float(epochs[0][11:21]))
+    pos = pos[start:end]/a[None,:]
+    pos = pos[np.all(pos > np.array([0, 0, 0, 0]), axis=1)]
+    return velocity_filtering(pos, 3*ptsCm)
 
 
 #adapted from turnsInField from organized
@@ -380,3 +381,25 @@ def trajectories_1(position, suptitle=""):
                 axs[i][j].plot(position[i*4+j][k][:,1]/4.72, position[i*4+j][k][:,2]/4.72)
                 axs[i][j].axis("equal")
     fig.tight_layout()
+
+
+def bulkGraphs(pos,unit1,unit2,unit4,unit5,unit6,spikes1,spikes2,spikes4,spikes5,spikes6,timestamp):
+    """
+    Makes multiple graphs of speed vs change in theta
+    pos: 4 columns, from read_pos2
+    timestamp: current timestamp
+    """
+    A = [[unit1,0,spikes1], [unit2,0,spikes2], [unit2,3,spikes2], 
+         [unit4,0,spikes4], [unit5,0,spikes5], [unit5,1,spikes5],
+         [unit5,2,spikes5], [unit5,3,spikes5], [unit6,0,spikes6], 
+         [unit6,1,spikes6], [unit6,2,spikes6], [unit6,3,spikes6]]
+    titles = ["1.1 subfield 0", "1.2 subfield 0", "1.2 subfield 3",
+              "1.4 subfield 0", "1.5 subfield 0", "1.5 subfield 1",
+              "1.5 subfield 2", "1.5 subfield 3", "1.6 subfield 0",
+              "1.6 subfield 1", "1.6 subfield 2", "1.6 subfield 3"]
+    for i,a in enumerate(A):
+        postd = turnsInField4(a[0].visits, pos, a[1])
+        spikes = getPosFromTs(a[2][:,0], postd)
+        graphRM3(postd, spikes, "R859 D3 T6 "+titles[i])
+        plt.savefig("C:/Users/Ruo-Yah Lai/Desktop/My folder/College/Junior/K lab research/Graphs/"
+                    + timestamp + " - " + titles[i] + ".png")
