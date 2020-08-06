@@ -1,0 +1,244 @@
+  #include <Wire.h>
+
+int childAddress = 24;
+int pd1 = A1;
+int pd2 = A0;
+int motor = 2;
+int led = 3;
+int buzzer = 8;
+int purgePulses = 39;
+int state = 2; // 2 is the init state
+
+int pdASensor;
+int pdBSensor;
+
+int pdABreak = 0;
+int pdBBreak = 0;
+
+
+void setup() {
+  //Serial.begin(115200);
+  Wire.begin(childAddress);
+  pinMode(pd1, INPUT);
+  pinMode(pd2, INPUT);
+
+	pinMode(buzzer, OUTPUT);
+  pinMode(motor, OUTPUT);
+  pinMode(led, OUTPUT);
+
+		 Wire.onReceive(processInstruction);
+		 Wire.onRequest(sendInformation);
+}
+
+void loop() {
+//foraging();
+foragingV2(); 
+//testParts();
+// testLogic();
+//testI2C();
+}
+
+void sendInformation(){
+  Wire.write(state);
+}
+
+
+void processInstruction(){
+  if(Wire.available()){
+  int c = Wire.read();
+  state = c;
+  }
+  }
+  
+void foraging(){
+//	pdASensor = analogRead(pd1);
+////  pdASensor = map(pdASensor, 0, 400, 0, 1023);
+////  if(pdASensor < 512){
+////    pdASensor = 0;
+////  }
+////  else if(pdASensor >= 512){
+////    pdASensor = 1;
+////  }
+//
+//  pdBSensor = digitalRead(pd2);
+////  pdBSensor = map(pdBSensor, 0, 250, 0, 1023);
+////  if(pdBSensor < 512){
+////    pdBSensor = 0;
+////  }
+////  else if(pdBSensor >= 512){
+////    pdBSensor = 1;
+////  }
+//
+//
+// if(state == 1){
+//  if(pdASensor == 0 || pdBSensor == 0){
+//    state = 0;
+//    reward();
+//  }
+// }
+// else if(state == 0 || state == 7 || state == 8){
+//  if(pdASensor == 0 || pdBSensor == 0){
+//    state = 7;
+//  }
+//  else if(pdASensor == 1 && pdBSensor == 1){
+//    state = 8;
+//    }
+// }
+//    else if(state == 3){
+//  	 purge();
+//     state = 0;
+//  } 
+//}
+}
+
+void foragingV2(){
+  pdASensor = analogRead(pd1);
+  pdASensor = map(pdASensor, 0, 600, 0, 1023);
+  if(pdASensor < 512){
+    pdASensor = 0;
+  }
+  else if(pdASensor >= 512){
+    pdASensor = 1;
+  }
+
+  pdBSensor = analogRead(pd2);
+  pdBSensor = map(pdBSensor, 0, 700, 0, 1023);
+  if(pdBSensor < 512){
+    pdBSensor = 0;
+  }
+  else if(pdBSensor >= 512){
+    pdBSensor = 1;
+  }
+
+if(state == 1){
+	if(pdASensor == 0){
+		reward();
+		state = 8;
+
+	 }
+	else if(pdBSensor == 0){
+		reward();
+		state = 9;
+	}
+}
+ else {
+
+	 if(pdASensor == 0 && pdBSensor == 0){
+		 state = 4;
+
+	 }
+	 if(pdASensor == 1 && pdBSensor == 0){
+		 state = 6;
+	 }
+	 
+	 if(pdASensor == 0 && pdBSensor == 1){
+		 state = 7;
+	 }
+	 
+	 if(pdASensor == 1 && pdBSensor == 1){
+		 state = 5;
+
+	 }
+ }
+
+}
+
+void reward(){
+	digitalWrite(motor,HIGH);
+	delay(500);
+	digitalWrite(motor,LOW);
+	tone(buzzer,500,750); 
+  digitalWrite(led,HIGH);
+  delay(2000);
+  digitalWrite(led,LOW);
+  }
+
+void error(){
+	tone(buzzer, 1000, 250);
+  for(int i=0; i<5; i++){
+    digitalWrite(led,HIGH);
+    delay(100);
+    digitalWrite(led,LOW);
+  }
+}
+
+void purge(){
+   for(int x = 0; x < purgePulses; x++){
+	 digitalWrite(motor,HIGH);
+	 delay(500);
+	 digitalWrite(motor,LOW);
+   }
+ }
+
+void testParts(){
+
+//  pdASensor = analogRead(pd1);
+//  pdASensor = map(pdASensor, 0, 230, 0, 1023);
+//  if(pdASensor < 512){
+//    pdASensor = 0;
+//  }
+//  else if(pdASensor >= 512){
+//    pdASensor = 1;
+//  }
+
+	pdASensor = analogRead(pd1);
+	pdBSensor = analogRead(pd2);
+	Serial.print("PD A: ");
+	Serial.print(pdASensor);
+	Serial.print("\n");
+  Serial.print("PD B: ");
+  Serial.print(pdBSensor);
+  Serial.print("\n");
+  
+  digitalWrite(led, HIGH);
+  delay(100);
+  digitalWrite(led, LOW);
+
+//  digitalWrite(motor,HIGH);
+//  delay(300);
+//  digitalWrite(motor,LOW);
+//  delay(10000);
+
+}
+
+void testLogic(){
+  pdASensor = digitalRead(pd1); // for corners, whichever PD is not in use, hardcode to 1 above
+  pdBSensor = digitalRead(pd2);
+
+  
+if((pdASensor == 0 || pdBSensor == 0) && state == 1){
+  state = 0; // active, crossed
+  reward();
+}
+
+if((pdASensor == 0 || pdBSensor == 0) && (state== 0 || state == 8 || state== 7)){
+  state= 7; // inactive, crossed
+  digitalWrite(led,HIGH);
+  delay(100);
+  digitalWrite(led,LOW);
+  
+}
+
+if((pdASensor == 1 && pdBSensor == 1) && (state == 0 || state == 8 || state == 7)){
+ state = 8; //inactive, uncrossed
+}
+Serial.println(state);
+delay(100);
+}
+
+void testI2C(){
+if(state == 1){
+  digitalWrite(led,HIGH);
+  delay(75);
+  digitalWrite(led,LOW);
+
+  digitalWrite(motor, HIGH);
+  delay(150);
+  digitalWrite(motor, LOW);
+
+  tone(buzzer, 500, 100);
+  state = 0;
+}
+  
+}
+

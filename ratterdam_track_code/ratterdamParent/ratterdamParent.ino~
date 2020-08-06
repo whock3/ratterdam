@@ -1,0 +1,93 @@
+#include <Wire.h>
+#include <Keypad.h>
+
+
+// Keypad Initialization - Start
+const byte numRows= 4; //number of rows on the keypad
+const byte numCols= 4; //number of columns on the keypad
+//keymap defines the key pressed according to the row and columns just as appears on the keypad
+char keymap[numRows][numCols]= 
+{
+{'1', '2', '3', 'S'}, 
+{'4', '5', '6', 'P'},   
+{'7', '8', '9', 'R'},
+{'*', '0', '#', 'Y'}
+};
+//Code that shows the the keypad connections to the arduino terminals
+byte rowPins[numRows] = {9,8,7,6}; 
+byte colPins[numCols]= {5, 4, 3, 2}; 
+//initializes an instance of the Keypad class
+Keypad myKeypad= Keypad(makeKeymap(keymap), rowPins, colPins, numRows, numCols);
+// Keypad Initialization - End
+
+
+//Serial comm managment decl start
+const byte numBytes = 3;
+char data[numBytes];
+int v;
+int alleyCode;
+// 3 byte command from python over Serial:
+int dir; //I or O? I meaning read from alleys, O meaning send to them
+int alley; // letter code which will be converted painfully to int 
+int command; // what is the command A,B,O,N,E,X (X means do nothing, used for requesting alley from which to read)
+int input;
+//Serial comm management delc end
+
+int buzzer = 10;
+
+void setup() {
+  Wire.begin();
+  Serial.begin(115200);
+  Serial.print("Ready");
+}
+
+void loop() {
+
+    //Read instructions from master arduino
+    v = Serial.readBytes(data, numBytes);
+    dir = data[0]; // direction I/O of comm.
+    alley = data[1]; // alley code
+    command = data[2]; // command. NB X means nothing, used for receiving data not sending
+
+    
+    if(dir == 0){
+    Wire.requestFrom(alley, 1);
+    input = Wire.read();
+    Serial.println(input);
+    }
+
+    if(dir == 3){
+      char keypressed = myKeypad.getKey();
+    if(keypressed == 'S'){
+      Serial.println(1);
+    }
+    else if(keypressed == 'P'){
+      Serial.println(0);
+    }
+		else if(keypressed == 'R'){
+			Serial.print(2);
+		}
+    else{
+      Serial.println(3);
+    }  
+    }
+    
+    if(dir == 1){
+       Wire.beginTransmission(alley);
+       Wire.write(command);
+       Wire.endTransmission(); 
+       Serial.println(5); //throwaway -py expects something
+    }
+
+    if(dir == 2){
+      Serial.println(5); // throwaway ''
+      if(command == 3){
+        tone(buzzer, 2000, 250);
+      }
+    }
+
+}
+
+
+
+
