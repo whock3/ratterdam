@@ -142,7 +142,7 @@ def global_FWER_alpha(nulls, unit, alpha=0.05): # fwerModifier should be 3 (txts
     else:
         fwerModifier = 3*multCompFactor
         FWERalpha = (alpha / fwerModifier)  # nb this is a proportion (decimal) not a list cutoff (integer)
-        alphaIncrements = np.linspace(0.017, 1e-6, 50) # start at 0.017 because thats the largest the adj p value could be: 0.05/(3*1)
+        alphaIncrements = np.linspace(0.017, 1e-4, 50) # start at 0.017 because thats the largest the adj p value could be: 0.05/(3*1)
         fwerSatisfied = False
         for adjustedAlpha in alphaIncrements:
             if not fwerSatisfied:
@@ -343,7 +343,7 @@ def plotPermutationResults(unit, bounds, stat, conditionName, globalCrossings, p
 if __name__ == '__main__':
     
     rat = "R859"
-    expCode = "BRD1"
+    expCode = "BRD3"
     datafile = f"E:\\Ratterdam\\{rat}\\{rat}{expCode}\\"
     fpath = f"E:\\Ratterdam\{rat}\\permutation_tests\\{expCode}\\"
     stamp = util.genTimestamp()
