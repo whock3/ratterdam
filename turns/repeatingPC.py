@@ -42,7 +42,7 @@ def repeatingPF(perims, spikes, pos):
     """
     subfields = [[] for _ in range(len(perims))]
     overlaps = [[] for _ in range(len(perims))]
-    allSubfields = []
+    allSubfields = np.empty(0)
     for i,perim in enumerate(perims):
         for j in range(17):
             alley = alleyInterBounds[str(j)]
@@ -87,19 +87,34 @@ def repeatingPF(perims, spikes, pos):
                 subfields[i].append("intersection")
         
         for j in subfields[i]:
-            allSubfields.append(j)
-                
-    print(allSubfields, set(allSubfields), subfields)
-    return len(allSubfields) > len(set(allSubfields))
+            allSubfields = np.hstack((allSubfields, j))
+    
+    repeat = False
+    PFtype = ""
+    if len(np.where(allSubfields == "horizontal")[0]) > 1:
+        repeat = True
+        PFtype = PFtype + "horizontal"
+    if len(np.where(allSubfields == "vertical")[0]) > 1:
+        repeat = True
+        PFtype = PFtype + "vertical"
+    if len(np.where(allSubfields == "intersection")[0]) > 1:
+        repeat = True
+        PFtype = PFtype + "intersection"
+    
+    print(allSubfields, subfields)
+    return repeat, PFtype
 
 
 def repeatingPC(perims, spikes, pos, title, unitNames):
-    a = np.empty(0, dtype=bool)
+    repeats = np.empty(0, dtype=bool)
+    PFtypes = np.empty(0, dtype=str)
     for i,perim in enumerate(perims):
-        a = np.hstack((a,repeatingPF(perim, spikes[i], pos)))
+        repeat, PFtype = repeatingPF(perim, spikes[i], pos)
+        repeats = np.hstack((repeats,repeat))
+        PFtypes = np.hstack((PFtypes, PFtype))
     with open(title, "w", newline="") as csvfile:
         csvwriter = csv.writer(csvfile)
-        data = np.column_stack((unitNames, a))
+        data = np.column_stack((unitNames, repeats, PFtypes))
         csvwriter.writerows(data)
 
 

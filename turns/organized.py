@@ -16,6 +16,8 @@ from RateMap import makeRM, weird_smooth
 from copy import deepcopy
 from RateMap1D import classifyTurns2
 import datetime
+from matplotlib import path
+from UnitClass import getVisits
 
 
 def velocity_filtering(position, threshold = 3, winsz=50):
@@ -599,7 +601,7 @@ def turnsInField2(visits, position, subfield):
 
 #from 070320: multipageTurnRM, making 100 graphs of segments of turn3
 #from 071520: noVelFilter, graphRM3D, sigmoid, graphRM2Dt, stack
-#from 072920: polarRateAngle, thetaDist, makeRM3, graphRM3, read_pos2, 
+#from 072220: polarRateAngle, thetaDist, makeRM3, graphRM3, read_pos2, 
     #turnsInField4, shiftPos2, graphRM2_1, trajectories_1
 
 
@@ -616,3 +618,14 @@ def genTimestamp(form='l'):
         return f"{d.year}{d.month:02d}{d.day:02d}-{d.hour:02d}{d.minute:02d}{d.second:02d}"
     else:
         return "Keyword Error"
+
+
+#from UnitClass modified for fitted place field borders
+def visits(borders, pos):
+    visits = []
+    for i,pf in enumerate(borders):
+        contour = path.Path(pf)
+        PinC = pos[contour.contains_points(pos[:,1:])]
+        posVisits = getVisits(PinC[:,0])
+        visits.append(posVisits)
+    return visits

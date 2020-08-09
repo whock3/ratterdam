@@ -14,7 +14,7 @@ def turnsInField3(visits, position, subfield):
     """
     Finds the turns where at least 1 point is inside the subfield
     position: before RDP
-    Returns: ts of 1st pt, before/during/after visit
+    Returns: ts of 1st pt, ego, allo, before/during/after visit
     """
     RList = RDP4(position, 4.72).ResultList
     idx3, theta_sum2, idx2, idx3_2 = turn3(RList, np.pi/12, np.pi/4, 5*4.72, 15*4.72)
@@ -50,9 +50,10 @@ def turnsInField3(visits, position, subfield):
                 a = np.hstack((a,5))
             j += 1
 
-    ts, theta_sum2, allo = ts.reshape((-1,1)), theta_sum2.reshape((-1,1)), allo.reshape((-1,1))
-    timeAndThetas = np.hstack((ts, theta_sum2, allo))
-    return timeAndThetas[js.astype(int)], a
+    #rotate allo so that 0 = N, np.pi/2 = E
+    allo = -(allo - np.pi/2) % (np.pi*2)
+    timeAndThetas = np.column_stack((ts[js.astype(int)], theta_sum2[js.astype(int)], allo[js.astype(int)], a))
+    return timeAndThetas
 
 def classifyTurns2(b1, b2, position, min_angle1=np.pi/12, min_angle2=np.pi/4, turn_range_start=5*4.72, vCutoff=15*4.72, vIncrease=1/7, epsilon=4.72):
     """
