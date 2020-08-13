@@ -10,6 +10,7 @@ from scipy.stats import sem
 import matplotlib.colors as colors
 from scipy.ndimage import gaussian_filter as gauss # for smoothing ratemaps
 import sys, os, csv
+import scipy.integrate
 
 if socket.gethostname() == 'Tolman':
     codeDirBase = 'C:\\Users\\whockei1\\Google Drive'
@@ -60,6 +61,23 @@ def computeTestStatistic_Diffs(groupX, groupY):
     avgY = maskY.mean(axis=0) # ignores inf and nan
     return avgX-avgY
 
+def computeTestStatistic_AUCDiffs(groupX, groupY):
+    """
+    Takes two arrays. Each of which is a stack
+    of single trial 
+    
+    Avgs them to summary traces, compute diff
+    and return the area of that diff
+    """    
+    
+    maskX= np.ma.masked_invalid(groupX)
+    avgX = maskX.mean(axis=0) # ignores inf and nan
+    maskY= np.ma.masked_invalid(groupY)
+    avgY = maskY.mean(axis=0) # ignores inf and nan
+    diff = np.abs(avgX-avgY)
+    
+    return scipy.integrate.simps(diff)
+
 def getLabels(unit, alley):
     """
     Get actual trial labels for a group
@@ -71,7 +89,7 @@ def getLabels(unit, alley):
         labels.append(visit['metadata']['stimulus'])
     return labels
 
-def genSingleNullStat(unit, alley, txtX, txtY, labels):
+def genSingleNullStat(unit, alley, txtX, txtY, labels, statname='auc'):
     """
     Generate a single null test statistic (diff x-y here)
     Shuffle labels, recompute means and take diff. 1x
@@ -79,14 +97,42 @@ def genSingleNullStat(unit, alley, txtX, txtY, labels):
     shuffLabels = np.random.permutation(labels)
     idxX, rmsX = poolTrials(unit, alley, shuffLabels, txtX)
     idxY, rmsY = poolTrials(unit, alley, shuffLabels, txtY)
-    null = computeTestStatistic_Diffs(rmsX, rmsY)
+    if statname == 'diff':
+        null = computeTestStatistic_Diffs(rmsX, rmsY)
+    elif statname == 'auc':
+        null = computeTestStatistic_AUCDiffs(rmsX, rmsY)
+    else:
+        print("Invalid stat name passed to genSingleNullStat()")
     return null
 
-def genRealStat(unit, alley, txtX, txtY):
+def genNNulls(n, unit, alley, txtX, txtY, statname='auc'):
+    """
+    Generates n null test statistics, hard coded
+    now to be the binwise diff of avg(txtA) - avg(txtB)
+    Returns np array nXl where l is length of 1d RM in bins
+    """
+    if statname == 'diff':
+        nulls = np.empty((0,Def.singleAlleyBins[0]-1)) # by convention long dim is first
+    elif statname == 'auc':
+        nulls = np.empty((0,1))
+        
+    labels = getLabels(unit, alley)
+    for i in range(n):
+        null = genSingleNullStat(unit, alley, txtX, txtY, labels, statname)
+
+        nulls = np.vstack((nulls, null))
+    return nulls
+
+def genRealStat(unit, alley, txtX, txtY, statname='auc'):
     labels = getLabels(unit, alley)
     idxX, rmsX = poolTrials(unit, alley, labels, txtX)
     idxY, rmsY = poolTrials(unit, alley, labels, txtY)
-    stat = computeTestStatistic_Diffs(rmsX, rmsY)
+    if statname == 'diff':
+        stat = computeTestStatistic_Diffs(rmsX, rmsY)
+    elif statname == 'auc':
+        stat = computeTestStatistic_AUCDiffs(rmsX, rmsY)
+    else:
+        print("Invalid test statistic name passed to genRealStat()")
     return stat
 
 def computeBandThresh(nulls, alpha, side):
@@ -157,23 +203,108 @@ def global_FWER_alpha(nulls, unit, alpha=0.05): # fwerModifier should be 3 (txts
 
     return FWERalphaSelected, globalLower, globalUpper
 
-def genNNulls(n, unit, alley, txtX, txtY):
-    """
-    Generates n null test statistics, hard coded
-    now to be the binwise diff of avg(txtA) - avg(txtB)
-    Returns np array nXl where l is length of 1d RM in bins
-    """
-    nulls = np.empty((0,Def.singleAlleyBins[0]-1)) # by convention long dim is first
-    labels = getLabels(unit, alley)
-    for i in range(n):
-        null = genSingleNullStat(unit, alley, txtX, txtY, labels)
 
-        nulls = np.vstack((nulls, null))
-    return nulls
+def unitPermutationTest_SinglePair_ScalarStat(unit, alley, txtX, txtY, nnulls, statname='auc'):
+    """
+    Wrapper function that conducts a permutation test on a single alley for a given unit
+    and the test statistic is a scalar quantity that is computed using the data from two stimuli,
+    e.g. the auc of the difference in avg firing rate between txtX and Y
+    """
+    nulls = genNNulls(nnulls, unit, alley, txtX, txtY)
+    
+    # test how many alleys have sufficient activity for a test, this in part determines adjusted pvalue
+    validalleys = []
+    for a in [16, 17, 3, 1, 5, 7, 8, 10, 11]:
+        valid = Filt.checkMinimumPassesActivity(unit, a)
+        validalleys.append(valid)
+    multCompFactor = sum(validalleys)
+    alphaAdj = 0.05/(multCompFactor*3)
+    
+    realStat = genRealStat(unit, alley, txtX, txtY, statname)
+    nullNthPercentile = np.percentile(nulls, 100-(alphaAdj*100))
+    
+    if realStat > nullNthPercentile:
+        pairpass = True
+    else:
+        pairpass = False
+    
+    return pairpass, nulls, realStat
 
-def unitPermutationTest_SinglePair(unit, alley, txtX, txtY, nnulls, plot=False, returnInfo=True):
+
+def unitPermutationTest_AllPairsAllAlleys_ScalarStat(unit, nnulls, fpath, logger=False, plot=False):
+    """
+    
+    * for scalar test stat * 
+    
+    Wrapper function to complete permutation tests for a unit
+    across all alleys and all pairwise stim (A,B,C) combinations
+    
+    Pointwise p-value is set to 0.05
+    
+    """
+    
+    if plot != False:
+        fig, axes = plt.subplots(9, 3, figsize=(12,12), dpi=200) #bigger plot, bigger dpi
+    
+    pairs = ["AB", "BC", "CA"]
+    fname = fpath + f"{stamp}_{unit.name}_{Def.singleAlleyBins[0]-1}bins_{Def.smoothing_1d_sigma}smooth_permutationResults"
+    
+    axCounter = 0 
+    for i,alley in enumerate([1,3,5,7,8,10,11,16,17]):
+        
+        valid = Filt.checkMinimumPassesActivity(unit, alley)
+        if valid:
+        
+            print(f"Running Permutation test in alley {alley}")
+        
+            for pair in pairs:
+                
+                txtX, txtY = pair[0], pair[1]
+                doesPass, nulls, real = unitPermutationTest_SinglePair_ScalarStat(unit, alley, txtX, txtY, nnulls,'auc') 
+                                                                                           
+                if doesPass:
+                    print(f"Pass at alley {alley}")
+                    
+                conditionName =  f"{alley}"
+                    
+                if plot != False:
+                    ax = fig.axes[i]
+                    ax.hist(nulls,color='k')
+                    ax.vlines(np.percentile)
+
+                
+                axCounter += 1 # increment to get the next subplot next iteration.
+                
+        else:
+            print(f"Insufficient activity in alley {alley}")
+                
+    plt.suptitle(f"Permutation Test Results for {unit.name}")
+                         
+                    
+    if logger == True:
+        permutationResultsLogger(crossings, fname)
+        
+    if plot == 'sepFile':      
+        # just in case this is buggy in future: when sep script is saving the fpath var is ''
+        plt.savefig(fname + ".svg")
+        plt.close()
+        
+    elif plot == 'addFile':
+        pass # just to be explicit that if another script is saving this plot
+             # to its own set of plots (e.g the ratemap routine) then leave open
+    
+    
+    
+    
+    
+
+def unitPermutationTest_SinglePair_ArrStat(unit, alley, txtX, txtY, nnulls, plot=False, returnInfo=True):
     """
     Wrapper function for global_FWER_alpha() that plots results
+    
+    This is for an array like test statistic, for instance the binwise diff in
+    avg firing rates that were used for analysis from 2016(?)-2020. If your
+    null is a scalar use unitPermutationTest_SinglePair_ScalarStat()
     """
     
     nulls = genNNulls(nnulls,unit,alley,txtX,txtY)
@@ -233,8 +364,11 @@ def permutationResultsLogger(d,fname):
                     w.writerow([crossType, d[alley][pair][crossType]])
         f.close()
         
-def unitPermutationTest_AllPairsAllAlleys(unit, nnulls,fpath, logger=True, plot='sepFile'):
+def unitPermutationTest_AllPairsAllAlleys_ArrStat(unit, nnulls,fpath, logger=True, plot='sepFile'):
     """
+    
+    * for arraylike test stat * 
+    
     Wrapper function to complete permutation tests for a unit
     across all alleys and all pairwise stim (A,B,C) combinations
     
@@ -269,7 +403,7 @@ def unitPermutationTest_AllPairsAllAlleys(unit, nnulls,fpath, logger=True, plot=
             for pair in pairs:
                 
                 txtX, txtY = pair[0], pair[1]
-                globalCrossings, pointwiseCrossings, bounds, stat = unitPermutationTest_SinglePair(unit, alley, txtX, txtY, nnulls, 
+                globalCrossings, pointwiseCrossings, bounds, stat = unitPermutationTest_SinglePair_ArrStat(unit, alley, txtX, txtY, nnulls, 
                                                                                            plot=False, returnInfo=True)
                 if globalCrossings is not None:
                     crossings[alley][pair]['global'] = globalCrossings
@@ -343,7 +477,7 @@ def plotPermutationResults(unit, bounds, stat, conditionName, globalCrossings, p
 if __name__ == '__main__':
     
     rat = "R859"
-    expCode = "BRD3"
+    expCode = "BRD1"
     datafile = f"E:\\Ratterdam\\{rat}\\{rat}{expCode}\\"
     fpath = f"E:\\Ratterdam\{rat}\\permutation_tests\\{expCode}\\"
     stamp = util.genTimestamp()
@@ -364,7 +498,7 @@ if __name__ == '__main__':
                 rm = util.makeRM(unit.spikes, unit.position)            
                 if np.nanpercentile(rm,Def.wholetrack_imshow_pct_cutoff) >= 0.75:
                     print(clustname)
-                    unitPermutationTest_AllPairsAllAlleys(unit, 5000, fpath)
+                    unitPermutationTest_AllPairsAllAlleys_ScalarStat(unit, 5000, fpath)
 
 
 
