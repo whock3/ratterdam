@@ -574,29 +574,6 @@ def loadRatterdamEpochTimes(df):
     return start, end
 
 
-def loadRepeatingUnit(df, clustName):
-    """take a path to a data dir
-    load spikes and position into two np arrays
-    spikes is (n,1) and pos is typical (3,n) cols of ts,x,y
-    use cameraOrientationInfo.txt to flip axes if needed
-    use sessionEpochInfo.txt, specific for open Ratterdam exp
-    to get session ts and clip spikes/pos"""
-    
-    with open(df+"sessionEpochInfo.txt","r") as f:
-        lines = f.readlines()
-    start, end = int(lines[0].split(',')[0]), int(lines[0].split(',')[1])
-    pos = read_pos(df)
-    ts = np.asarray(sorted(list(pos.keys())))
-    posx, posy = Parse.adjustPosCamera(df, pos, ts)
-    position = np.column_stack((ts, posx, posy))
-    position = position[(position[:,0]>=start) & (position[:,0]<=end)]
-    clust = np.asarray(read_clust(df+clustName))
-    clust = clust[(clust >= start) & (clust <= end)]
-    spikexy = getPosFromTs(clust,position)
-    spikes = np.column_stack((clust,spikexy))
-    
-    return position, spikes
-
 
 def genTimestamp(form='l'):
     """
