@@ -56,7 +56,7 @@ def graphRM3D(position, pos2, spikes, suptitle, percentile=99, mycm="jet", smoot
         n1 = []
         ho1 = np.histogram2d(pos2[i][:,2], pos2[i][:,1], bins=[rows,cols])[0]
         for j in range(len(position[i])):
-            n1.append(makeRM2(spikes[i][j], position[i][j]))
+            n1.append(makeRM2(spikes[i][j], position[i][j])[0])
         n2 = np.nanmean(n1, axis=0)
         n2 = weird_smooth(n2,smoothing_2d_sigma)
         n2[np.where(ho1==0)] = np.nan

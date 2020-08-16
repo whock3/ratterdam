@@ -105,16 +105,18 @@ def repeatingPF(perims, spikes, pos):
     return repeat, PFtype
 
 
-def repeatingPC(perims, spikes, pos, title, unitNames):
+def repeatingPC(perims, spikes, pos, title, unitNames, rat="", day="", tetrode=""):
     repeats = np.empty(0, dtype=bool)
     PFtypes = np.empty(0, dtype=str)
     for i,perim in enumerate(perims):
         repeat, PFtype = repeatingPF(perim, spikes[i], pos)
         repeats = np.hstack((repeats,repeat))
         PFtypes = np.hstack((PFtypes, PFtype))
+    rows = len(unitNames)
     with open(title, "w", newline="") as csvfile:
         csvwriter = csv.writer(csvfile)
-        data = np.column_stack((unitNames, repeats, PFtypes))
+        data = np.column_stack((np.full(rows,rat), np.full(rows,day), np.full(rows,tetrode), unitNames, repeats, PFtypes))
+        csvwriter.writerow(["Rat number", "Day", "Tetrode number", "Unit", "Repetition?", "Repeated type"])
         csvwriter.writerows(data)
 
 

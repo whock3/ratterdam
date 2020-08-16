@@ -14,7 +14,7 @@ def turnsInField3(visits, position, subfield):
     """
     Finds the turns where at least 1 point is inside the subfield
     position: before RDP
-    Returns: ts of 1st pt, ego, allo, before/during/after visit
+    Returns: ts of 1st pt, ego, allo, before/during/after visit, ts of last pt
     """
     RList = RDP4(position, 4.72).ResultList
     idx3, theta_sum2, idx2, idx3_2 = turn3(RList, np.pi/12, np.pi/4, 5*4.72, 15*4.72)
@@ -26,6 +26,7 @@ def turnsInField3(visits, position, subfield):
     j = 0
     js = np.array([])
     a = np.array([]) #before, during, or after the visit
+    b = np.array([]) #index of the visit
     for i in range(len(visits[subfield])): #the ith visit
         while j < len(ts):
             if ts[j]-400000 > visits[subfield][i][-1]:
@@ -33,26 +34,32 @@ def turnsInField3(visits, position, subfield):
             if visits[subfield][i][0] <= ts[j] <= visits[subfield][i][-1] and ts2[j] <= visits[subfield][i][-1]:
                 js = np.hstack((js,j))
                 a = np.hstack((a,1))
+                b = np.hstack((b,i))
             elif visits[subfield][i][0] <= ts[j] <= visits[subfield][i][-1] and ts2[j] > visits[subfield][i][-1]:
                 js = np.hstack((js,j))
                 a = np.hstack((a,2))
+                b = np.hstack((b,i))
             elif visits[subfield][i][0] <= ts2[j] <= visits[subfield][i][-1]:
                 js = np.hstack((js,j))
                 a = np.hstack((a,0))
+                b = np.hstack((b,i))
             elif ts[j] < visits[subfield][i][0] and visits[subfield][i][-1] <= ts2[j]:
                 js = np.hstack((js,j))
                 a = np.hstack((a,3))
+                b = np.hstack((b,i))
             elif visits[subfield][i][0] <= ts[j]-400000 <= visits[subfield][i][-1]:
                 js = np.hstack((js,j))
                 a = np.hstack((a,4))
+                b = np.hstack((b,i))
             elif ts[j]-400000 < visits[subfield][i][0] and visits[subfield][i][-1] < ts2[j]:
                 js = np.hstack((js,j))
                 a = np.hstack((a,5))
+                b = np.hstack((b,i))
             j += 1
 
     #rotate allo so that 0 = N, np.pi/2 = E
     allo = -(allo - np.pi/2) % (np.pi*2)
-    timeAndThetas = np.column_stack((ts[js.astype(int)], theta_sum2[js.astype(int)], allo[js.astype(int)], a))
+    timeAndThetas = np.column_stack((ts[js.astype(int)], theta_sum2[js.astype(int)], allo[js.astype(int)], a, ts2[js.astype(int)], b))
     return timeAndThetas
 
 def classifyTurns2(b1, b2, position, min_angle1=np.pi/12, min_angle2=np.pi/4, turn_range_start=5*4.72, vCutoff=15*4.72, vIncrease=1/7, epsilon=4.72):
