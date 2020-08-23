@@ -83,7 +83,7 @@ class Unit():
             
             totalRate = sum(field_FR)
             area = self.PolyArea(pf.perimeter[1]*binWidth+binWidth/2, pf.perimeter[0]*binWidth+binWidth/2)
-            print(totalRate/area)
+            print(i, totalRate/area)
             if True:
                 self.fields.append(np.column_stack((field_TS, field_FR)))
                 self.perimeters.append(points[vertices])
