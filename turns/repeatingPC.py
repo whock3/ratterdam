@@ -8,7 +8,7 @@ from matplotlib import path
 import numpy as np
 from RateMap import makeRM
 from collections import namedtuple
-from williamDefaults import alleyInterBounds, alleyInterType
+from newAlleyBounds import alleyInterBounds, alleyInterType
 import csv
 from string import ascii_uppercase
 
@@ -36,6 +36,13 @@ def mass(perim, alley, spikes, pos):
     return massInAlley / totalMass
 
 
+def PolyArea(x,y):
+    """
+    Found at https://stackoverflow.com/questions/24467972/calculate-area-of-polygon-given-x-y-coordinates
+    """
+    return 0.5*np.abs(np.dot(x,np.roll(y,1))-np.dot(y,np.roll(x,1)))
+
+
 def repeatingPF(perims, spikes, pos):
     """
     perims: subfields' perimeters
@@ -43,14 +50,17 @@ def repeatingPF(perims, spikes, pos):
     subfields = [[] for _ in range(len(perims))]
     overlaps = [[] for _ in range(len(perims))]
     allSubfields = np.empty(0)
+    threshold = 0.7
     for i,perim in enumerate(perims):
+        fieldSize = PolyArea(perim[:,0], perim[:,1])
         for j in range(17):
             alley = alleyInterBounds[str(j)]
             aRect = Rectangle(alley[0][0], alley[1][0], alley[0][1], alley[1][1])
             alleyPerim = np.array([[aRect.xmin, aRect.ymin], [aRect.xmax, aRect.ymin],
                                    [aRect.xmax, aRect.ymax], [aRect.xmin, aRect.ymax]])
             alleySize = (aRect.xmax-aRect.xmin) * (aRect.ymax-aRect.ymin)
-            if overlap(perim, alleyPerim) > alleySize*0.75:
+            overlap1 = overlap(perim, alleyPerim)
+            if overlap1 > alleySize*threshold or overlap1 > fieldSize*threshold:
                 subfields[i].append(alleyInterType[str(j)][1])
                 overlaps[i].append(j)
         for j in ascii_uppercase[:12]:
@@ -60,7 +70,8 @@ def repeatingPF(perims, spikes, pos):
             iPerim = np.array([[iRect.xmin, iRect.ymin], [iRect.xmax, iRect.ymin],
                                [iRect.xmax, iRect.ymax], [iRect.xmin, iRect.ymax]])
             Size = (iRect.xmax-iRect.xmin) * (iRect.ymax-iRect.ymin)
-            if overlap(perim, iPerim) > Size*0.75:
+            overlap1 = overlap(perim, iPerim)
+            if overlap1 > Size*threshold or overlap1 > fieldSize*threshold:
                 subfields[i].append(alleyInterType[j][0])
                 overlaps[i].append(j)
         
@@ -102,14 +113,15 @@ def repeatingPF(perims, spikes, pos):
         PFtype = PFtype + "intersection"
     
     print(allSubfields, subfields)
-    return repeat, PFtype
+    return repeat, PFtype, overlaps
 
 
-def repeatingPC(perims, spikes, pos, title, unitNames, rat="", day="", tetrode=""):
+#units from UnitClass2
+def repeatingPC(units, pos, title, unitNames, rat="", day="", tetrode=""):
     repeats = np.empty(0, dtype=bool)
     PFtypes = np.empty(0, dtype=str)
-    for i,perim in enumerate(perims):
-        repeat, PFtype = repeatingPF(perim, spikes[i], pos)
+    for unit in units:
+        repeat, PFtype, _ = repeatingPF(unit.perimeters, unit.spikes, pos)
         repeats = np.hstack((repeats,repeat))
         PFtypes = np.hstack((PFtypes, PFtype))
     rows = len(unitNames)
@@ -118,6 +130,19 @@ def repeatingPC(perims, spikes, pos, title, unitNames, rat="", day="", tetrode="
         data = np.column_stack((np.full(rows,rat), np.full(rows,day), np.full(rows,tetrode), unitNames, repeats, PFtypes))
         csvwriter.writerow(["Rat number", "Day", "Tetrode number", "Unit", "Repetition?", "Repeated type"])
         csvwriter.writerows(data)
+
+
+def fieldLocation(unit, title):
+    """
+    Prints the alleys/intersections that each field occupies into a csv
+    """
+    _,_,overlaps = repeatingPF(unit.perimeters,unit.spikes,unit.position)
+    with open(title, "w", newline="") as csvfile:
+        csvwriter = csv.writer(csvfile)
+        csvwriter.writerow(["Subfield", "Alleys/intersections"])
+        for i,a in enumerate(overlaps):
+            a = [str(x) for x in a]
+            csvwriter.writerow([i,a])
 
 
 Rectangle = namedtuple("Rectangle", "xmin ymin xmax ymax")
@@ -129,4 +154,4 @@ cols = np.linspace(2.37, 637.63, round(640/4.72)-1) #matches the 2D histogram of
 Xbin, Ybin = np.meshgrid(cols, rows)
 coordsBin = np.array(list(zip(Xbin.flatten(), Ybin.flatten())))
 
-#repeatingPC([borders1,borders2,borders4,borders5,borders6,borders7,borders8],[spikes1,spikes2,spikes4,spikes5,spikes6,spikes7,spikes8],pos,"20200802-134514",["unit1","unit2","unit4","unit5","unit6","unit7","unit8"])
+#repeatingPC([unit1,unit2,unit4,unit5,unit6,unit7,unit8],pos,genTimestamp(),["unit1","unit2","unit4","unit5","unit6","unit7","unit8"], "R859", "D3", "T6")
