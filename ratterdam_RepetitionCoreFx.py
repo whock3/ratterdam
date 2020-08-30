@@ -241,10 +241,15 @@ def interpolateField(unit,wnSize=5, wnStep=2,s=5,k=3,plot=True, ret=False):
     if ret:
         return xs, ys
     
-def plotMats(clust, mats, wins, mattype='diff',shuff='False'):
+def plotMats(clust, mats, wins, mattype='diff',shuff='False',vthresh=[]):
     ncol=10
     fig, ax = plt.subplots(int(np.ceil(len(mats)/ncol)),ncol,figsize=(8,8))
-    _max, _min = max([arr.max() for arr in mats]), min([arr.min() for arr in mats])
+    if vthresh == []:
+        _max, _min = max([arr.max() for arr in mats]), min([arr.min() for arr in mats])
+    else:
+        _max, _min = vthresh[1], vthresh[0]
+    
+    
     for i in range(len(mats)):
         im = fig.axes[i].imshow(mats[i], aspect='auto',interpolation='None', cmap=cmap, vmin=_min, vmax=_max)
         fig.axes[i].set_title(f"Mins {wins[i][0]}-{wins[i][1]}")
@@ -292,7 +297,7 @@ def makeSemaphores(fieldArray):
             for j in range(nf):
                 x = np.linspace(start, end, 100)
                 ainterp, binterp = splev(x,fieldFx[i]), splev(x, fieldFx[j])
-                diff = np.abs(np.mean(ainterp)-np.mean(binterp))
+                diff = np.mean(ainterp)-np.mean(binterp)
                 diffmat[i,j] = diff
         diffmats.append(diffmat)
     diffmats = np.asarray(diffmats)

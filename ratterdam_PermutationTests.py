@@ -60,6 +60,24 @@ def computeTestStatistic_Diffs(groupX, groupY):
     avgY = maskY.mean(axis=0) # ignores inf and nan
     return avgX-avgY
 
+
+def computeTestStatistic_AUCDiffs(groupX, groupY):
+    """
+    Takes two arrays. Each of which is a stack
+    of single trial 
+    
+    Avgs them to summary traces, compute diff
+    and return the area of that diff
+    """    
+    
+    maskX= np.ma.masked_invalid(groupX)
+    avgX = maskX.mean(axis=0) # ignores inf and nan
+    maskY= np.ma.masked_invalid(groupY)
+    avgY = maskY.mean(axis=0) # ignores inf and nan
+    diffauc = np.abs(scipy.integrate.simps(avgX)-scipy.integrate.simps(avgY))
+    
+    return diffauc
+
 def getLabels(unit, alley):
     """
     Get actual trial labels for a group
