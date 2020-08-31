@@ -122,8 +122,11 @@ def alleyTransitions(pos, graph=False, minTime=0.5e6):
                 idxEnd = np.where(idxPos)[0][-1]+1
                 posnew = np.column_stack((posList[idxPos], np.zeros(idxEnd-idxStart), np.full(idxEnd-idxStart,i)))
                 if i.isdigit(): #if i is an alley
-                    posnew[0,3] = 1 #1st point of this visit
-                    posnew[-1,3] = 2 #last point of this visit
+                    posnew[0,3] = 1 #1st point of this visit to alley
+                    posnew[-1,3] = 2 #last point of this visit to alley
+                else:
+                    posnew[0,3] = 3 #1st point of this visit to intersection
+                    posnew[-1,3] = 4 #last point of this visit to intersection
                 posNew = np.vstack((posNew, posnew))
             
                 posList = list(posList)
