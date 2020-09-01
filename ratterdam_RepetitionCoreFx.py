@@ -28,7 +28,7 @@ from scipy.spatial import ConvexHull
 import scipy
 
 
-def loadRepeatingUnit(df, clustName):
+def loadRepeatingUnit(df, clustName, smoothing=2):
     """take a path to a data dir
     load spikes and position into two np arrays
     spikes is (n,1) and pos is typical (3,n) cols of ts,x,y
@@ -49,7 +49,7 @@ def loadRepeatingUnit(df, clustName):
     spikexy = util.getPosFromTs(clust,position)
     spikes = np.column_stack((clust,spikexy))
     
-    unit = Unit(spikes,position, clustName)
+    unit = Unit(spikes,position, clustName, smoothing)
     
     return unit
 
@@ -59,7 +59,7 @@ class Unit():
     for instance.spikes and instance.position
     """
     
-    def __init__(self, s, p, clustname):
+    def __init__(self, s, p, clustname, smoothing):
         self.name = clustname
         self.spikes = s
         self.position = p
@@ -67,7 +67,7 @@ class Unit():
         self.visits = [] # nested list. each list is a subfield and values are themselves lists of points in visit
         self.perimeters = [] # has had the convex alg run on it
         self.colors = cnames
-        self.smoothing = 2
+        self.smoothing = smoothing
         self.repUnit = RateMapClass.RateMap(self) # a different unit class from the pf alg someone else wrote
         # self.repUnit.PF is a list of pf objects. each object has pf.perimeter as an attribute which is the well-fitting but out of order [x,y] border lists
         self.alphaHullFactor = 1
