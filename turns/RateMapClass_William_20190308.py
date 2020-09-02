@@ -35,8 +35,8 @@ class RateMap():
         self.maxFiringRate = np.nanmax(self.rateMap2D)
         self.PF = []
         self.findPlaceFields()
-        self.findVisits()
-        self.PF_df = self.findPlaceFieldPatterns()
+        #self.findVisits()
+        #self.PF_df = self.findPlaceFieldPatterns()
 
     
     def makeRateMap2D(self):
