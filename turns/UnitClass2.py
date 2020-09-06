@@ -43,6 +43,7 @@ class Unit():
         self.alpha = 0
         self.findFields()
         
+        
     def PolyArea(self,x,y):
         """
         Found at https://stackoverflow.com/questions/24467972/calculate-area-of-polygon-given-x-y-coordinates
@@ -78,6 +79,9 @@ class Unit():
             field_TSs.append(field_TS)
             field_FRs.append(field_FR)
             borders.append(border)
+            area = self.PolyArea(border[:,0],border[:,1])
+            print(meanRates[-1]/area*1e6, np.nansum(field_FR)/area*1e3)
+        
         
         print(meanRates)
         maxRate = max(meanRates)
