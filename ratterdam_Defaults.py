@@ -225,7 +225,7 @@ wholetrack_imshow_pct_cutoff = 95
 singlealley_imshow_pct_cutoff = 97
 
 # toggle as to whether to include rewarded trials when constructing the Core.Unit() data structure
-includeRewards = False
+includeRewards = 1 # flag to decide whether rewarded trials will be included in analysis. 0 - no rewards, 1 - only rewards, 2 - all trials
 
 
 beltwayAlleys = [16,17,3,1,5,7,8,10,11]

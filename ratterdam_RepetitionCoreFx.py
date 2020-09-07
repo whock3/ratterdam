@@ -84,7 +84,6 @@ class Unit():
         self.fields = []
         self.visits = []
         for i,pf in enumerate(self.repUnit.PF[:]):
-            self.visits.append([])
             #create boundary using alphahull alg which allows for concave hulls but does not work all that well as is
 #             alpha = self.alphaHullFactor*alphashape.optimizealpha(list(zip(pf.perimeter[1]*binWidth+binWidth/2, pf.perimeter[0]*binWidth+binWidth/2)))
 #             hull = alphashape.alphashape(list(zip(pf.perimeter[1]*binWidth+binWidth/2, pf.perimeter[0]*binWidth+binWidth/2)),alpha)
@@ -99,7 +98,7 @@ class Unit():
 
             PinC = self.position[contour.contains_points(self.position[:,1:])]
             posVisits = getVisits(PinC[:,0])
-            self.visits[-1].append(posVisits)
+            self.visits.append(posVisits)
             field_FR = []
             field_TS = [] # take middle ts 
             for visit in posVisits:
@@ -142,13 +141,13 @@ def plotRoutine_RepPF_TempDyn(unit,smoothing=0, nf=99, time='time', save=False, 
     
     """
     clust = unit.name
-    fig, ax = plt.subplots(2,1, figsize=(10,14))
+    fig, ax = plt.subplots(1,2, figsize=(17,5))
     
     fig.axes[0].imshow(unit.repUnit.rateMap2D, origin='lower', aspect='auto', interpolation='None', 
                        cmap=cmap, vmax=np.nanpercentile(unit.repUnit.rateMap2D, 98),
                 extent=[wmDef.xedges[0], wmDef.xedges[-1], wmDef.yedges[0], wmDef.yedges[-1]])
     fig.axes[0].set_title(f"{clust}, cutoff = {round(np.nanpercentile(unit.repUnit.rateMap2D, 98),2)}Hz", fontsize=20)
-    fig.axes[0].axis('equal')
+    #fig.axes[0].axis('equal')
     fig.axes[0].set_ylim([0,480])
     fig.axes[0].set_xlim([0, 640])
     fig.axes[0].set_xticks([])
@@ -160,38 +159,41 @@ def plotRoutine_RepPF_TempDyn(unit,smoothing=0, nf=99, time='time', save=False, 
 
     #option to not visualize garbage fields. 99 is an 'infinity' value as no cell will have 99 fields.
     if nf == 99:
-        end = len(unit.fields)
-        contig=range(end)
+        fieldlist = range(99)
+    elif nf < 99:
+        fieldlist = range(nf)
     elif type(nf) == list:
-        end = len(unit.fields)
-        contig = nf
+        fieldlist = nf
     else:
         pass
         
-    for i, field in enumerate(unit.fields[:end]):
-        f = util.weird_smooth(field[:,1],smoothing)
-        
-        if time == 'time':
-            xval = field[:,0]
-        elif time  == 'visit' or time == 'visits':
-            xval = range(field.shape[0])
-        
-        fig.axes[1].plot(xval, f, color=unit.colors[i], marker='.',alpha=0.8)
-        fig.axes[0].plot(unit.perimeters[i][:,0], unit.perimeters[i][:,1],color=unit.colors[i])
-        fig.axes[1].tick_params(axis='y', labelsize=14)
-        fig.axes[1].tick_params(axis='x', labelsize=14)
-        fig.axes[1].set_xlabel(f"Time in session ({(lambda x: 'min' if x == 'time' else 'visits')(time)})", fontsize=24)
-        fig.axes[1].set_ylabel("Firing Rate (Hz, smoothed)", fontsize=24)
-        fig.axes[1].spines['right'].set_visible(False)
-        fig.axes[1].spines['top'].set_visible(False)
-        fig.axes[1].set_title(f"gaussian smoothing sigma = {smoothing+unit.smoothing}", fontsize=12)
+    for i, field in enumerate(unit.fields):
+        if i in fieldlist:
+            f = util.weird_smooth(field[:,1],smoothing)
+            
+            if time == 'time':
+                xval = field[:,0]
+                xval = [((i-field[0,0])/1e6)/60 for i in xval]
+            elif time  == 'visit' or time == 'visits':
+                xval = range(field.shape[0])
+            
+            fig.axes[1].plot(xval, f, color=unit.colors[i], marker='.',alpha=0.8)
+            fig.axes[0].plot(unit.perimeters[i][:,0], unit.perimeters[i][:,1],color=unit.colors[i])
+            fig.axes[1].text(xval[0]-0.1,f[0]-0.1,i)
+            fig.axes[1].tick_params(axis='y', labelsize=14)
+            fig.axes[1].tick_params(axis='x', labelsize=14)
+            fig.axes[1].set_xlabel(f"Time in session ({(lambda x: 'min' if x == 'time' else 'visits')(time)})", fontsize=18)
+            fig.axes[1].set_ylabel(f"Firing Rate Hz (sigma = {unit.smoothing+smoothing})", fontsize=18)
+            fig.axes[1].spines['right'].set_visible(False)
+            fig.axes[1].spines['top'].set_visible(False)
+            fig.axes[1].set_title(f"Place Field Dynamics", fontsize=20)
     
     if save:
         clustname = clust.replace("\\","_")
         plt.savefig(fname=savepath+clustname+".png", format='png')
         plt.close()
         
-def interpolateField(unit,wnSize=5, wnStep=2,s=5,k=3,plot=True, ret=False):
+def interpolateField(unit,wnSize=5*1e6*60, wnStep=2*1e6*60,s=5,k=3,plot=True, ret=False):
     """
     Input: A unit object with attribute fields (list of [ts,fr] arrays])
            wnSize - size of sliding window in time units (minutes)
@@ -209,11 +211,21 @@ def interpolateField(unit,wnSize=5, wnStep=2,s=5,k=3,plot=True, ret=False):
     Returns (optional) xs, ys which are lists of the interpolated points (w overlap bc sliding window)
     """
     fmax = int(np.ceil(max([max(field[:,0]) for field in unit.fields])))
+    fmin = int(np.ceil(min([min(field[:,0]) for field in unit.fields])))
+
     wins = []
-    for i in range(fmax):
-        a,b = 0+(i*wnStep), wnSize+(i*wnStep)
+    begin = fmin
+    stop = False
+    
+    while not stop:
+        a,b = begin, begin + wnSize
         if b < np.ceil(fmax):
             wins.append((a,b))
+            begin += wnStep
+        else:
+            stop = True
+            
+            
     # For each field, get the spline params so two fields can be interpolated to same # pts within a window, allowing for a pearson R calc
     fieldFx = [splrep(d[:,0], d[:,1], k=k, task=0, s=s) for d in unit.fields]
     ## sample spline fx in wins as would be done in analysis and view
@@ -241,8 +253,10 @@ def interpolateField(unit,wnSize=5, wnStep=2,s=5,k=3,plot=True, ret=False):
     if ret:
         return xs, ys
     
-def plotMats(clust, mats, wins, mattype='diff',shuff='False',vthresh=[]):
+def plotMats(clustname, mats, wins, mattype='diff',vthresh=[],cm=None):
     ncol=10
+    if cm is None:
+        cm = cmap
     fig, ax = plt.subplots(int(np.ceil(len(mats)/ncol)),ncol,figsize=(8,8))
     if vthresh == []:
         _max, _min = max([arr.max() for arr in mats]), min([arr.min() for arr in mats])
@@ -251,7 +265,7 @@ def plotMats(clust, mats, wins, mattype='diff',shuff='False',vthresh=[]):
     
     
     for i in range(len(mats)):
-        im = fig.axes[i].imshow(mats[i], aspect='auto',interpolation='None', cmap=cmap, vmin=_min, vmax=_max)
+        im = fig.axes[i].imshow(mats[i], aspect='auto',interpolation='None', cmap=cm, vmin=_min, vmax=_max)
         fig.axes[i].set_title(f"Mins {wins[i][0]}-{wins[i][1]}")
     fig.subplots_adjust(right=0.8)
     cbar_ax = fig.add_axes([0.85, 0.15, 0.05, 0.7])
@@ -259,34 +273,42 @@ def plotMats(clust, mats, wins, mattype='diff',shuff='False',vthresh=[]):
     for i in range(len(fig.axes)):
         fig.axes[i].set_xticks([])
         fig.axes[i].set_yticks([])
-    plt.suptitle(f"{clust} Time Varying Unsigned Mean {mattype} Matrices, shuff = {shuff}", fontsize=20)
+    plt.suptitle(f"{clustname} Time Varying Unsigned Mean {mattype} Matrices", fontsize=16)
     
-def plotCorrOfMats(mats):
+def corrOfMats(mats, plot=True, ret=False):
     corrOfcorrs = np.empty((len(mats),len(mats)))
 
     for i in range(len(mats)):
         for j in range(len(mats)):
             corrOfcorrs[i,j] = scipy.stats.pearsonr(mats[i].flatten(),mats[j].flatten())[0]
-        
-    plt.figure()
-    plt.imshow(corrOfcorrs, origin='lower', interpolation='None')
-    plt.title("Autocorrelation Matrix of Difference Matrices",fontsize=22)
-    plt.xlabel("Difference matrices",fontsize=16)
-    plt.ylabel("Difference matrices", fontsize=16)
+    if plot:
+        plt.figure()
+        plt.imshow(corrOfcorrs, origin='lower', interpolation='None')
+        plt.title("Autocorrelation Matrix of Difference Matrices",fontsize=22)
+        plt.xlabel("Difference matrices",fontsize=16)
+        plt.ylabel("Difference matrices", fontsize=16)
+    if ret:
+        return corrOfcorrs
     
-def makeSemaphores(fieldArray):
+def makeSemaphores(fieldArray, s=10, wnSize=5*1e6*60, wnStep=2*1e6*60):
     # Semaphore Plot Analysis
-    s=1
     k=3 # should be 3 usually
     fieldFx = [splrep(d[:,0], d[:,1], k=k, task=0, s=s) for d in fieldArray]
     fmax = int(np.ceil(max([max(field[:,0]) for field in fieldArray])))
-    wnSize=5
-    wnStep = 2
+    fmin = int(np.ceil(min([min(field[:,0]) for field in fieldArray])))
+
     wins = []
-    for i in range(0,fmax):
-        a,b = 0+(i*wnStep), wnSize+(i*wnStep)
+    begin = fmin
+    stop = False
+    
+    while not stop:
+        a,b = begin, begin + wnSize
         if b < np.ceil(fmax):
             wins.append((a,b))
+            begin += wnStep
+        else:
+            stop = True
+    
 
     nf = len(fieldArray)
     diffmats = []
@@ -297,8 +319,8 @@ def makeSemaphores(fieldArray):
             for j in range(nf):
                 x = np.linspace(start, end, 100)
                 ainterp, binterp = splev(x,fieldFx[i]), splev(x, fieldFx[j])
-                diff = np.mean(ainterp)-np.mean(binterp)
+                diff = np.abs(np.mean(ainterp)-np.mean(binterp))
                 diffmat[i,j] = diff
         diffmats.append(diffmat)
     diffmats = np.asarray(diffmats)
-    return diffmats
+    return diffmats, wins

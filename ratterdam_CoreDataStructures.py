@@ -105,14 +105,22 @@ class UnitData():
                 # rewarded and exclude it. This is to prevent reward-related
                 # firing rate confounds. 
                 nrtrialnum = None
-                if Def.includeRewards == False:
+                if Def.includeRewards == 0:
                     interval = Parse.checkInterval(visitsOcc[0,0],[i[0] for i in self.alleyVisits[alley-1]]+[self.alleyVisits[alley-1][-1][1]])
                     if stimData['rewards'][alley-1][interval] == 1:
                         include = False
                     else:
                         include = True
                         nrtrialnum = visit
-                elif Def.includeRewards == True:
+                elif Def.includeRewards == 1:
+                    interval = Parse.checkInterval(visitsOcc[0,0],[i[0] for i in self.alleyVisits[alley-1]]+[self.alleyVisits[alley-1][-1][1]])
+                    if stimData['rewards'][alley-1][interval] == 1:
+                        include = True
+                        nrtrialnum = visit
+                    else:
+                        include = False
+                    
+                elif Def.includeRewards == 2:
                     include = True
                  
                 if include == True:
