@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 """
+@author: Ruo-Yah Lai
+
 PointList = ([[x1, y1],
               [x2, y2],
               ...

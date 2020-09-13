@@ -11,15 +11,7 @@ from scipy.ndimage import gaussian_filter as gauss # for smoothing ratemaps
 from matplotlib.colors import LinearSegmentedColormap
 import sys
 
-if socket.gethostname() == 'Tolman':
-    codeDirBase = 'C:\\Users\\whockei1\\Google Drive'
-elif socket.gethostname() == 'DESKTOP-BECTOJ9':
-    codeDirBase = 'C:\\Users\\whock\\Google Drive'
-elif socket.gethostname() == 'DESKTOP-0PH2B0B':
-    codeDirBase = 'C:\\Users\\whock\\Google Drive'
-    
-sys.path.insert(0, codeDirBase + '\\KnierimLab\\Ratterdam\\Code')
-sys.path.insert(0, codeDirBase + '\\Python_Code\\KLab\\mts_analysis')
+
 import utility_fx as util
 import ratterdam_ParseBehavior as pBehav
 from ratterdam_Defaults import *

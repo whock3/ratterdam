@@ -7,9 +7,10 @@ Created on Sat Aug  1 21:14:22 2020
 import numpy as np
 from williamDefaults import binWidth
 from copy import deepcopy
+from time import perf_counter
 
 
-def reorderBorder(border):
+def reorderBorder(border, field):
     """
     Reorder the points that make up the border of subfields
     """
@@ -18,6 +19,7 @@ def reorderBorder(border):
     firstPoint = border[0]
     point = border[0]
     newBorder = np.array(point)
+    startTime = perf_counter()
     while True:
         if (point[0]+1, point[1]) in border: #to the right
             border.remove(point)
@@ -60,17 +62,19 @@ def reorderBorder(border):
             point = (point[0]-1, point[1])
             newBorder = np.vstack((newBorder, point))
             border.append(point)
-        
+                
         if point == firstPoint:
             break
-        
+        if perf_counter()-startTime > 5:
+            print(f"Field {field} took too long")
+            break
     return newBorder*binWidth+binWidth/2
 
 
 def reorderBorders(unit):
     borders = []
     for i in range(len(unit.repUnit.PF)):
-        borders.append(reorderBorder(unit.repUnit.PF[i].perimeter))
+        borders.append(reorderBorder(unit.repUnit.PF[i].perimeter, i))
     return borders
 
 """

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-
+@author: Ruo-Yah Lai
 """
 import numpy as np
 

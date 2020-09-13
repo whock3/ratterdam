@@ -21,8 +21,6 @@ import williamDefaults as wmDef
 from matplotlib.backends.backend_pdf import PdfPages
 import more_itertools, itertools
 from sklearn.metrics import auc
-import alphashape
-from descartes import PolygonPatch
 from scipy.interpolate import splrep, splev
 from scipy.spatial import ConvexHull
 import scipy

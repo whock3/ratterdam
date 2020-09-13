@@ -307,7 +307,7 @@ def graphRM(position, spikes, title, percentile=95, perim=[], mycm="jet"):
     im = ax.imshow(n, cmap=mycm, origin="lower", vmin=0, vmax=vmax)
     ax.set_xlabel("x coordinates (cm)")
     ax.set_ylabel("y coordinates (cm)")
-    colors = ["b","g","r","k","c","m","y"]
+    colors = ["b","g","r","k","c","m","y","orange"]
     for i in range(len(perim)):
         ax.plot(perim[i][:,0]/4.72, perim[i][:,1]/4.72, color=colors[i], 
                 label=f"Subfield {i}")
