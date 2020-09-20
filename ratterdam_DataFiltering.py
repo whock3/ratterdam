@@ -17,7 +17,7 @@ import ratterdam_Defaults as Def
 # Velocity Filtering #
 ######################
 
-def velocity_filtering(position, winsz=50):
+def velocity_filtering(position, thresh = Def.velocity_filter_thresh, winsz=50):
     gradts, gradx, grady = np.gradient(position[:,0]), np.gradient(position[:,1]), np.gradient(position[:,2])
     gradx = [np.mean(gradx[0+i:winsz+i]) for i in range(len(gradx))]
     grady = [np.mean(grady[0+i:winsz+i]) for i in range(len(grady))]
@@ -31,7 +31,7 @@ def velocity_filtering(position, winsz=50):
     sv = [np.mean(v[0+i:winsz+i]) for i in range(len(v))]
     sv = np.asarray(sv)
     
-    vf_pos = position[sv > Def.velocity_filter_thresh]
+    vf_pos = position[sv > thresh]
     
     return vf_pos
 
