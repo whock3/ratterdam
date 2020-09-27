@@ -58,6 +58,20 @@ def crossBorder(pos1, pos2, alley):
         border = 999 #not a turn
     return border
 
+def crossBorder2(pos1, pos2, border1, border2):
+    """
+    border1 and border2: 3 segments that make up the N/S or E/W halves of the alley's border
+                        arrays of shape 4 (points) x 2 (x and y)
+    """
+    for i in range(3):
+        if intersect((border1[i,0],border1[i,1]), (border1[i+1,0],border1[i+1,1]), pos1[1:3], pos2[1:3]):
+            border = 0
+            break
+        elif intersect((border2[i,0],border2[i,1]), (border2[i+1,0],border2[i+1,1]), pos1[1:3], pos2[1:3]):
+            border = 2
+            break
+    return border
+
 def turn(a, b):
     """
     First border crossed is a. Second border crossed is b.

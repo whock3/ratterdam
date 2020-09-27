@@ -7,11 +7,13 @@ Created on Wed Aug 12 17:05:21 2020
 import matplotlib.pyplot as plt
 from bisect import bisect
 import numpy as np
-from williamDefaults import cityBlocks
+import matplotlib.patches as patches
+import sys
+sys.path.insert(1, "C:/Users/Ruo-Yah Lai/Documents/GitHub/ratterdam")
 from RDP4_class import RDP4
 from turn3 import turn3
+from newAlleyBounds import cityBlocks, alleyLines
 
-import matplotlib.patches as patches
 
 
 def graph(tath, pos): 
@@ -77,12 +79,15 @@ def graphLive(pos, border, start=0):
             plt.cla()
             plt.axis([0,130,0,100])
             plt.plot(border[:,0], border[:,1])
+            for k in range(len(alleyLines)):
+                plt.plot(alleyLines[k][:,0]/4.72, alleyLines[k][:,1]/4.72)
+    
             for k in range(6):
                 plt.plot(cityBlocks[k,:,0]/4.72, cityBlocks[k,:,1]/4.72)
                             
             x = np.hstack((x, pos[i*150+j*30:i*150+j*30+30, 1]))
             y = np.hstack((y, pos[i*150+j*30:i*150+j*30+30, 2]))
-            plt.plot(x, y)
+            plt.scatter(x, y, s=2)
             plt.title(pos[i*150+j*30+30,0])
         
             plt.pause(0.3)

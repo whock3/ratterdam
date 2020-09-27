@@ -8,14 +8,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import path
 from matplotlib.backends.backend_pdf import PdfPages
+from matplotlib.gridspec import GridSpec
 from mpl_toolkits.axes_grid1 import ImageGrid
 from string import ascii_uppercase
 from collections import namedtuple
 from copy import deepcopy
 from bisect import bisect_left
 from alleyTransitions import alleyTransitions
-from newAlleyBounds import alleyInterBounds
-from alleyTransitions import crossBorder
+from newAlleyBounds import R781, R808, R859
+from alleyTransitions import crossBorder, crossBorder2
 import ratterdam_Defaults as Def
 from ratterdam_ParseBehavior import adjustPosCamera
 import ratterdam_DataFiltering as Filt
@@ -84,10 +85,11 @@ def graphDirections(position, suptitle):
     ax.set_title(suptitle)
 
 
-def graphDirAndOcc(pos, title):
+def graphDirAndOcc(pos, alleyInterBounds, title):
     """
-    Makes 8 graphs: 4 rate maps (with no firing rate) of occupancy divided by direction
+    Makes 10 graphs: 4 rate maps (with no firing rate) of occupancy divided by direction
                     4 bar graphs of points in each alley/intersection divided by direction
+                    2 bar graphs comparing north vs south and east vs west
     """
     posDir = directionFilter(pos)
     rbins, cbins = [int(round(480/4.72/2)),int(round(640/4.72/2))]
@@ -119,30 +121,68 @@ def graphDirAndOcc(pos, title):
             inAlleys[i+17,j] = np.sum(inAlley)
     inAlleys /= sum(inAlleys)
     
-    fig, axs = plt.subplots(4,2,figsize=(12,12),gridspec_kw={"width_ratios":[3,5]})
+    #fig, axs = plt.subplots(4,2,figsize=(12,12),gridspec_kw={"width_ratios":[3,5]})
     vmax = np.nanpercentile(hos, 99)
     titles = ["North facing", "East facing", "South facing", "West facing"]
-    for i in range(4):
-        axs[i,0].set_title(titles[i])
-        axs[i,0].set_xlabel("x coordinates (cm)")
-        axs[i,0].set_ylabel("y coordinates (cm)")
-        axs[i,0].set_xticks(np.arange(0,80,20))
-        axs[i,0].set_xticklabels(np.arange(0,80,20)*2)
-        axs[i,0].set_yticks(np.arange(0,50,10))
-        axs[i,0].set_yticklabels(np.arange(0,50,10)*2)
-        im = axs[i,0].imshow(hos[i], cmap="jet", origin="lower", vmin=0, vmax=vmax)
-    cb = fig.colorbar(im, ax=axs[3,0])
+    #for i in range(4):
+    #    axs[i,0].set_title(titles[i])
+    #    axs[i,0].set_xlabel("x coordinates (cm)")
+    #    axs[i,0].set_ylabel("y coordinates (cm)")
+    #    axs[i,0].set_xticks(np.arange(0,80,20))
+    #    axs[i,0].set_xticklabels(np.arange(0,80,20)*2)
+    #    axs[i,0].set_yticks(np.arange(0,50,10))
+    #    axs[i,0].set_yticklabels(np.arange(0,50,10)*2)
+    #    im = axs[i,0].imshow(hos[i], cmap="jet", origin="lower", vmin=0, vmax=vmax)
+    #cb = fig.colorbar(im, ax=axs[3,0])
+    #cb.set_label("Occupancy (points per bin)")
+    
+    #for i in range(4):
+    #    axs[i,1].bar(np.arange(29), inAlleys[:,i])
+    #    axs[i,1].set_title(titles[i])
+    #    axs[i,1].set_ylabel("Fraction number of points")
+    #    axs[i,1].set_xlabel("Alleys")
+    #    axs[i,1].set_xticks(np.arange(29))
+    #    axs[i,1].set_xticklabels(a)
+    #fig.suptitle(title, y=1.04)
+    #fig.tight_layout()
+    
+    
+    fig = plt.figure(figsize=(12,15))
+    gs = GridSpec(5, 8, figure=fig)
+    for i in range(4): #rate maps
+        ax = fig.add_subplot(gs[i, :3])
+        ax.set_title(titles[i])
+        ax.set_xlabel("x coordinates (cm)")
+        ax.set_ylabel("y coordinates (cm)")
+        ax.set_xticks(np.arange(0,80,20))
+        ax.set_xticklabels(np.arange(0,80,20)*2)
+        ax.set_yticks(np.arange(0,50,10))
+        ax.set_yticklabels(np.arange(0,50,10)*2)
+        im = ax.imshow(hos[i], cmap="jet", origin="lower", vmin=0, vmax=vmax)
+    cb = fig.colorbar(im, ax=ax)
     cb.set_label("Occupancy (points per bin)")
     
-    for i in range(4):
-        axs[i,1].bar(np.arange(29), inAlleys[:,i])
-        axs[i,1].set_title(titles[i])
-        axs[i,1].set_ylabel("Fraction number of points")
-        axs[i,1].set_xlabel("Alleys")
-        axs[i,1].set_xticks(np.arange(29))
-        axs[i,1].set_xticklabels(a)
+    horizVert = ["\nH","\nH","\nV","\nV","\nH","\nV","\nH","\nV","\nH","\nV","\nH","\nV","\nH","\nH","\nV","\nH","\nV"] + ["" for _ in range(12)]
+    for i in range(4): #bar graphs
+        ax = fig.add_subplot(gs[i, 3:])
+        ax.bar(np.arange(29), inAlleys[:,i])
+        ax.set_title(titles[i])
+        ax.set_ylabel("Fraction number of points")
+        ax.set_xlabel("Alleys and Intersections")
+        ax.set_xticks(np.arange(29))
+        ax.set_xticklabels(np.core.defchararray.add(a, np.array(horizVert)))
     fig.suptitle(title, y=1.04)
     fig.tight_layout()
+    
+    titles2 = ["North - South", "East - West"]
+    for i in range(2): #north vs south and east vs west
+        ax = fig.add_subplot(gs[4, i*4:i*4+4])
+        ax.bar(np.arange(17), inAlleys[:17,i]-inAlleys[:17,i+2])
+        ax.set_title(titles2[i])
+        ax.set_ylabel("Fraction number of points")
+        ax.set_xlabel("Alleys")
+        ax.set_xticks(np.arange(17))
+        ax.set_xticklabels(np.core.defchararray.add(np.arange(17).astype(str), np.array(horizVert[:17])))
     
     return fig
 
@@ -178,7 +218,7 @@ def occupancy(pos, title=""):
     ax.set_xlabel("Alleys and intersections")
     
 
-def occupancy2(pos, title=""):
+def occupancy2(pos, alleyInterBounds, title=""):
     """
     Checks occupancy using contains_points and pos without velocity filtering
     """
@@ -213,17 +253,20 @@ def occupancy2(pos, title=""):
     fig.tight_layout()
     
 
-def findRewards(df, pos, a=b"0x0002"):
+def findRewards(df, pos, alleyInterBounds, a=b"0x0002"):
     """
     Find which alley the animal was in and which direction it was going in 
     at the time of rewards
     """
     hrd, rec = util.readNEV(df)
-    ts = [i[3] for i in rec if a in i[10]]
-    rewardPos = [pos[bisect_left(pos[:,0], i)-1] for i in ts]
+    ts = np.array([i[3] for i in rec if a in i[10]])
+    ts = ts[np.where(ts <= pos[-1,0])]
+    rewardPos = [pos[bisect_left(pos[:,0], i)] for i in ts]
+    print("Number of rewards: ", len(rewardPos))
     rewardPos = np.column_stack((rewardPos, ts))
     inAlleys = np.empty(0)
     inAlleysDir = np.zeros((17, 4))
+    axTypes = alleyType(alleyInterBounds) #0 = horiz, 1 = vert
     for i in range(17):
         alley = alleyInterBounds[str(i)]
         aRect = Rectangle(alley[0][0], alley[1][0], alley[0][1], alley[1][1])
@@ -235,6 +278,19 @@ def findRewards(df, pos, a=b"0x0002"):
             for j in np.arange(0.5,10,0.5):
                 end = bisect_left(pos[:,0], reward[3]+j*1e6)
                 cross = crossBorder(reward, pos[end], aRect)
+                if cross == axTypes[i] or cross == axTypes[i]+2: #going N/S in a horiz alley or going E/W in a vert alley
+                    if axTypes[i] == 0: #horizontal alley
+                        border1 = np.array([[(aRect.xmin+aRect.xmax)/2,aRect.ymax], [aRect.xmax,aRect.ymax], [aRect.xmax,aRect.ymin], [(aRect.xmin+aRect.xmax)/2,aRect.ymin]]) #East half
+                        border2 = np.array([[(aRect.xmin+aRect.xmax)/2,aRect.ymax], [aRect.xmin,aRect.ymax], [aRect.xmin,aRect.ymin], [(aRect.xmin+aRect.xmax)/2,aRect.ymin]]) #West half
+                        cross = crossBorder2(reward, pos[end], border1, border2)+1
+                        
+                            
+                        
+                    elif axTypes[i] == 1: #vertical alley
+                        border1 = np.array([[aRect.xmin,(aRect.ymin+aRect.ymax)/2], [aRect.xmin,aRect.ymax], [aRect.xmax,aRect.ymax], [aRect.xmax,(aRect.ymin+aRect.ymax)/2]]) #North half
+                        border2 = np.array([[aRect.xmin,(aRect.ymin+aRect.ymax)/2], [aRect.xmin,aRect.ymin], [aRect.xmax,aRect.ymin], [aRect.xmax,(aRect.ymin+aRect.ymax)/2]]) #South half
+                        cross = crossBorder2(reward, pos[end], border1, border2)
+                        break
                 if cross != 999: #999 = no border crossed
                     break
             if cross != 999:
@@ -242,11 +298,11 @@ def findRewards(df, pos, a=b"0x0002"):
     return inAlleys, inAlleysDir
 
 
-def graphRewards(df, pos, title="", a=b"0x0002"):
+def graphRewards(df, pos, alleyInterBounds, title="", a=b"0x0002"):
     """
     Makes bar graphs of rewards in each alley and rewards in each alley divided by direction
     """
-    inAlleys, inAlleysDir = findRewards(df, pos, a)
+    inAlleys, inAlleysDir = findRewards(df, pos, alleyInterBounds, a)
     
     fig, axs = plt.subplots(2,1)
     x = np.arange(17)
@@ -270,33 +326,48 @@ def graphRewards(df, pos, title="", a=b"0x0002"):
     return fig
     
 
-def directionTime(pos, posDir):
+def alleyType(alleyInterBounds):
     """
-    Finds the direction the animal was facing in each alley over time
+    Finds whether an alley is horizontal(0) or vertical(1)
     """
-    rbins, cbins = [20, 20]
-    rows = np.linspace(pos[0,0], pos[-1,0], rbins)
-    hists = []
-    axLimits = []
-    #histArray = np.empty((0,19))
+    axTypes = []
     for i in range(17):
         alley = alleyInterBounds[str(i)]
         aRect = Rectangle(alley[0][0], alley[1][0], alley[0][1], alley[1][1])
         if (aRect.xmax - aRect.xmin) > (aRect.ymax - aRect.ymin): #horizontal
-            cols = np.linspace(aRect.xmin, aRect.xmax, cbins)
-            axType = 1
-            axLimit = [aRect.xmin, aRect.xmax]
+            axTypes.append(0)
         elif (aRect.xmax - aRect.xmin) < (aRect.ymax - aRect.ymin): #vertical
-            cols = np.linspace(aRect.ymin, aRect.ymax, cbins)
-            axType = 2
+            axTypes.append(1)
+    return np.array(axTypes)
+
+
+def directionTime(pos, posDir, alleyInterBounds):
+    """
+    Finds the direction the animal was facing in each alley over time
+    """
+    rbins, cbins = [18, 20]
+    cols = np.linspace(pos[0,0], pos[-1,0], cbins)
+    hists = []
+    axLimits = []
+    axTypes = alleyType(alleyInterBounds)+1
+    #histArray = np.empty((0,19))
+    for i in range(17):
+        alley = alleyInterBounds[str(i)]
+        aRect = Rectangle(alley[0][0], alley[1][0], alley[0][1], alley[1][1])
+        axType = axTypes[i]
+        if axType == 1: #horizontal
+            rows = np.linspace(aRect.xmin, aRect.xmax, rbins)
+            axLimit = [aRect.xmin, aRect.xmax]
+        elif axType == 2: #vertical
+            rows = np.linspace(aRect.ymin, aRect.ymax, rbins)
             axLimit = [aRect.ymin, aRect.ymax]
         
         inAlley1 = np.all((posDir[axType][:,1] > aRect.xmin, posDir[axType][:,1] < aRect.xmax,\
                            posDir[axType][:,2] > aRect.ymin, posDir[axType][:,2] < aRect.ymax),axis=0)
-        hist1 = np.histogram2d(posDir[axType][inAlley1,0],posDir[axType][inAlley1,axType],bins=[rows,cols])[0]
+        hist1 = np.histogram2d(posDir[axType][inAlley1,axType],posDir[axType][inAlley1,0],bins=[rows,cols])[0]
         inAlley2 = np.all((posDir[(axType+2)%4][:,1] > aRect.xmin, posDir[(axType+2)%4][:,1] < aRect.xmax,\
                            posDir[(axType+2)%4][:,2] > aRect.ymin, posDir[(axType+2)%4][:,2] < aRect.ymax),axis=0)
-        hist2 = np.histogram2d(posDir[(axType+2)%4][inAlley2,0],posDir[(axType+2)%4][inAlley2,axType],bins=[rows,cols])[0]
+        hist2 = np.histogram2d(posDir[(axType+2)%4][inAlley2,axType],posDir[(axType+2)%4][inAlley2,0],bins=[rows,cols])[0]
         
         hists.append([axType,deepcopy(hist1),deepcopy(hist2)])
         hists[i][1][np.where(hist1==0)] = np.nan
@@ -312,12 +383,12 @@ def directionTime(pos, posDir):
     return hists, axLimits
 
 
-def graphDirTime(pos):
+def graphDirTime(pos, alleyInterBounds):
     """
     Graphs direction over time
     """
     posDir = directionFilter(pos)
-    hists, axLimits = directionTime(pos, posDir)
+    hists, axLimits = directionTime(pos, posDir, alleyInterBounds)
     xlabels = np.round(np.linspace(pos[0,0]/1e6, pos[-1,0]/1e6, 8), 0).astype(int)
     fig = plt.figure(figsize=(12,18))
     for i in range(17):
@@ -330,7 +401,7 @@ def graphDirTime(pos):
             axs[j].set_xlabel("Time (s)")
             axs[j].set_xticks(np.linspace(-0.5,18.5,8))
             axs[j].set_xticklabels(xlabels[:-1])
-            axs[j].set_yticks(np.linspace(-0.5,18.5,8))
+            axs[j].set_yticks(np.linspace(-0.5,16.5,8))
             axs[j].set_yticklabels(ylabels)
         cax = axs.cbar_axes[0]
         axs.cbar_axes[0].colorbar(im)
@@ -347,10 +418,20 @@ def graphDirTime(pos):
             axs[1].set_title(f"Alley {int(i)}, North")
     return fig
 
-def graphConfounds(dfData, dfGraph, title, a=b"0x0002"):
+def graphConfounds(dfData, dfGraph, title, rat):
     """
     Puts all confound graphs in a multi-page pdf
+    rat: string; "R781", "R808", or "R859"
     """
+    if rat == "R781":
+        alleyInterBounds = R781.alleyInterBounds
+        a = b"0x0040"
+    elif rat == "R808":
+        alleyInterBounds = R808.alleyInterBounds
+        a = b"0x0080"
+    elif rat == "R859":
+        alleyInterBounds = R859.alleyInterBounds
+        a = b"0x0002"
     with open(dfData+"sessionEpochInfo.txt","r") as f:
         lines = f.readlines()
     start, end = int(lines[0].split(',')[0]), int(lines[0].split(',')[1])
@@ -359,16 +440,17 @@ def graphConfounds(dfData, dfGraph, title, a=b"0x0002"):
     posx, posy = adjustPosCamera(dfData, pos, ts)
     position = np.column_stack((ts, posx, posy))
     position = position[(position[:,0]>=start) & (position[:,0]<=end)]
+    position = position[np.all(position > np.array([0, 0, 0]), axis=1)]
     posFilt = Filt.velocity_filtering(position, 3)
     
     with PdfPages(dfGraph+title+" confounds") as pdf:
-        plot = graphDirAndOcc(position, title+"\nNo velocity filtering")
+        plot = graphDirAndOcc(position, alleyInterBounds, title+"\nNo velocity filtering")
         pdf.savefig(plot, bbox_inches="tight")
-        plot = graphDirAndOcc(posFilt, title+"\nVelocity filtered with threshold = 3 cm/s")
+        plot = graphDirAndOcc(posFilt, alleyInterBounds, title+"\nVelocity filtered with threshold = 3 cm/s")
         pdf.savefig(plot, bbox_inches="tight")
-        plot = graphRewards(dfData, position, title, a)
+        plot = graphRewards(dfData, position, alleyInterBounds, title, a)
         pdf.savefig(plot, bbox_inches="tight")
-        plot = graphDirTime(posFilt)
+        plot = graphDirTime(posFilt, alleyInterBounds)
         pdf.savefig(plot, bbox_inches="tight")
         
 Rectangle = namedtuple("Rectangle", "xmin ymin xmax ymax")
