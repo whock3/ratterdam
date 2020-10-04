@@ -298,34 +298,6 @@ def findRewards(df, pos, alleyInterBounds, a=b"0x0002"):
     return inAlleys, inAlleysDir
 
 
-def graphRewards(df, pos, alleyInterBounds, title="", a=b"0x0002"):
-    """
-    Makes bar graphs of rewards in each alley and rewards in each alley divided by direction
-    """
-    inAlleys, inAlleysDir = findRewards(df, pos, alleyInterBounds, a)
-    
-    fig, axs = plt.subplots(2,1)
-    x = np.arange(17)
-    width = 0.2
-    axs[0].bar(x - 1.5*width, inAlleysDir[:,0], width, label="North")
-    axs[0].bar(x - 0.5*width, inAlleysDir[:,1], width, label="East")
-    axs[0].bar(x + 0.5*width, inAlleysDir[:,2], width, label="South")
-    axs[0].bar(x + 1.5*width, inAlleysDir[:,3], width, label="West")
-    axs[0].set_ylabel("Number of rewards")
-    axs[0].set_xticks(x)
-    axs[0].set_xticklabels(x)
-    axs[0].legend()
-    
-    axs[1].bar(x, inAlleys)
-    axs[1].set_ylabel("Number of rewards")
-    axs[1].set_xlabel("Alleys")
-    axs[1].set_xticks(x)
-    axs[1].set_xticklabels(x)
-    fig.suptitle(title)
-    
-    return fig
-    
-
 def alleyType(alleyInterBounds):
     """
     Finds whether an alley is horizontal(0) or vertical(1)
@@ -340,6 +312,34 @@ def alleyType(alleyInterBounds):
             axTypes.append(1)
     return np.array(axTypes)
 
+
+def graphRewards(df, pos, alleyInterBounds, title="", a=b"0x0002"):
+    """
+    Makes bar graphs of rewards in each alley and rewards in each alley divided by direction
+    """
+    inAlleys, inAlleysDir = findRewards(df, pos, alleyInterBounds, a)
+    
+    fig, axs = plt.subplots(2,1)
+    x = np.arange(17)
+    width = 0.4
+    axs[0].bar(x - 0.5*width, inAlleysDir[:,0], width, label="North")
+    axs[0].bar(x - 0.5*width, inAlleysDir[:,1], width, label="East")
+    axs[0].bar(x + 0.5*width, inAlleysDir[:,2], width, label="South")
+    axs[0].bar(x + 0.5*width, inAlleysDir[:,3], width, label="West")
+    axs[0].set_ylabel("Number of rewards")
+    axs[0].set_xticks(x)
+    axs[0].set_xticklabels(x)
+    axs[0].legend()
+    
+    axs[1].bar(x, inAlleys)
+    axs[1].set_ylabel("Number of rewards")
+    axs[1].set_xlabel("Alleys")
+    axs[1].set_xticks(x)
+    axs[1].set_xticklabels(x)
+    fig.suptitle(title)
+    
+    return fig
+    
 
 def directionTime(pos, posDir, alleyInterBounds):
     """
@@ -383,16 +383,16 @@ def directionTime(pos, posDir, alleyInterBounds):
     return hists, axLimits
 
 
-def graphDirTime(pos, alleyInterBounds):
+def graphDirTime(pos, alleyInterBounds, title=""):
     """
-    Graphs direction over time
+    Graphs direction over time (2D histograms)
     """
     posDir = directionFilter(pos)
     hists, axLimits = directionTime(pos, posDir, alleyInterBounds)
     xlabels = np.round(np.linspace(pos[0,0]/1e6, pos[-1,0]/1e6, 8), 0).astype(int)
-    fig = plt.figure(figsize=(12,18))
+    fig1 = plt.figure(figsize=(12,18))
     for i in range(17):
-        axs = ImageGrid(fig, (i%2*3/4,i/8-i%2/8,0.6,0.6), (1,2), axes_pad=0.1, cbar_mode="single")
+        axs = ImageGrid(fig1, (i%2*3/4,i/8-i%2/8,0.6,0.6), (1,2), axes_pad=0.1, cbar_mode="single")
         
         ylabels = np.round(np.linspace(axLimits[i][0], axLimits[i][1], 8), 0).astype(int)
         vmax = np.nanpercentile(np.hstack((hists[i][1],hists[i][2])),99)
@@ -416,7 +416,30 @@ def graphDirTime(pos, alleyInterBounds):
             axs[0].set_ylabel("y coordinates (camera coordinates)")
             axs[0].set_title(f"Alley {int(i)}, South")
             axs[1].set_title(f"Alley {int(i)}, North")
-    return fig
+    fig1.suptitle(title,y=2.43, x=0.68)
+    
+    fig2, axs = plt.subplots(9,2,figsize=(12,15))
+    timeBin = (pos[-1,0]-pos[0,0])/1e6/20
+    xlabels2 = np.linspace(pos[0,0]/1e6+timeBin/2, pos[-1,0]/1e6-timeBin/2, 19)
+    for i in range(17):
+        row, col = [8-(i)//2, 1-(i+1)%2]
+        hists[i][1][~np.isfinite(hists[i][1])] = 0
+        hists[i][2][~np.isfinite(hists[i][2])] = 0
+        medians1 = np.nanmedian(hists[i][1],axis=0)
+        medians2 = np.nanmedian(hists[i][2],axis=0)
+        if hists[i][0] == 1: #horizontal
+            axs[row,col].plot(xlabels2, medians1, label="East")
+            axs[row,col].plot(xlabels2, medians2, label="West")
+        elif hists[i][0] == 2: #vertical
+            axs[row,col].plot(xlabels2, medians1, label="South")
+            axs[row,col].plot(xlabels2, medians2, label="North")
+        axs[row,col].legend()
+        axs[row,col].set_title(f"Alley {int(i)}")
+        axs[row,col].set_ylabel("Median pts/bin")
+        axs[row,col].set_xlabel("Time (s)")
+    fig2.suptitle(title, y=1.02)
+    fig2.tight_layout()
+    return fig1, fig2
 
 def graphConfounds(dfData, dfGraph, title, rat):
     """
@@ -443,14 +466,18 @@ def graphConfounds(dfData, dfGraph, title, rat):
     position = position[np.all(position > np.array([0, 0, 0]), axis=1)]
     posFilt = Filt.velocity_filtering(position, 3)
     
-    with PdfPages(dfGraph+title+" confounds") as pdf:
+    with PdfPages(dfGraph+title+" confounds.pdf") as pdf:
         plot = graphDirAndOcc(position, alleyInterBounds, title+"\nNo velocity filtering")
         pdf.savefig(plot, bbox_inches="tight")
         plot = graphDirAndOcc(posFilt, alleyInterBounds, title+"\nVelocity filtered with threshold = 3 cm/s")
         pdf.savefig(plot, bbox_inches="tight")
-        plot = graphRewards(dfData, position, alleyInterBounds, title, a)
+        plot = graphRewards(dfData, position, alleyInterBounds, title+"\nNo velocity filtering", a)
         pdf.savefig(plot, bbox_inches="tight")
-        plot = graphDirTime(posFilt, alleyInterBounds)
-        pdf.savefig(plot, bbox_inches="tight")
+        plot1, plot2 = graphDirTime(position, alleyInterBounds, title+"\nNo velocity filtering")
+        pdf.savefig(plot1, bbox_inches="tight")
+        pdf.savefig(plot2, bbox_inches="tight")
+        plot1, plot2 = graphDirTime(posFilt, alleyInterBounds, title+"\nVelocity filtered with threshold = 3 cm/s")
+        pdf.savefig(plot1, bbox_inches="tight")
+        pdf.savefig(plot2, bbox_inches="tight")
         
 Rectangle = namedtuple("Rectangle", "xmin ymin xmax ymax")

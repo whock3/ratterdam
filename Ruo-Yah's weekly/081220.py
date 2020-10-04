@@ -63,7 +63,7 @@ def graph2(tath, pos, border):
         #ax.set_title(turn[0])
 
 
-def graphLive(pos, border, start=0):
+def graphLive(pos, border=np.empty((0,2)), start=0):
     """
     Live plot of the rat running
     """
@@ -82,8 +82,8 @@ def graphLive(pos, border, start=0):
             for k in range(len(alleyLines)):
                 plt.plot(alleyLines[k][:,0]/4.72, alleyLines[k][:,1]/4.72)
     
-            for k in range(6):
-                plt.plot(cityBlocks[k,:,0]/4.72, cityBlocks[k,:,1]/4.72)
+            #for k in range(6):
+            #    plt.plot(cityBlocks[k,:,0]/4.72, cityBlocks[k,:,1]/4.72)
                             
             x = np.hstack((x, pos[i*150+j*30:i*150+j*30+30, 1]))
             y = np.hstack((y, pos[i*150+j*30:i*150+j*30+30, 2]))
