@@ -602,3 +602,95 @@ def experimentCellInventory(df,ret=False):
         print(f"{k}: {count[k]}")
     if ret:
         return count
+    
+def genParameterRecord(parmdict):
+    string = ''
+    for k,v in parmdict.items():
+        string += f"{k}:{v}\n"
+    return string
+
+def calcActiveCells(datafile, expCode):
+    """
+    Calculate how many cells in a recording day
+    are sufficiently active on track (Beltway).
+    Use Filter.checkMinimumPassesActivity with defaults
+    Active if passes >=1alley
+    
+    Input - datafile - path to recording day
+          - expCode - code eg "BRD3"
+    
+    output - [numactive, total]
+    """
+    clusts = getClustList(datafile)
+    alleyTracking, alleyVisits,  txtVisits, p_sess, ts_sess = Parse.getDaysBehavioralData(datafile, expCode)
+    n=0
+    for clust in clusts:
+        unit = Core.UnitData(clust, datafile, expCode, Def.alleyBounds, alleyVisits, txtVisits, p_sess, ts_sess)
+        unit.loadData_raw()
+        validalleys = []
+        for a in [16, 17, 3, 1, 5, 7, 8, 10, 11]:
+            valid = Filt.checkMinimumPassesActivity(unit, a)
+            validalleys.append(valid)
+        if sum(validalleys) > 0:
+            n+= 1
+    return [n, len(clusts)]
+
+def calcGroupedCombs(a,b,c):
+    total = sum([a,b,c])
+    return math.factorial(total)/(math.factorial(a)*math.factorial(b)*math.factorial(c))
+
+def distance(p0, p1):
+    return math.sqrt((p0[0] - p1[0])**2 + (p0[1] - p1[1])**2)
+
+def consecutive(data, stepsize=1):
+    return np.split(data, np.where(np.diff(data) != stepsize)[0]+1)
+
+def findField(unit,alley,sthresh=3,rthresh=0.5,pctThresh=None):
+    """
+    Identify a field as a set of sthresh or more contiguous bins
+    greater than some thresh
+    rthresh - an absolute thresh in Hz
+    pct thresh - a pct of max 
+    One of these must be None, cant have both
+    """
+    rms = np.empty((0, Def.singleAlleyBins[0]-1))
+    for visit in unit.alleys[alley]:
+        rm = visit['ratemap1d']
+        rms = np.vstack((rms, rm))
+        
+    if rthresh is not None and pctThresh is not None:
+        print("Error - conflicting thresh definitions")
+    mean = np.nanmean(rms, axis=0)
+    if rthresh is not None:
+        fi = np.where(mean>=rthresh)[0]
+    elif pctThresh is not None:
+        fi = np.where(mean>=(pctThresh*np.nanmax(mean)))[0]        
+    
+    field = True
+    try:
+        field_idx = np.concatenate(([i for i in consecutive(fi) if len(i)>=sthresh]))
+    except:
+        field = False
+        field_idx = None
+    return field, field_idx
+
+def checkInclusion(unit,ncompsperalley):
+    """
+    Apply inclusion criteria to a unit, deciding which(if any)
+    alleys will be included in analysis. If 0, cell is not used.
+    return: inclusion bool, adj alpha, alley(s) to be included
+    adj alpha is 0.05 / (# alleys included * # comparisons per alley (arg: ncompsperalley))
+    """
+    validalleys = []
+    for alley in Def.beltwayAlleys:
+        passesCheck = Filt.checkMinimumPassesActivity(unit, alley, pass_thresh=12)
+        fieldCheck, _ = findField(unit, alley)
+        if passesCheck is True and fieldCheck is True:
+            validalleys.append(alley)
+    if len(validalleys)>0:
+        alphaCorr = 0.05/(len(validalleys)*ncompsperalley)
+        include = True
+    else:
+        alphaCorr = None
+        include = False
+    return include, alphaCorr, validalleys

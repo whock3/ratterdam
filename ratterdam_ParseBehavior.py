@@ -362,7 +362,7 @@ def extractRows(reader):
 
 def loadBeltwayData(basedir,stimFiles, expCode):
     """assumes a standard data file layout"""
-    beltwayAlleys = [i-1 for i in [16,17,3,1,5,7,8,10,11]]
+    beltwayAlleys = [0,2,4,6,7,9,10,15,16]
     #find file matching the exp you want
     
     for file in stimFiles:
@@ -373,7 +373,7 @@ def loadBeltwayData(basedir,stimFiles, expCode):
             # but for expcode want 2 letter code so BS is ccw and BR cw using chemistry R/S nomenclature for rotations
             if (rows[0][1] == "CCW" and "BS" in expCode) or (rows[0][1] == "CW" and "BR" in expCode):
                 targetFile = file
-
+    
     with open(basedir+targetFile, "r") as dataFile:
         reader = csv.reader(dataFile)
         stimData = {"stimuli":{alley:[] for alley in beltwayAlleys}, "rewards":{alley:[] for alley in beltwayAlleys}}
@@ -386,12 +386,18 @@ def loadBeltwayData(basedir,stimFiles, expCode):
         sessionLen = len(rows[3])
             
         stimData["lapStarts"] = [float(i) for i in rows[3][1:sessionLen]]
-        for x,alley in enumerate(beltwayAlleys):
+        
+        for r in rows[4:]:
+            alley = int(r[0].split(" ")[1])
+            entrytype = r[0].split(" ")[2] # 'textures' or 'rewards'
+            if entrytype == 'textures':
+                stimData['stimuli'][alley] = r[1:sessionLen] # here you take sessionlen-1 because last entry is the lap cued up after last lap when lap over button was pressed ending session
+            elif entrytype == 'rewards':
+                stimData['rewards'][alley] = [int(i) for i in r[1:sessionLen]]
+            else:
+                print("Error in parsing beltway stimuli file")
             
-            stimData['stimuli'][alley] = rows[4+(x*2)+1][1:sessionLen] # here you take sessionlen-1 because last entry is the lap cued up after last lap when lap over button was pressed ending session
-            stimData['rewards'][alley] = [int(i) for i in rows[4+(x*2)][1:sessionLen]]
-            
-
+    
     return stimData
         
 

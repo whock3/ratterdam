@@ -7,6 +7,7 @@ Created on Sat Aug  1 21:14:22 2020
 import numpy as np
 from williamDefaults import binWidth
 from copy import deepcopy
+import time
 
 
 def reorderBorder(border):
@@ -18,6 +19,8 @@ def reorderBorder(border):
     firstPoint = border[0]
     point = border[0]
     newBorder = np.array(point)
+    timeCutoff = False
+    begin = time.time()
     while True:
         if (point[0]+1, point[1]) in border: #to the right
             border.remove(point)
@@ -63,14 +66,22 @@ def reorderBorder(border):
         
         if point == firstPoint:
             break
+        elif (time.time()-begin) > 10:
+            timeCutoff = True
         
-    return newBorder*binWidth+binWidth/2
+    if timeCutoff == True:
+        return False
+    else:
+        return newBorder*binWidth+binWidth/2
 
 
 def reorderBorders(unit):
     borders = []
     for i in range(len(unit.repUnit.PF)):
-        borders.append(reorderBorder(unit.repUnit.PF[i].perimeter))
+        newborder = reorderBorder(unit.repUnit.PF[i].perimeter)
+        if newborder == False:
+            newborder = unit.repUnit.PF[i].perimeter
+        borders.append(newborder)
     return borders
 
 """

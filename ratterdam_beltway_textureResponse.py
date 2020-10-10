@@ -22,8 +22,8 @@ import ratterdam_visBasic as Vis
 from scipy.interpolate import interp1d
 
 
-rat = "R859"
-expCode = "BRD5"
+rat = "R781"
+expCode = "BRD4"
 
 
 datafile = f"E:\\Ratterdam\\{rat}\\{rat}{expCode}\\"
@@ -104,9 +104,9 @@ for subdir, dirs, fs in os.walk(datafile):
                             txt  = visit['metadata']['stimulus']
                             visits[txt] = np.vstack((visits[txt], visit['ratemap1d']))
                             visitsSpk[txt].append(visit['spikes'])
-                            if Def.includeRewards == True:
+                            if Def.includeRewards == 2:
                                 visitIdx[txt].append(i)
-                            elif Def.includeRewards == False:
+                            elif Def.includeRewards == 0 or Def.includeRewards == 1:
                                 visitIdx[txt].append(visit['metadata']['nrtrialnum'])
                             
                             

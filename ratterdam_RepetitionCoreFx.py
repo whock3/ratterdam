@@ -16,14 +16,13 @@ import matplotlib.gridspec as gridspec
 from matplotlib import pyplot as plt
 import ratterdam_Defaults as Def
 import ratterdam_visBasic as Vis
+import placeFieldBorders
 import RateMapClass_William_20190308 as RateMapClass
 import williamDefaults as wmDef
 from matplotlib.backends.backend_pdf import PdfPages
 import more_itertools, itertools
 from sklearn.metrics import auc
-import alphashape
-from descartes import PolygonPatch
-from scipy.interpolate import splrep, splev
+from scipy.interpolate import splrep, splev, PchipInterpolator as pchip
 from scipy.spatial import ConvexHull
 import scipy
 
@@ -50,6 +49,8 @@ def loadRepeatingUnit(df, clustName, smoothing=2):
     spikes = np.column_stack((clust,spikexy))
     
     unit = Unit(spikes,position, clustName, smoothing)
+    if smoothing:
+        unit.smoothFieldsFx()
     
     return unit
 
@@ -79,22 +80,24 @@ class Unit():
         Found at https://stackoverflow.com/questions/24467972/calculate-area-of-polygon-given-x-y-coordinates
         """
         return 0.5*np.abs(np.dot(x,np.roll(y,1))-np.dot(y,np.roll(x,1)))
+    
+    def shuffleFieldsFx(self):
+        for i,field in enumerate(self.fields):
+            self.fields[i] = np.column_stack((self.fields[i][:,0], np.random.permutation(self.fields[i][:,1])))
+            
+    def smoothFieldsFx(self):
+        self.smoothedFields = []
+        for i, field in enumerate(self.fields):
+            self.smoothedFields.append(np.column_stack((self.fields[i][:,0], util.weird_smooth(self.fields[i][:,1],self.smoothing))))
         
     def findFields(self):
         self.fields = []
         self.visits = []
         for i,pf in enumerate(self.repUnit.PF[:]):
-            #create boundary using alphahull alg which allows for concave hulls but does not work all that well as is
-#             alpha = self.alphaHullFactor*alphashape.optimizealpha(list(zip(pf.perimeter[1]*binWidth+binWidth/2, pf.perimeter[0]*binWidth+binWidth/2)))
-#             hull = alphashape.alphashape(list(zip(pf.perimeter[1]*binWidth+binWidth/2, pf.perimeter[0]*binWidth+binWidth/2)),alpha)
-#             hxy = hull.exterior.coords.xy
-#             contour = path.Path(list(zip(hxy[0],hxy[1])))
-
-            #create boundary using convex hull
-            points = np.asarray(list(zip(pf.perimeter[1]*binWidth+binWidth/2, pf.perimeter[0]*binWidth+binWidth/2))) # use this to go from 2d hist coords to camera coords
-            hull = ConvexHull(points)
-            vertices = np.append(hull.vertices, hull.vertices[0]) # add the first point to close the contour
-            contour = path.Path(points[vertices])
+            border = placeFieldBorders.reorderBorder(pf.perimeter)
+            self.perimeters.append(border)
+            #border = np.append(border, border[0]) # add the first point to close the contour
+            contour = path.Path(border)
 
             PinC = self.position[contour.contains_points(self.position[:,1:])]
             posVisits = getVisits(PinC[:,0])
@@ -107,14 +110,7 @@ class Unit():
                 field_FR.append(spk.shape[0]/vdur)
                 field_TS.append(visit[0])
                 
-            field_FR = util.weird_smooth(np.asarray(field_FR), self.smoothing)
-            
-            totalRate = sum(field_FR)
-            area = self.PolyArea(pf.perimeter[1]*binWidth+binWidth/2, pf.perimeter[0]*binWidth+binWidth/2)
-            print(totalRate/area)
-            if True:
-                self.fields.append(np.column_stack((field_TS, field_FR)))
-                self.perimeters.append(points[vertices])
+            self.fields.append(np.column_stack((field_TS, field_FR)))
                 
 def getVisits(data, maxgap=2*1e6):
     """
@@ -133,7 +129,7 @@ binWidth = wmDef.binWidth
 from matplotlib import path
 cmap = util.makeCustomColormap()
 
-def plotRoutine_RepPF_TempDyn(unit,smoothing=0, nf=99, time='time', save=False, savepath=[]):
+def plotRoutine_RepPF_TempDyn(unit, nf=99, time='time', save=False, savepath=[]):
     """
     Plotting routine using unit and ratemapclass classes in local namespace
     Create a ratemap of fields with detected fields outlined
@@ -166,10 +162,14 @@ def plotRoutine_RepPF_TempDyn(unit,smoothing=0, nf=99, time='time', save=False, 
         fieldlist = nf
     else:
         pass
+    
+    if unit.smoothedFields:
+        fields = unit.smoothedFields
+    else:
+        fields = unit.fields
         
-    for i, field in enumerate(unit.fields):
+    for i, field in enumerate(fields):
         if i in fieldlist:
-            f = util.weird_smooth(field[:,1],smoothing)
             
             if time == 'time':
                 xval = field[:,0]
@@ -177,13 +177,13 @@ def plotRoutine_RepPF_TempDyn(unit,smoothing=0, nf=99, time='time', save=False, 
             elif time  == 'visit' or time == 'visits':
                 xval = range(field.shape[0])
             
-            fig.axes[1].plot(xval, f, color=unit.colors[i], marker='.',alpha=0.8)
+            fig.axes[1].plot(xval, field[:,1], color=unit.colors[i], marker='.',alpha=0.8)
             fig.axes[0].plot(unit.perimeters[i][:,0], unit.perimeters[i][:,1],color=unit.colors[i])
-            fig.axes[1].text(xval[0]-0.1,f[0]-0.1,i)
+            fig.axes[1].text(xval[0]-0.1,field[0,1]-0.1,i)
             fig.axes[1].tick_params(axis='y', labelsize=14)
             fig.axes[1].tick_params(axis='x', labelsize=14)
             fig.axes[1].set_xlabel(f"Time in session ({(lambda x: 'min' if x == 'time' else 'visits')(time)})", fontsize=18)
-            fig.axes[1].set_ylabel(f"Firing Rate Hz (sigma = {unit.smoothing+smoothing})", fontsize=18)
+            fig.axes[1].set_ylabel(f"Firing Rate Hz (sigma = {unit.smoothing})", fontsize=18)
             fig.axes[1].spines['right'].set_visible(False)
             fig.axes[1].spines['top'].set_visible(False)
             fig.axes[1].set_title(f"Place Field Dynamics", fontsize=20)
@@ -193,7 +193,7 @@ def plotRoutine_RepPF_TempDyn(unit,smoothing=0, nf=99, time='time', save=False, 
         plt.savefig(fname=savepath+clustname+".png", format='png')
         plt.close()
         
-def interpolateField(unit,wnSize=5*1e6*60, wnStep=2*1e6*60,s=5,k=3,plot=True, ret=False):
+def interpolateField(fields,name,wnSize=5*1e6*60, wnStep=2*1e6*60,s=5,k=3,plot=True, ret=False):
     """
     Input: A unit object with attribute fields (list of [ts,fr] arrays])
            wnSize - size of sliding window in time units (minutes)
@@ -210,8 +210,8 @@ def interpolateField(unit,wnSize=5*1e6*60, wnStep=2*1e6*60,s=5,k=3,plot=True, re
     The spline rep is contructed in each sliding window with the params above
     Returns (optional) xs, ys which are lists of the interpolated points (w overlap bc sliding window)
     """
-    fmax = int(np.ceil(max([max(field[:,0]) for field in unit.fields])))
-    fmin = int(np.ceil(min([min(field[:,0]) for field in unit.fields])))
+    fmax = int(np.ceil(max([max(field[:,0]) for field in fields])))
+    fmin = int(np.ceil(min([min(field[:,0]) for field in fields])))
 
     wins = []
     begin = fmin
@@ -227,9 +227,9 @@ def interpolateField(unit,wnSize=5*1e6*60, wnStep=2*1e6*60,s=5,k=3,plot=True, re
             
             
     # For each field, get the spline params so two fields can be interpolated to same # pts within a window, allowing for a pearson R calc
-    fieldFx = [splrep(d[:,0], d[:,1], k=k, task=0, s=s) for d in unit.fields]
+    fieldFx = [splrep(d[:,0], d[:,1], k=k, task=0, s=s) for d in fields]
     ## sample spline fx in wins as would be done in analysis and view
-    nf = len(unit.fields)
+    nf = len(fields)
     xs, ys = [], []
     for j in range(nf):
         xc, yc = [], []
@@ -246,10 +246,10 @@ def interpolateField(unit,wnSize=5*1e6*60, wnStep=2*1e6*60,s=5,k=3,plot=True, re
         ys[i] = [item for sublist in ys[i] for item in sublist]
     if plot:
         plt.figure()
-        for i,c in zip(range(nf),['b','r','g','k']):
+        for i,c in zip(range(nf),cnames):
             plt.plot(xs[i], ys[i],'.',color=c,markersize=4)
-            plt.plot(unit.fields[i][:,0], unit.fields[i][:,1], color=c)
-        plt.title(unit.name)
+            plt.plot(fields[i][:,0], fields[i][:,1], color=c)
+        plt.title(name)
     if ret:
         return xs, ys
     
@@ -290,12 +290,11 @@ def corrOfMats(mats, plot=True, ret=False):
     if ret:
         return corrOfcorrs
     
-def makeSemaphores(fieldArray, s=10, wnSize=5*1e6*60, wnStep=2*1e6*60):
+def makeSemaphores(fieldArray,  wnSize=5*1e6*60, wnStep=2*1e6*60):
     # Semaphore Plot Analysis
-    k=3 # should be 3 usually
-    fieldFx = [splrep(d[:,0], d[:,1], k=k, task=0, s=s) for d in fieldArray]
     fmax = int(np.ceil(max([max(field[:,0]) for field in fieldArray])))
     fmin = int(np.ceil(min([min(field[:,0]) for field in fieldArray])))
+    pchip_fields = [pchip(field[:,0], field[:,1]) for field in fieldArray] 
 
     wins = []
     begin = fmin
@@ -318,9 +317,10 @@ def makeSemaphores(fieldArray, s=10, wnSize=5*1e6*60, wnStep=2*1e6*60):
         for i in range(nf):
             for j in range(nf):
                 x = np.linspace(start, end, 100)
-                ainterp, binterp = splev(x,fieldFx[i]), splev(x, fieldFx[j])
+                ainterp, binterp = pchip_fields[i](x), pchip_fields[j](x) 
                 diff = np.abs(np.mean(ainterp)-np.mean(binterp))
                 diffmat[i,j] = diff
         diffmats.append(diffmat)
     diffmats = np.asarray(diffmats)
     return diffmats, wins
+        
