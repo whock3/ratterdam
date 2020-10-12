@@ -405,3 +405,214 @@ def bulkGraphs(turns,spikes1,spikes2,spikes4,spikes5,spikes6,spikes7,spikes8,tim
                     + timestamp + " - " + titles[i] + ".png")
 
 Rectangle = namedtuple("Rectangle", "xmin xmax ymin ymax")
+
+
+into0 = [[False, False, False, True],
+         [False, True, False, False],
+         [False, False, False, False],
+         [False, False, False, True]]
+into1 = [[False, False, False, True],
+         [False, True, False, True],
+         [False, False, False, False],
+         [False, True, False, True]]
+into2= [[True, False, False, False],
+        [True, False, False, False],
+        [False, False, False, False],
+        [False, False, True, False]]
+into3 = [[True, False, False, False],
+         [True, False, True, False],
+         [False, False, False, False],
+         [True, False, True, False],]
+into4 = [[False, True, False, True], 
+         [False, True, False, False],
+         [False, False, False, False],
+         [False, False, False, True]]
+into5 = [[True, False, False, False],
+         [True, False, True, False],
+         [False, False, False, False],
+         [True, False, True, False],]
+into6 = [[False, True, False, False], 
+         [False, True, False, False],
+         [False, False, False, False],
+         [False, False, False, True]]
+into7 = [[True, False, False, False],
+         [False, False, True, False],
+         [False, False, False, False],
+         [True, False, False, False]]
+into8 = [[False, True, False, False],
+         [False, True, False, True],
+         [False, False, False, False],
+         [False, True, False, True]]
+into9 = [[False, False, True, False],
+         [False, False, True, False],
+         [False, False, False, False],
+         [True, False, False, False]]
+into10 = [[False, True, False, False],
+          [False, False, False, True],
+          [False, False, False, False],
+          [False, True, False, False]]
+into11 = [[False, False, True, False],
+         [True, False, True, False],
+         [False, False, False, False],
+         [True, False, True, False],]
+into12 = [[False, True, False, True],
+         [False, True, False, True],
+         [False, False, False, False],
+         [False, True, False, True]]
+into13 = [[False, True, False, True],
+          [False, False, False, True],
+          [False, False, False, False],
+          [False, True, False, False]]
+into14 = [[False, False, True, False],
+         [True, False, True, False],
+         [False, False, False, False],
+         [True, False, True, False],]
+into15 = [[False, False, False, True],
+          [False, False, False, True],
+          [False, False, False, False],
+          [False, True, False, False]]
+into16 = [[False, False, True, False],
+        [True, False, False, False],
+        [False, False, False, False],
+        [False, False, True, False]]
+
+
+insideH = [[False, False, False, False],
+           [False, False, False, False],
+           [False, True, False, True],
+           [False, False, False, False]]
+insideV = [[False, False, False, False],
+           [False, False, False, False],
+           [True, False, True, False],
+           [False, False, False, False],]
+
+
+outof0 = [[False, True, False, False], 
+         [False, False, True, False],
+         [False, False, False, False],
+         [False, False, True, False]]
+outof1 = [[False, True, False, False],
+          [True, False, True, False],
+          [False, False, False, False],
+          [True, False, True, False]]
+outof2 = [[False, False, True, False],
+          [False, True, False, False],
+          [False, False, False, False],
+          [False, True, False, False]]
+outof3 = [[False, False, True, False],
+          [False, True, False, True],
+          [False, False, False, False],
+          [False, True, False, True]]
+outof4 = [[False, True, False, True], 
+         [False, False, True, False],
+         [False, False, False, False],
+         [False, False, True, False]]
+outof5 = [[False, False, True, False],
+          [False, True, False, True],
+          [False, False, False, False],
+          [False, True, False, True]]
+outof6 = [[False, False, False, True], 
+         [False, False, True, False],
+         [False, False, False, False],
+         [False, False, True, False]]
+outof7 = [[False, False, True, False],
+          [False, False, False, True],
+          [False, False, False, False],
+          [False, False, False, True]]
+outof8 = [[False, False, False, True],
+          [True, False, True, False],
+          [False, False, False, False],
+          [True, False, True, False]]
+outof9 = [[True, False, False, False],
+          [False, False, False, True],
+          [False, False, False, False],
+          [False, False, False, True]]
+outof10 = [[False, False, False, True],
+           [True, False, False, False],
+           [False, False, False, False],
+           [True, False, False, False]]
+outof11 = [[True, False, False, False],
+          [False, True, False, True],
+          [False, False, False, False],
+          [False, True, False, True]]
+outof12 = [[False, True, False, True],
+          [True, False, True, False],
+          [False, False, False, False],
+          [True, False, True, False]]
+outof13 = [[False, True, False, True],
+           [True, False, False, False],
+           [False, False, False, False],
+           [True, False, False, False]]
+outof14 = [[True, False, False, False],
+          [False, True, False, True],
+          [False, False, False, False],
+          [False, True, False, True]]
+outof15 = [[False, True, False, False],
+           [True, False, False, False],
+           [False, False, False, False],
+           [True, False, False, False]]
+outof16 = [[True, False, False, False],
+          [False, True, False, False],
+          [False, False, False, False],
+          [False, True, False, False]]
+
+
+possibleTurnsA = np.array([[into0,into1,into2,into3,into4,into5,into6,into7,into8,into9,into10,into11,into12,into13,into14,into15,into16],
+                  [insideH,insideH,insideV,insideV,insideH,insideV,insideH,insideV,insideH,insideV,insideH,insideV,insideH,insideH,insideV,insideH,insideV],
+                  [outof0,outof1,outof2,outof3,outof4,outof5,outof6,outof7,outof8,outof9,outof10,outof11,outof12,outof13,outof14,outof15,outof16],
+                  [[[False,False,False,False] for _ in range(4)] for _ in range(17)]])
+
+
+thruA = [[False, False, False, False],
+         [False, True, False, False],
+         [False, True, True, False],
+         [False, False, True, False]]
+thruB = [[False, True, False, True],
+         [False, True, True, False],
+         [False, True, True, True],
+         [False, False, True, True]]
+thruC = [[False, True, False, True],
+         [False, True, True, False],
+         [False, True, True, True],
+         [False, False, True, True]]
+thruD = [[False, False, False, False],
+         [False, False, True, False],
+         [False, False, True, True],
+         [False, False, False, True]]
+thruE = [[True, False, True, False],
+         [True, True, False, False],
+         [True, True, True, False],
+         [False, True, True, False]]
+thruF = [[True, True, True, True],
+         [True, True, True, True],
+         [True, True, True, True],
+         [True, True, True, True]]
+thruG = [[True, True, True, True],
+         [True, True, True, True],
+         [True, True, True, True],
+         [True, True, True, True]]
+thruH = [[True, False, True, False],
+         [False, False, True, True],
+         [True, False, True, True],
+         [True, False, False, True]]
+thruI = [[False, False, False, False],
+         [True, False, False, False],
+         [True, True, False, False],
+         [False, True, False, False]]
+thruJ = [[False, True, False, True],
+         [True, False, False, True],
+         [True, True, False, True],
+         [True, True, False, False]]
+thruK = [[False, True, False, True],
+         [True, False, False, True],
+         [True, True, False, True],
+         [True, True, False, False]]
+thruL = [[False, False, False, False],
+         [False, False, False, True],
+         [True, False, False, True],
+         [True, False, False, False]]
+
+possibleTurnsI = np.array([[[[False,False,False,False] for _ in range(4)] for _ in range(12)],
+                  [[[False,False,False,False] for _ in range(4)] for _ in range(12)],
+                  [[[False,False,False,False] for _ in range(4)] for _ in range(12)],
+                  [thruA,thruB,thruC,thruD,thruE,thruF,thruG,thruH,thruI,thruJ,thruK,thruL]])

@@ -385,7 +385,7 @@ def directionTime(pos, posDir, alleyInterBounds):
 
 def graphDirTime(pos, alleyInterBounds, title=""):
     """
-    Graphs direction over time (2D histograms)
+    Graphs direction over time (2D histograms and line graphs)
     """
     posDir = directionFilter(pos)
     hists, axLimits = directionTime(pos, posDir, alleyInterBounds)
@@ -481,3 +481,69 @@ def graphConfounds(dfData, dfGraph, title, rat):
         pdf.savefig(plot2, bbox_inches="tight")
         
 Rectangle = namedtuple("Rectangle", "xmin ymin xmax ymax")
+
+
+def firingDir(pos, spikes, alleyInterBounds, title=""):
+    """
+    Plots firing rate vs difference between the median occupancy of opposite directions
+    """
+    posDir = directionFilter(pos)
+    hists, axLimits = directionTime(pos, posDir, alleyInterBounds)
+    axTypes = alleyType(alleyInterBounds) #0=h, 1=v
+    timeBins = np.linspace(pos[0,0], pos[-1,0], 20)
+    tBinSize = (pos[-1,0]-pos[0,0])/19
+    fig, axs = plt.subplots(6,3,figsize=(10,16))
+    axs = axs.flatten()
+    titles2 = ["East - West", "North - South"]
+    colors = plt.cm.viridis(np.arange(19)/19)
+    for i in range(17): #np.where(axTypes == 0)[0]: #horiz alleys
+        hists[i][1][~np.isfinite(hists[i][1])] = 0
+        hists[i][2][~np.isfinite(hists[i][2])] = 0
+        if axTypes[i] == 0:
+            diff = np.median(hists[i][1],axis=0) - np.median(hists[i][2],axis=0) #E-W
+        elif axTypes[i] == 1:
+            diff = np.median(hists[i][2],axis=0) - np.median(hists[i][1],axis=0) #N-S
+        
+        alley = alleyInterBounds[str(i)]
+        aRect = Rectangle(alley[0][0], alley[1][0], alley[0][1], alley[1][1])
+        oInAlley = np.all((pos[:,1] > aRect.xmin, pos[:,1] < aRect.xmax,\
+                           pos[:,2] > aRect.ymin, pos[:,2] < aRect.ymax),axis=0)
+        sInAlley = np.all((spikes[:,1] > aRect.xmin, spikes[:,1] < aRect.xmax,\
+                           spikes[:,2] > aRect.ymin, spikes[:,2] < aRect.ymax),axis=0)
+        rates = []
+        for timeBin in timeBins[:-1]:
+            o = pos[oInAlley][np.all((pos[oInAlley][:,0] > timeBin, pos[oInAlley][:,0] <= timeBin+tBinSize),axis=0)]
+            s = spikes[sInAlley][np.all((spikes[sInAlley][:,0] > timeBin, spikes[sInAlley][:,0] <= timeBin+tBinSize),axis=0)]
+            if len(o) == 0:
+                rates.append(np.nan)
+            else:
+                rates.append(len(s)/len(o)*30)
+        
+        axs[i].scatter(diff, rates, color=colors)
+        axs[i].set_title(f"Alley {int(i)}")
+        axs[i].set_ylabel("Firing rate (Hz)")
+        axs[i].set_xlabel(f"{titles2[axTypes[i]]} median pts/bin")
+    cb = fig.colorbar(plt.cm.ScalarMappable())
+    cb.set_label("0=start 1=end of session")
+    fig.suptitle(title,y=1.02)
+    fig.tight_layout()
+
+
+def firingDirGraphs(position, df, clustName, title, timestamp):
+    """
+    Generates multiples graphs using firingDir
+    """
+    with open(df+"sessionEpochInfo.txt","r") as f:
+        lines = f.readlines()
+    start, end = int(lines[0].split(',')[0]), int(lines[0].split(',')[1])
+    clust = np.asarray(util.read_clust(df+clustName))
+    clust = clust[(clust >= start) & (clust <= end)]
+    spikexy = util.getPosFromTs(clust,position)
+    spikes = np.column_stack((clust,spikexy))
+    
+    firingDir(position, spikes, R859.alleyInterBounds, title+"\nVelocity filtered with threshold = 3 cm/s")
+    plt.savefig("C:/Users/Ruo-Yah Lai/Desktop/My folder/College/Junior/K lab research/Graphs/"
+                    + timestamp + " - " + title + ".png", bbox_inches="tight")
+    
+    
+    
