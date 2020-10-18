@@ -64,6 +64,9 @@ def filterField(unit, index, rateThresh=0.2, pctThresh=10):
     
     
 def filterFields(unit):
+    """
+    Test whether fields are good and give tight fitting borders to good fields
+    """
     perims = []
     for i in range(len(unit.perimeters)):
         if filterField(unit, i):
@@ -83,14 +86,14 @@ def filterFields(unit):
 
             
 #modified from turnsInFieldIO in alleyTransitions
-def turnsInFieldIO(turns, unit, position, filename, subfield, suptitle="", percentile=98):
+def turnsInFieldIO(turns, unit, position, filename, df, subfield, suptitle="", percentile=98):
     """
     Graphs the turns associated with a subfield, separated by into/inside/out of
     turns: from alleyTransitions
     position: velocity filtered
     filename: the file with which locations a field is in
     """
-    with open("C:/Users/Ruo-Yah Lai/Desktop/My folder/College/Junior/K lab research/R859 OD3/"+filename, "r") as csv_file:
+    with open(df+filename, "r") as csv_file:
         data_iter = csv.reader(csv_file)
         data = [data for data in data_iter]
     fieldLoc = ast.literal_eval(data[subfield+1][1])
@@ -212,7 +215,7 @@ def turnsInFieldIO(turns, unit, position, filename, subfield, suptitle="", perce
     fig.tight_layout()
 
 
-def bulkGraphs(turns, pos, timestamp, units, filenames):
+def bulkGraphs(turns, pos, timestamp, units, filenames, df, ratDayTetrode):
     """
     Makes multiple graphs using turnsInFieldIO
     timestamp: current timestamp
@@ -221,10 +224,10 @@ def bulkGraphs(turns, pos, timestamp, units, filenames):
     for i in range(len(units)):
         for j in range(len(units[i].perimeters)):
             print(i,j)
-            turnsInFieldIO(turns, units[i], pos, filenames[i], j, f"R859 D3 T6 1.{i+1} subfield {j}")
+            turnsInFieldIO(turns, units[i], pos, filenames[i], df, j, f"{ratDayTetrode} 1.{i+1} subfield {j}")
             plt.savefig("C:/Users/Ruo-Yah Lai/Desktop/My folder/College/Junior/K lab research/Graphs/"
                         + timestamp + " - " + f"1.{i+1} subfield {j}" + ".png",
                         bbox_inches="tight")
             plt.close()
             
-#bulkGraphs(turns,posFilt,"20201008-213157",[unit1,unit2,unit3,unit4,unit5,unit6,unit7,unit8,unit9],["100820 - unit1 locations","100820 - unit2 locations","100820 - unit3 locations","100820 - unit4 locations","100820 - unit5 locations","100820 - unit6 locations","100820 - unit7 locations","100820 - unit8 locations","100820 - unit9 locations"])
+#bulkGraphs(turns,posFilt,"20201008-213157",[unit1,unit2,unit3,unit4,unit5,unit6,unit7,unit8,unit9],["100820 - unit1 locations","100820 - unit2 locations","100820 - unit3 locations","100820 - unit4 locations","100820 - unit5 locations","100820 - unit6 locations","100820 - unit7 locations","100820 - unit8 locations","100820 - unit9 locations"],"C:/Users/Ruo-Yah Lai/Desktop/My folder/College/Junior/K lab research/R859 OD3/","R859 D3 T6")

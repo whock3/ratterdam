@@ -11,6 +11,8 @@ sys.path.insert(0, 'E:\\UserData\\Documents\\GitHub\\ratterdam\\')
 import utility_fx as util
 import ratterdam_ParseBehavior as Parse
 import ratterdam_Defaults as Def
+import matplotlib.path as path
+from placeFieldBorders import reorderBorder
 
 
 ######################
@@ -88,3 +90,51 @@ def checkOverallAlleyActivity(unit, alley, thresh=1.):
         return True
     else:
         return False
+
+def unitVelocityFilter(ts, position, clust):
+        '''
+        Remove spikes emitted when the animal's
+        velocity was below threshold. 
+        
+        This class does not explicitly store
+        the thresh, or even whether a velocity
+        filter was applied. That occurs in the BehavioralData
+        class and is reflected implicitly in the position array
+        having been filtered. the ts dict is unfiltered and is used
+        as a reference.
+        '''
+        
+        allSpikeTs = np.asarray([util.takeClosest(ts, i) for i in clust])
+        filtTs = clust[np.isin(allSpikeTs, position[:,0])]
+        return filtTs
+
+def filterField(unit, index, rateThresh=0.2, pctThresh=10):
+    """
+    Inputs: unit - Unit class object
+            index - index of field to filter
+            rateThresh - pixel rate that will be used to see % pixels below it
+            pctThresh -  % of pixels (0-100) with rate below rateThresh above which field should be discarded
+    Returns: True/False, as to whether field passes. True = pass
+    Function to filter detected place fields by what percent of the field is 'too quiet'. Count pct
+    of pixels with rate below rateThresh. if this pct exceeds pctThresh, return False.
+    """
+    perim = unit.perimeters[index]
+    contour = path.Path(perim)
+    spkIn = unit.spikes[contour.contains_points(unit.spikes[:,1:])]
+    occIn = unit.position[contour.contains_points(unit.position[:,1:])]
+    rm=util.makeRM(spkIn,occIn)
+    area = np.sum(~np.isnan(rm.flatten()))
+    binsBelowThresh = np.where(rm.flatten()<=rateThresh)[0].shape[0]
+    pct = (binsBelowThresh/area)*100
+    if pct > pctThresh:
+        return False
+    else:
+        return True
+    
+def filterFields(unit):
+    perims = []
+    for i in range(len(unit.perimeters)):
+        if filterField(unit, i):
+            perims.append(reorderBorder(unit.repUnit.PF[i].perimeter, i))
+    unit.perimeters = perims
+    return unit

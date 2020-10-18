@@ -7,6 +7,7 @@ Created on Mon Aug 31 16:10:36 2020
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import path
+from matplotlib.colors import Normalize
 from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.gridspec import GridSpec
 from mpl_toolkits.axes_grid1 import ImageGrid
@@ -496,6 +497,7 @@ def firingDir(pos, spikes, alleyInterBounds, title=""):
     axs = axs.flatten()
     titles2 = ["East - West", "North - South"]
     colors = plt.cm.viridis(np.arange(19)/19)
+    samples, diffs, ratess = [], [], []
     for i in range(17): #np.where(axTypes == 0)[0]: #horiz alleys
         hists[i][1][~np.isfinite(hists[i][1])] = 0
         hists[i][2][~np.isfinite(hists[i][2])] = 0
@@ -519,29 +521,38 @@ def firingDir(pos, spikes, alleyInterBounds, title=""):
             else:
                 rates.append(len(s)/len(o)*30)
         
-        axs[i].scatter(diff, rates, color=colors)
+        samples.append(np.logical_or(np.median(hists[i][1],axis=0) != 0, np.median(hists[i][2],axis=0) != 0))
+        #print(diff,"\n",rates)
+        diffs.append(diff)
+        ratess.append(rates)
+        #print(diff,"\n",rates)
+        
+    diffs = np.array(diffs)
+    ratess = np.array(ratess)
+    xmin = np.min(diffs)
+    xmax = np.max(diffs)
+    ratemax = np.nanpercentile(ratess,99)
+    norm = Normalize(vmin=0, vmax=ratemax)
+    for i in range(17):
+        #x = discrepancy, y = rate, color = time
+        #axs[i].scatter(diffs[i][samples[i]], ratess[i][samples[i]], color=colors[samples[i]])
+        #x = time, y = discrepancy, color = rate
+        axs[i].scatter(np.arange(19)[samples[i]], diffs[i][samples[i]], color=plt.cm.jet(ratess[i][samples[i]]/ratemax))
+        #axs[i].set_xlim(xmin, xmax)
         axs[i].set_title(f"Alley {int(i)}")
-        axs[i].set_ylabel("Firing rate (Hz)")
-        axs[i].set_xlabel(f"{titles2[axTypes[i]]} median pts/bin")
-    cb = fig.colorbar(plt.cm.ScalarMappable())
-    cb.set_label("0=start 1=end of session")
+        axs[i].set_ylabel(f"{titles2[axTypes[i]]} median pts/bin")#Firing rate (Hz)")
+        axs[i].set_xlabel("Start to end of session")#f"{titles2[axTypes[i]]} median pts/bin")
+    cb = fig.colorbar(plt.cm.ScalarMappable(norm=norm, cmap="jet"))
+    cb.set_label("Firing rate (Hz)")#"0=start 1=end of session")
     fig.suptitle(title,y=1.02)
     fig.tight_layout()
 
 
-def firingDirGraphs(position, df, clustName, title, timestamp):
+def firingDirGraphs(unit, title, timestamp):
     """
-    Generates multiples graphs using firingDir
+    Generates and saves a graph using firingDir
     """
-    with open(df+"sessionEpochInfo.txt","r") as f:
-        lines = f.readlines()
-    start, end = int(lines[0].split(',')[0]), int(lines[0].split(',')[1])
-    clust = np.asarray(util.read_clust(df+clustName))
-    clust = clust[(clust >= start) & (clust <= end)]
-    spikexy = util.getPosFromTs(clust,position)
-    spikes = np.column_stack((clust,spikexy))
-    
-    firingDir(position, spikes, R859.alleyInterBounds, title+"\nVelocity filtered with threshold = 3 cm/s")
+    firingDir(unit.position, unit.spikes, R859.alleyInterBounds, title+"\nVelocity filtered with threshold = 3 cm/s")
     plt.savefig("C:/Users/Ruo-Yah Lai/Desktop/My folder/College/Junior/K lab research/Graphs/"
                     + timestamp + " - " + title + ".png", bbox_inches="tight")
     
