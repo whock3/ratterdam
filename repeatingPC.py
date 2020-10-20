@@ -112,23 +112,40 @@ def repeatingPF(perims, spikes, pos):
         repeat = True
         PFtype = PFtype + "intersection"
     
+    repeatType = ""
+    if len(set(allSubfields)) < len(allSubfields)-1: #more than 1 type of location is repeated
+        repeatType = "multiple"
+        multLoc = [i for i in subfields if len(i)>1]
+        for i,subfield1 in enumerate(multLoc):
+            for j,subfield2 in enumerate(multLoc):
+                if i == j:
+                    continue
+                if len(set(subfield1 + subfield2)) < len(subfield1 + subfield2)-1:
+                    repeatType = "complex"
+                    break
+            else:
+                continue
+            break
+    
     print(allSubfields, subfields)
-    return repeat, PFtype, overlaps
+    return repeat, PFtype, repeatType, overlaps
 
 
 #units from UnitClass2
 def repeatingPC(units, pos, title, unitNames, rat="", day="", tetrode=""):
     repeats = np.empty(0, dtype=bool)
     PFtypes = np.empty(0, dtype=str)
+    repeatTypes = np.empty(0, dtype=str)
     for unit in units:
-        repeat, PFtype, _ = repeatingPF(unit.perimeters, unit.spikes, pos)
+        repeat, PFtype, repeatType, _ = repeatingPF(unit.perimeters, unit.spikes, pos)
         repeats = np.hstack((repeats,repeat))
         PFtypes = np.hstack((PFtypes, PFtype))
+        repeatTypes = np.hstack((repeatTypes, repeatType))
     rows = len(unitNames)
     with open(title+'.csv', "w", newline="") as csvfile:
         csvwriter = csv.writer(csvfile)
-        data = np.column_stack((np.full(rows,rat), np.full(rows,day), np.full(rows,tetrode), unitNames, repeats, PFtypes))
-        csvwriter.writerow(["Rat number", "Day", "Tetrode number", "Unit", "Repetition?", "Repeated type"])
+        data = np.column_stack((np.full(rows,rat), np.full(rows,day), np.full(rows,tetrode), unitNames, repeats, PFtypes, repeatTypes))
+        csvwriter.writerow(["Rat number", "Day", "Tetrode number", "Unit", "Repetition?", "Repeated location", "Repeat type"])
         csvwriter.writerows(data)
 
 
@@ -136,7 +153,7 @@ def fieldLocation(unit, title):
     """
     Prints the alleys/intersections that each field occupies into a csv
     """
-    _,_,overlaps = repeatingPF(unit.perimeters,unit.spikes,unit.position)
+    _,_,_,overlaps = repeatingPF(unit.perimeters,unit.spikes,unit.position)
     with open(title, "w", newline="") as csvfile:
         csvwriter = csv.writer(csvfile)
         csvwriter.writerow(["Subfield", "Alleys/intersections"])

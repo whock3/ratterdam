@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 """
+@author: Ruo-Yah Lai
+
 1. idx = Points that are > min_angle1
 2. idx2 = Points within turn_range of a point in idx
       a. While taking out points in idx2 from idx

@@ -2,6 +2,8 @@
 """
 Created on Sun Jun  14 2020
 
+@author: Ruo-Yah Lai
+
 Protects againts instances when no middle point should be kept 
 in the segment passed to RDP
 """

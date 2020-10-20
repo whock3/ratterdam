@@ -11,6 +11,7 @@ from scipy.ndimage import gaussian_filter as gauss # for smoothing ratemaps
 from matplotlib.colors import LinearSegmentedColormap
 import sys
 
+
 import utility_fx as util
 import ratterdam_ParseBehavior as pBehav
 from ratterdam_Defaults import *
