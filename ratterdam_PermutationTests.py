@@ -26,7 +26,7 @@ import ratterdam_DataFiltering as Filt
 def poolTrials(unit, alley, labels, txt):
     """
     Pool all trials that will form a group.
-    Group defined as linear RM (computed differently from viz. lin rm)
+    Group defined as linear RM 
     from all visits to a given alley when it harbored a given texture.
     
     This does not subsample to approx. balance group sizes. That is done after.
@@ -91,6 +91,8 @@ def getLabels(unit, alley):
 
 def genSingleNullStat(unit, alley, txtX, txtY, labels):
     """
+    DEPRECATED - making them all array-style in genNNulls
+    
     Generate a single null test statistic (diff x-y here)
     Shuffle labels, recompute means and take diff. 1x
     """
@@ -150,7 +152,7 @@ def global_FWER_alpha(nulls, unit, alpha=0.05): # fwerModifier should be 3 (txts
     
     validalleys = []
     for a in [16, 17, 3, 1, 5, 7, 8, 10, 11]:
-        valid = Filt.checkMinimumPassesActivity(unit, a)
+        valid = Filt.checkMinimumPassesActivity(unit, a, pass_thresh=12)
         validalleys.append(valid)
     multCompFactor = sum(validalleys)
     
@@ -175,26 +177,81 @@ def global_FWER_alpha(nulls, unit, alpha=0.05): # fwerModifier should be 3 (txts
 
     return FWERalphaSelected, globalLower, globalUpper
 
-def genNNulls(n, unit, alley, txtX, txtY):
+
+def shuffleArray(array, field_idx):
+    for row in range(len(array)):
+        array[row,field_idx] = np.random.permutation(array[row,field_idx])
+
+def consecutive(data, stepsize=1):
+    return np.split(data, np.where(np.diff(data) != stepsize)[0]+1)
+
+def findField(rms,sthresh=3,rthresh=0.2):
+    """
+    Identify a field as a set of sthresh or more contiguous bins
+    greater than rthresh of max
+    """
+    mean = np.nanmean(rms, axis=0)
+    fi = np.where(mean>=(rthresh*np.nanmax(mean)))[0]
+    field = True
+    try:
+        field_idx = np.concatenate(([i for i in consecutive(fi) if len(i)>=sthresh]))
+    except:
+        field = False
+        field_idx = None
+        
+    return field, field_idx
+    
+def genNNulls(n, rms, labels, txtX, txtY):
     """
     Generates n null test statistics, hard coded
     now to be the binwise diff of avg(txtA) - avg(txtB)
     Returns np array nXl where l is length of 1d RM in bins
     """
+    shuffpos = True # toggle to shuffle bins within field
     nulls = np.empty((0,Def.singleAlleyBins[0]-1)) # by convention long dim is first
-    labels = getLabels(unit, alley)
+    
+    if shuffpos:
+        result, field_idx = findField(rms)
+        if result == False: # no good field
+            shuffpos = False
+    
+    rmsshuffle = copy.deepcopy(rms)
+        
+        
     for i in range(n):
-        null = genSingleNullStat(unit, alley, txtX, txtY, labels)
-
+        
+        shufflabels = np.random.permutation(labels)
+        if shuffpos:
+            shuffleArray(rmsshuffle, field_idx) # shuffle in place within rows
+        
+        srmsX, srmsY = rmsshuffle[np.where(shufflabels==txtX)[0],:], rmsshuffle[np.where(shufflabels==txtY)[0],:]
+        
+        
+        null = computeTestStatistic_Diffs(srmsX, srmsY)
         nulls = np.vstack((nulls, null))
+    
+
     return nulls
+
+
+def makeRMS(unit, alley):
+    """
+    Create array of 1d ratemaps each row is a visit
+    return array and label array of txt present
+    """
+    rms = np.empty((0, Def.singleAlleyBins[0]-1))
+    labels = np.empty((0))
+    for visit in unit.alleys[alley]:
+        rms = np.vstack((rms, visit['ratemap1d']))
+        labels = np.hstack((labels, visit['metadata']['stimulus']))
+    return rms, labels
 
 def unitPermutationTest_SinglePair(unit, alley, txtX, txtY, nnulls, plot=False, returnInfo=True):
     """
     Wrapper function for global_FWER_alpha() that plots results
     """
-    
-    nulls = genNNulls(nnulls,unit,alley,txtX,txtY)
+    rms, labels = makeRMS(unit, alley)
+    nulls = genNNulls(nnulls,rms,labels,txtX,txtY)
     FWERalphaSelected, glowerBand, gupperBand = global_FWER_alpha(nulls, unit)
     if FWERalphaSelected == None:
         glowerBand, gupperBand, pwAlphaLower, pwAlphaUpper = None, None, None, None
@@ -273,13 +330,13 @@ def unitPermutationTest_AllPairsAllAlleys(unit, nnulls,fpath, logger=True, plot=
         fig, axes = plt.subplots(9, 3, figsize=(12,12), dpi=200) #bigger plot, bigger dpi
     
     pairs = ["AB", "BC", "CA"]
-    fname = fpath + f"{stamp}_{unit.name}_{Def.singleAlleyBins[0]-1}bins_{Def.smoothing_1d_sigma}smooth_permutationResults"
+    fname = fpath + f"{stamp}_{unit.name}_{Def.singleAlleyBins[0]-1}bins_{Def.smoothing_1d_sigma}smooth_{Def.includeRewards}R_{Def.velocity_filter_thresh}vfilt_permutationResults"
     crossings = {i:{pair:{'global':"XXX", 'pointwise':"XXX"} for pair in pairs} for i in [1,3,5,7,8,10,11,16,17]}
     
     axCounter = 0 
     for alley in [1,3,5,7,8,10,11,16,17]:
         
-        valid = Filt.checkMinimumPassesActivity(unit, alley)
+        valid = Filt.checkMinimumPassesActivity(unit, alley, pass_thresh=12)
         if valid:
         
             print(f"Running Permutation test in alley {alley}")
@@ -360,7 +417,7 @@ def plotPermutationResults(unit, bounds, stat, conditionName, globalCrossings, p
        
 if __name__ == '__main__':
     
-    rat = "R859"
+    rat = "R781"
     expCode = "BRD3"
     datafile = f"E:\\Ratterdam\\{rat}\\{rat}{expCode}\\"
     fpath = f"E:\\Ratterdam\{rat}\\permutation_tests\\{expCode}\\"
@@ -379,10 +436,15 @@ if __name__ == '__main__':
                 clustname = subdir[subdir.index("TT"):] + "\\" + f
                 unit = Core.UnitData(clustname, datafile, expCode, Def.alleyBounds, alleyVisits, txtVisits, p_sess, ts_sess)
                 unit.loadData_raw()
-                rm = util.makeRM(unit.spikes, unit.position)            
-                if np.nanpercentile(rm,Def.wholetrack_imshow_pct_cutoff) >= 0.75:
+                validalleys = []
+                for a in [16, 17, 3, 1, 5, 7, 8, 10, 11]:
+                    valid = Filt.checkMinimumPassesActivity(unit, a, pass_thresh=12)
+                    validalleys.append(valid)
+                if sum(validalleys) > 0:         
                     print(clustname)
-                    unitPermutationTest_AllPairsAllAlleys(unit, 5000, fpath)
+                    unitPermutationTest_AllPairsAllAlleys(unit, 1000, fpath)
+                else:
+                    print(f"{clustname} not run")
 
 
 

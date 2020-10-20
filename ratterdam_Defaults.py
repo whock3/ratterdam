@@ -198,19 +198,19 @@ alleyBounds_PolygonTriEnds = {0:[(),(),(),(),(),()],}
 dataPathNub = "D:\\Ratterdam\\"
 figurePathNub = "C:\\Users\\whock\\Google Drive\\KnierimLab\\Ratterdam\\Figures\\"
 
-velocity_filter_thresh = 1.0#units are cm/s
+velocity_filter_thresh = 0#units are cm/s
 ptsCm_krieger= 4.85 # number of camera points equiv to a cm
 
 ptsCm_macaulay = 4.72
 ptsCm = ptsCm_macaulay
 
 #old bins = 15,30
-singleAlleyBins = [13,8]
+singleAlleyBins = [13,3]
 wholeAlleyBins = [round(int(480/ptsCm)),int(round(640/ptsCm))]
 
 # Smoothing values to use
 smoothing_2d_sigma = 2
-smoothing_1d_sigma = 0.5 # if gaussian smoothing this is sigma. If step smoothing where you average a bin by its nextdoor neighbors it is the scaling
+smoothing_1d_sigma = 0.5# if gaussian smoothing this is sigma. If step smoothing where you average a bin by its nextdoor neighbors it is the scaling
                         #factor for those neigbors. i.e. (smoothing_1d_sigma*bin[i-1] + bin[i] + smoothing_1d_sigma*bin[i+1]) / 3
 
 # Define visit parameters in milliseconds
@@ -225,7 +225,7 @@ wholetrack_imshow_pct_cutoff = 95
 singlealley_imshow_pct_cutoff = 97
 
 # toggle as to whether to include rewarded trials when constructing the Core.Unit() data structure
-includeRewards = False
+includeRewards = 2# flag to decide whether rewarded trials will be included in analysis. 0 - no rewards, 1 - only rewards, 2 - all trials
 
 
 beltwayAlleys = [16,17,3,1,5,7,8,10,11]
