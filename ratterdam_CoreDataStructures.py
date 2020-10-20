@@ -105,22 +105,34 @@ class UnitData():
                 # rewarded and exclude it. This is to prevent reward-related
                 # firing rate confounds. 
                 nrtrialnum = None
-                if Def.includeRewards == False:
-                    interval = Parse.checkInterval(visitsOcc[0,0],[i[0] for i in self.alleyVisits[alley-1]]+[self.alleyVisits[alley-1][-1][1]])
-                    if stimData['rewards'][alley-1][interval] == 1:
+                
+                interval = Parse.checkInterval(visitsOcc[0,0],[i[0] for i in self.alleyVisits[alley-1]]+[self.alleyVisits[alley-1][-1][1]])
+                reward = stimData['rewards'][alley-1][interval]
+
+                if Def.includeRewards == 0:
+                    if reward == 1:
                         include = False
                     else:
                         include = True
                         nrtrialnum = visit
-                elif Def.includeRewards == True:
+                elif Def.includeRewards == 1:
+                    if reward == 1:
+                        include = True
+                        nrtrialnum = visit
+                    else:
+                        include = False
+                    
+                elif Def.includeRewards == 2:
                     include = True
-                 
+                    nrtrialnum = visit
+
+                                  
                 if include == True:
                     self.alleys[alley].append({'spikes': visitsSpk, 
                                            'occs': visitsOcc, 
                                            'ratemap2d': self.computeSingleRM(visitsSpk, visitsOcc, alley, dim=2),
                                            'ratemap1d': self.computeSingleRM(visitsSpk, visitsOcc, alley, dim=1),
-                                           'metadata': self.generateVisitMetadata(alley, visit, nrtrialnum)
+                                           'metadata': self.generateVisitMetadata(alley, visit, nrtrialnum, reward)
                                             })
                 
         allS, allO = np.empty((0,3)), np.empty((0,3)) # for collecting all spikes/occs to make overall RM
@@ -184,7 +196,7 @@ class UnitData():
                 
         return visitSpikes, visitPos
     
-    def generateVisitMetadata(self, alley, visit, nrtrialnum):
+    def generateVisitMetadata(self, alley, visit, nrtrialnum, reward):
         """
         Generates metadata for each trial. Metadata is a dict so can
         easily be extended as more info needs to be included
@@ -192,9 +204,10 @@ class UnitData():
         txt - stimulus present on that trial at that alley
         nrtrialnum - the overall trial number. Used when excluding reward so one has a record of what 
                     the actual trial num is as opposed to just numbering the surviving trials in their relative order
+        reward - 0,1 if reward was not given, or given respectively on trial. This added 10/10/20. 
         """
         txt = self.txtVisits[alley-1][visit]
-        return {"stimulus":txt, "nrtrialnum":nrtrialnum}
+        return {"stimulus":txt, "nrtrialnum":nrtrialnum, "reward":reward}
         
     
     

@@ -22,8 +22,8 @@ import ratterdam_visBasic as Vis
 from scipy.interpolate import interp1d
 
 
-rat = "R859"
-expCode = "BRD5"
+rat = "R781"
+expCode = "BRD4"
 
 
 datafile = f"E:\\Ratterdam\\{rat}\\{rat}{expCode}\\"
@@ -54,7 +54,7 @@ for subdir, dirs, fs in os.walk(datafile):
                 unit.loadData_raw()
                 cn = clustname.split("\\")[0] + clustname.split("\\")[1]
                 
-                with PdfPages(figpath+date+"_"+unit.name+f"_smooth{Def.smoothing_1d_sigma}_{Def.singleAlleyBins[0]-1}bins_{Def.velocity_filter_thresh}vfilt_{(lambda x: 'NoR' if x == False else 'wRs')(Def.includeRewards)}"+".pdf") as pdf:
+                with PdfPages(figpath+date+"_"+unit.name+f"_smooth{Def.smoothing_1d_sigma}_{Def.singleAlleyBins[0]-1}bins_{Def.velocity_filter_thresh}vfilt_R{Def.includeRewards}"+".pdf") as pdf:
     
                     for alley in beltwayAlleys:
                         
@@ -104,9 +104,9 @@ for subdir, dirs, fs in os.walk(datafile):
                             txt  = visit['metadata']['stimulus']
                             visits[txt] = np.vstack((visits[txt], visit['ratemap1d']))
                             visitsSpk[txt].append(visit['spikes'])
-                            if Def.includeRewards == True:
+                            if Def.includeRewards == 2:
                                 visitIdx[txt].append(i)
-                            elif Def.includeRewards == False:
+                            elif Def.includeRewards == 0 or Def.includeRewards == 1:
                                 visitIdx[txt].append(visit['metadata']['nrtrialnum'])
                             
                             
@@ -219,29 +219,29 @@ for subdir, dirs, fs in os.walk(datafile):
                         ########################
                         # Rasters (Temporal)   #
                         ########################
-                        def findTrialStart(realIdx):
-                            for trial in unit.alleys[alley]:
-                                if trial['metadata']['nrtrialnum'] == realIdx:
-                                    return trial['occs'][0,0]
-                        
-                        timeCutoff = 2*1e3 # cutoff time in trial to divide spikes between subrasters (long, short timescale responses)
-                        
-                        for txt, ax in zip(['A','B','C'], [axTimeRasterA, axTimeRasterB, axTimeRasterC]):
-                            for i,(trial,idx) in enumerate(zip(visitsSpk[txt],visitIdx[txt])):
-                                trialStart= findTrialStart(idx)
-                                spikesZeroed = (trial[:,0] - trialStart)/1e3 # zero spike array 'trial' to trial start and convert from us to ms
-                                ax[0].plot(spikesZeroed, [i]*spikesZeroed.shape[0], marker='|', color='k',linestyle='')
-                                ax[1].plot(spikesZeroed, [i]*spikesZeroed.shape[0], marker='|', color='k',linestyle='')
-                            ax[0].set_xlim(left=0,right=timeCutoff)
-                            ax[1].set_xlim(left=timeCutoff)
-                            ax9.set_title("Time Raster Zeroed to trial start (ms)",fontsize=10)
-                            ax[0].set_yticks(range(len(visitIdx[txt])))
-                            ax[0].set_yticklabels(visitIdx[txt])
-                            
-                            ax[0].spines['right'].set_visible(False)
-                            ax[1].spines['left'].set_visible(False)
-                            ax[1].set_yticklabels([])
-                            ax[1].set_yticks([])
+#                        def findTrialStart(realIdx):
+#                            for trial in unit.alleys[alley]:
+#                                if trial['metadata']['nrtrialnum'] == realIdx:
+#                                    return trial['occs'][0,0]
+#                        
+#                        timeCutoff = 2*1e3 # cutoff time in trial to divide spikes between subrasters (long, short timescale responses)
+#                        
+#                        for txt, ax in zip(['A','B','C'], [axTimeRasterA, axTimeRasterB, axTimeRasterC]):
+#                            for i,(trial,idx) in enumerate(zip(visitsSpk[txt],visitIdx[txt])):
+#                                trialStart= findTrialStart(idx)
+#                                spikesZeroed = (trial[:,0] - trialStart)/1e3 # zero spike array 'trial' to trial start and convert from us to ms
+#                                ax[0].plot(spikesZeroed, [i]*spikesZeroed.shape[0], marker='|', color='k',linestyle='')
+#                                ax[1].plot(spikesZeroed, [i]*spikesZeroed.shape[0], marker='|', color='k',linestyle='')
+#                            ax[0].set_xlim(left=0,right=timeCutoff)
+#                            ax[1].set_xlim(left=timeCutoff)
+#                            ax9.set_title("Time Raster Zeroed to trial start (ms)",fontsize=10)
+#                            ax[0].set_yticks(range(len(visitIdx[txt])))
+#                            ax[0].set_yticklabels(visitIdx[txt])
+#                            
+#                            ax[0].spines['right'].set_visible(False)
+#                            ax[1].spines['left'].set_visible(False)
+#                            ax[1].set_yticklabels([])
+#                            ax[1].set_yticks([])
                                                     
 
 

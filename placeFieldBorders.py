@@ -20,6 +20,7 @@ def reorderBorder(border, field):
     point = border[0]
     newBorder = np.array(point)
     startTime = perf_counter()
+
     while True:
         if (point[0]+1, point[1]) in border: #to the right
             border.remove(point)
@@ -65,10 +66,12 @@ def reorderBorder(border, field):
                 
         if point == firstPoint:
             break
+
         if perf_counter()-startTime > 5:
             print(f"Field {field} took too long")
             break
     return newBorder*binWidth+binWidth/2
+
 
 
 def reorderBorders(unit):
