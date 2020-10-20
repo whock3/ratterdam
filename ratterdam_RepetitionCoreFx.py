@@ -48,11 +48,29 @@ def loadRepeatingUnit(df, clustName, smoothing=2):
     spikexy = util.getPosFromTs(clust,position)
     spikes = np.column_stack((clust,spikexy))
     
+    
     unit = Unit(spikes,position, clustName, smoothing)
     if smoothing:
         unit.smoothFieldsFx()
     
     return unit
+
+def unitVelocityFilter(ts, position, clust):
+        '''
+        Remove spikes emitted when the animal's
+        velocity was below threshold. 
+        
+        This class does not explicitly store
+        the thresh, or even whether a velocity
+        filter was applied. That occurs in the BehavioralData
+        class and is reflected implicitly in the position array
+        having been filtered. the ts dict is unfiltered and is used
+        as a reference.
+        '''
+        
+        allSpikeTs = np.asarray([util.takeClosest(ts, i) for i in clust])
+        filtTs = clust[np.isin(allSpikeTs, position[:,0])]
+        return filtTs
 
 class Unit():
     """
