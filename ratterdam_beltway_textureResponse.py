@@ -23,7 +23,7 @@ from scipy.interpolate import interp1d
 
 
 rat = "R781"
-expCode = "BRD4"
+expCode = "BRD3"
 
 
 datafile = f"E:\\Ratterdam\\{rat}\\{rat}{expCode}\\"

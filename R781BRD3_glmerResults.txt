@@ -1,0 +1,460 @@
+[1] "============ Cell: TT11\\cl-maze1.1, Cell ID: 0, alley ID: 16 =============== "
+Generalized linear mixed model fit by maximum likelihood (Laplace Approximation) ['glmerMod']
+ Family: Gamma  ( inverse )
+Formula: log(rate + 1) + 1 ~ spatialBin * texture + (1 | trial) + (1 |      reward)
+   Data: celldf
+Control: glmerControl(optimizer = "Nelder_Mead")
+
+     AIC      BIC   logLik deviance df.resid 
+  7860.7   7919.3  -3921.4   7842.7     4962 
+
+Scaled residuals: 
+    Min      1Q  Median      3Q     Max 
+-1.1698 -1.0225 -0.1086  0.9604  2.0793 
+
+Random effects:
+ Groups   Name        Variance  Std.Dev.
+ trial    (Intercept) 1.570e-04 0.012530
+ reward   (Intercept) 1.995e-05 0.004466
+ Residual             1.235e-01 0.351493
+Number of obs: 4971, groups:  trial, 30; reward, 2
+
+Fixed effects:
+                      Estimate Std. Error t value Pr(>|z|)    
+(Intercept)          0.6318089  0.0131240  48.141  < 2e-16 ***
+spatialBin          -0.0002641  0.0016189  -0.163  0.87043    
+textureB             0.0171922  0.0151977   1.131  0.25796    
+textureC             0.0418458  0.0153252   2.731  0.00632 ** 
+spatialBin:textureB -0.0028230  0.0023127  -1.221  0.22221    
+spatialBin:textureC -0.0064247  0.0023042  -2.788  0.00530 ** 
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Correlation of Fixed Effects:
+            (Intr) sptlBn textrB textrC sptB:B
+spatialBin  -0.699                            
+textureB    -0.548  0.581                     
+textureC    -0.597  0.590  0.488              
+sptlBn:txtB  0.513 -0.713 -0.824 -0.428       
+sptlBn:txtC  0.516 -0.716 -0.414 -0.842  0.520
+convergence code: 0
+Model failed to converge with max|grad| = 0.0239685 (tol = 0.002, component 1)
+Model is nearly unidentifiable: very large eigenvalue
+ - Rescale variables?
+
+[1] "Confidence Intervals (Wald)"
+                           1.5 %       98.5 %
+(Intercept)          0.603328559  0.660289202
+spatialBin          -0.003777150  0.003249033
+textureB            -0.015788282  0.050172586
+textureC             0.008588788  0.075102794
+spatialBin:textureB -0.007841773  0.002195709
+spatialBin:textureC -0.011424997 -0.001424382
+[1] "============ Cell: TT11\\cl-maze1.1, Cell ID: 0, alley ID: 17 =============== "
+Generalized linear mixed model fit by maximum likelihood (Laplace Approximation) ['glmerMod']
+ Family: Gamma  ( inverse )
+Formula: log(rate + 1) + 1 ~ spatialBin * texture + (1 | trial) + (1 |      reward)
+   Data: celldf
+Control: glmerControl(optimizer = "Nelder_Mead")
+
+     AIC      BIC   logLik deviance df.resid 
+  8898.3   8958.1  -4440.2   8880.3     5661 
+
+Scaled residuals: 
+    Min      1Q  Median      3Q     Max 
+-1.1195 -0.9953 -0.1790  0.9636  2.0155 
+
+Random effects:
+ Groups   Name        Variance  Std.Dev. 
+ trial    (Intercept) 1.437e-04 1.199e-02
+ reward   (Intercept) 1.196e-09 3.459e-05
+ Residual             1.260e-01 3.549e-01
+Number of obs: 5670, groups:  trial, 30; reward, 2
+
+Fixed effects:
+                     Estimate Std. Error t value Pr(>|z|)    
+(Intercept)          0.631067   0.010310  61.208  < 2e-16 ***
+spatialBin           0.002371   0.001505   1.575  0.11525    
+textureB             0.019208   0.014162   1.356  0.17501    
+textureC             0.027871   0.014238   1.957  0.05030 .  
+spatialBin:textureB -0.003900   0.002136  -1.826  0.06788 .  
+spatialBin:textureC -0.006572   0.002143  -3.067  0.00216 ** 
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Correlation of Fixed Effects:
+            (Intr) sptlBn textrB textrC sptB:B
+spatialBin  -0.787                            
+textureB    -0.665  0.572                     
+textureC    -0.663  0.570  0.481              
+sptlBn:txtB  0.555 -0.705 -0.825 -0.402       
+sptlBn:txtC  0.553 -0.702 -0.402 -0.828  0.495
+convergence code: 0
+boundary (singular) fit: see ?isSingular
+
+[1] "Confidence Intervals (Wald)"
+                            1.5 %        98.5 %
+(Intercept)          0.6086928551  0.6534413759
+spatialBin          -0.0008956401  0.0056368904
+textureB            -0.0115250887  0.0499401960
+textureC            -0.0030279779  0.0587693718
+spatialBin:textureB -0.0085357167  0.0007354312
+spatialBin:textureC -0.0112221686 -0.0019226458
+[1] "============ Cell: TT11\\cl-maze1.1, Cell ID: 0, alley ID: 3 =============== "
+Generalized linear mixed model fit by maximum likelihood (Laplace Approximation) ['glmerMod']
+ Family: Gamma  ( inverse )
+Formula: log(rate + 1) + 1 ~ spatialBin * texture + (1 | trial) + (1 |      reward)
+   Data: celldf
+Control: glmerControl(optimizer = "Nelder_Mead")
+
+     AIC      BIC   logLik deviance df.resid 
+ 10615.7  10677.5  -5298.9  10597.7     7089 
+
+Scaled residuals: 
+    Min      1Q  Median      3Q     Max 
+-1.1599 -0.9142 -0.3908  0.9761  2.3675 
+
+Random effects:
+ Groups   Name        Variance  Std.Dev.
+ trial    (Intercept) 0.0002358 0.01535 
+ reward   (Intercept) 0.0000000 0.00000 
+ Residual             0.1285714 0.35857 
+Number of obs: 7098, groups:  trial, 30; reward, 2
+
+Fixed effects:
+                     Estimate Std. Error t value Pr(>|z|)    
+(Intercept)          0.605447   0.009609  63.009  < 2e-16 ***
+spatialBin           0.010532   0.001340   7.862 3.77e-15 ***
+textureB             0.012796   0.012787   1.001  0.31698    
+textureC             0.028664   0.012915   2.219  0.02645 *  
+spatialBin:textureB -0.001846   0.001966  -0.939  0.34763    
+spatialBin:textureC -0.005771   0.001940  -2.975  0.00293 ** 
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Correlation of Fixed Effects:
+            (Intr) sptlBn textrB textrC sptB:B
+spatialBin  -0.711                            
+textureB    -0.610  0.534                     
+textureC    -0.616  0.529  0.452              
+sptlBn:txtB  0.485 -0.681 -0.791 -0.361       
+sptlBn:txtC  0.491 -0.690 -0.369 -0.785  0.470
+convergence code: 0
+boundary (singular) fit: see ?isSingular
+
+[1] "Confidence Intervals (Wald)"
+                            1.5 %       98.5 %
+(Intercept)          0.5845945634  0.626298708
+spatialBin           0.0076249830  0.013438830
+textureB            -0.0149536252  0.040545803
+textureC             0.0006377161  0.056691062
+spatialBin:textureB -0.0061123821  0.002419774
+spatialBin:textureC -0.0099820467 -0.001560835
+[1] "============ Cell: TT11\\cl-maze1.1, Cell ID: 0, alley ID: 1 =============== "
+Generalized linear mixed model fit by maximum likelihood (Laplace Approximation) ['glmerMod']
+ Family: Gamma  ( inverse )
+Formula: log(rate + 1) + 1 ~ spatialBin * texture + (1 | trial) + (1 |      reward)
+   Data: celldf
+Control: glmerControl(optimizer = "Nelder_Mead")
+
+     AIC      BIC   logLik deviance df.resid 
+ 11048.7  11110.4  -5515.4  11030.7     7034 
+
+Scaled residuals: 
+    Min      1Q  Median      3Q     Max 
+-1.1121 -0.9770 -0.2204  0.9748  2.2055 
+
+Random effects:
+ Groups   Name        Variance  Std.Dev.
+ trial    (Intercept) 2.431e-04 0.015590
+ reward   (Intercept) 3.433e-05 0.005859
+ Residual             1.282e-01 0.358117
+Number of obs: 7043, groups:  trial, 30; reward, 2
+
+Fixed effects:
+                      Estimate Std. Error t value Pr(>|z|)    
+(Intercept)          0.6274529  0.0134573  46.626   <2e-16 ***
+spatialBin           0.0023401  0.0013805   1.695   0.0901 .  
+textureB             0.0008579  0.0130841   0.066   0.9477    
+textureC             0.0315402  0.0134656   2.342   0.0192 *  
+spatialBin:textureB -0.0016461  0.0019442  -0.847   0.3972    
+spatialBin:textureC -0.0044104  0.0019624  -2.247   0.0246 *  
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Correlation of Fixed Effects:
+            (Intr) sptlBn textrB textrC sptB:B
+spatialBin  -0.547                            
+textureB    -0.447  0.559                     
+textureC    -0.504  0.547  0.461              
+sptlBn:txtB  0.389 -0.710 -0.799 -0.389       
+sptlBn:txtC  0.386 -0.704 -0.393 -0.792  0.499
+convergence code: 0
+Model failed to converge with max|grad| = 8.62201 (tol = 0.002, component 1)
+Model is nearly unidentifiable: very large eigenvalue
+ - Rescale variables?
+
+[1] "Confidence Intervals (Wald)"
+                            1.5 %        98.5 %
+(Intercept)          0.5982493639  0.6566563928
+spatialBin          -0.0006557666  0.0053359248
+textureB            -0.0275357404  0.0292514578
+textureC             0.0023186467  0.0607617254
+spatialBin:textureB -0.0058651653  0.0025729697
+spatialBin:textureC -0.0086690567 -0.0001518419
+[1] "============ Cell: TT11\\cl-maze1.1, Cell ID: 0, alley ID: 5 =============== "
+Generalized linear mixed model fit by maximum likelihood (Laplace Approximation) ['glmerMod']
+ Family: Gamma  ( inverse )
+Formula: log(rate + 1) + 1 ~ spatialBin * texture + (1 | trial) + (1 |      reward)
+   Data: celldf
+Control: glmerControl(optimizer = "Nelder_Mead")
+
+     AIC      BIC   logLik deviance df.resid 
+ 10088.8  10149.8  -5035.4  10070.8     6502 
+
+Scaled residuals: 
+    Min      1Q  Median      3Q     Max 
+-1.1228 -0.9638 -0.2406  0.9353  2.3453 
+
+Random effects:
+ Groups   Name        Variance  Std.Dev.
+ trial    (Intercept) 1.996e-04 0.014129
+ reward   (Intercept) 5.906e-05 0.007685
+ Residual             1.286e-01 0.358562
+Number of obs: 6511, groups:  trial, 30; reward, 2
+
+Fixed effects:
+                     Estimate Std. Error t value Pr(>|z|)    
+(Intercept)          0.632233   0.014849  42.579  < 2e-16 ***
+spatialBin           0.002049   0.001379   1.486  0.13732    
+textureB             0.009939   0.013718   0.725  0.46874    
+textureC             0.026939   0.014098   1.911  0.05604 .  
+spatialBin:textureB -0.002512   0.001992  -1.261  0.20728    
+spatialBin:textureC -0.005455   0.002071  -2.634  0.00844 ** 
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Correlation of Fixed Effects:
+            (Intr) sptlBn textrB textrC sptB:B
+spatialBin  -0.505                            
+textureB    -0.403  0.545                     
+textureC    -0.399  0.531  0.443              
+sptlBn:txtB  0.348 -0.692 -0.800 -0.368       
+sptlBn:txtC  0.335 -0.666 -0.359 -0.816  0.461
+convergence code: 0
+Model failed to converge with max|grad| = 2.37763 (tol = 0.002, component 1)
+Model is nearly unidentifiable: very large eigenvalue
+ - Rescale variables?
+
+[1] "Confidence Intervals (Wald)"
+                            1.5 %        98.5 %
+(Intercept)          0.6000103309  0.6644561549
+spatialBin          -0.0009437195  0.0050422121
+textureB            -0.0198308879  0.0397098179
+textureC            -0.0036561927  0.0575332639
+spatialBin:textureB -0.0068354601  0.0018109188
+spatialBin:textureC -0.0099497445 -0.0009608444
+[1] "============ Cell: TT11\\cl-maze1.1, Cell ID: 0, alley ID: 7 =============== "
+Generalized linear mixed model fit by maximum likelihood (Laplace Approximation) ['glmerMod']
+ Family: Gamma  ( inverse )
+Formula: log(rate + 1) + 1 ~ spatialBin * texture + (1 | trial) + (1 |      reward)
+   Data: celldf
+Control: glmerControl(optimizer = "Nelder_Mead")
+
+     AIC      BIC   logLik deviance df.resid 
+ 11841.6  11904.6  -5911.8  11823.6     8118 
+
+Scaled residuals: 
+    Min      1Q  Median      3Q     Max 
+-1.1205 -0.9733 -0.2378  0.9581  2.1837 
+
+Random effects:
+ Groups   Name        Variance  Std.Dev. 
+ trial    (Intercept) 1.223e-04 1.106e-02
+ reward   (Intercept) 1.341e-09 3.662e-05
+ Residual             1.194e-01 3.456e-01
+Number of obs: 8127, groups:  trial, 30; reward, 2
+
+Fixed effects:
+                      Estimate Std. Error t value Pr(>|z|)    
+(Intercept)          0.6576182  0.0086377  76.134  < 2e-16 ***
+spatialBin           0.0003172  0.0012060   0.263  0.79253    
+textureB             0.0164357  0.0120043   1.369  0.17095    
+textureC             0.0150747  0.0121467   1.241  0.21458    
+spatialBin:textureB -0.0028866  0.0017431  -1.656  0.09773 .  
+spatialBin:textureC -0.0048224  0.0017563  -2.746  0.00604 ** 
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Correlation of Fixed Effects:
+            (Intr) sptlBn textrB textrC sptB:B
+spatialBin  -0.764                            
+textureB    -0.655  0.549                     
+textureC    -0.645  0.543  0.462              
+sptlBn:txtB  0.529 -0.692 -0.801 -0.376       
+sptlBn:txtC  0.524 -0.687 -0.376 -0.804  0.475
+convergence code: 0
+Model failed to converge with max|grad| = 0.0156308 (tol = 0.002, component 1)
+Model is nearly unidentifiable: very large eigenvalue
+ - Rescale variables?
+
+[1] "Confidence Intervals (Wald)"
+                           1.5 %        98.5 %
+(Intercept)          0.638873606  0.6763627355
+spatialBin          -0.002299842  0.0029342290
+textureB            -0.009614772  0.0424860938
+textureC            -0.011284670  0.0414341464
+spatialBin:textureB -0.006669274  0.0008961523
+spatialBin:textureC -0.008633680 -0.0010110844
+[1] "============ Cell: TT11\\cl-maze1.1, Cell ID: 0, alley ID: 8 =============== "
+Generalized linear mixed model fit by maximum likelihood (Laplace Approximation) ['glmerMod']
+ Family: Gamma  ( inverse )
+Formula: log(rate + 1) + 1 ~ spatialBin * texture + (1 | trial) + (1 |      reward)
+   Data: celldf
+Control: glmerControl(optimizer = "Nelder_Mead")
+
+     AIC      BIC   logLik deviance df.resid 
+  8688.5   8748.3  -4335.3   8670.5     5675 
+
+Scaled residuals: 
+    Min      1Q  Median      3Q     Max 
+-1.2021 -0.9935 -0.1816  0.9671  2.3019 
+
+Random effects:
+ Groups   Name        Variance  Std.Dev.
+ trial    (Intercept) 0.0001233 0.0111  
+ reward   (Intercept) 0.0000000 0.0000  
+ Residual             0.1206629 0.3474  
+Number of obs: 5684, groups:  trial, 30; reward, 2
+
+Fixed effects:
+                     Estimate Std. Error t value Pr(>|z|)    
+(Intercept)          0.661034   0.010238  64.567   <2e-16 ***
+spatialBin          -0.003058   0.001469  -2.082   0.0373 *  
+textureB             0.001673   0.014071   0.119   0.9054    
+textureC             0.017167   0.014215   1.208   0.2272    
+spatialBin:textureB -0.001017   0.002087  -0.487   0.6262    
+spatialBin:textureC -0.004199   0.002090  -2.009   0.0445 *  
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Correlation of Fixed Effects:
+            (Intr) sptlBn textrB textrC sptB:B
+spatialBin  -0.802                            
+textureB    -0.673  0.583                     
+textureC    -0.668  0.578  0.481              
+sptlBn:txtB  0.565 -0.704 -0.833 -0.407       
+sptlBn:txtC  0.563 -0.703 -0.410 -0.835  0.495
+convergence code: 0
+boundary (singular) fit: see ?isSingular
+
+[1] "Confidence Intervals (Wald)"
+                           1.5 %       98.5 %
+(Intercept)          0.638816309 0.6832509208
+spatialBin          -0.006246461 0.0001295234
+textureB            -0.028862745 0.0322086630
+textureC            -0.013680888 0.0480151650
+spatialBin:textureB -0.005545948 0.0035126799
+spatialBin:textureC -0.008734106 0.0003361476
+[1] "============ Cell: TT11\\cl-maze1.1, Cell ID: 0, alley ID: 10 =============== "
+Generalized linear mixed model fit by maximum likelihood (Laplace Approximation) ['glmerMod']
+ Family: Gamma  ( inverse )
+Formula: log(rate + 1) + 1 ~ spatialBin * texture + (1 | trial) + (1 |      reward)
+   Data: celldf
+Control: glmerControl(optimizer = "Nelder_Mead")
+
+     AIC      BIC   logLik deviance df.resid 
+  7276.9   7334.9  -3629.5   7258.9     4598 
+
+Scaled residuals: 
+     Min       1Q   Median       3Q      Max 
+-1.28590 -1.08635  0.00928  0.99168  2.16096 
+
+Random effects:
+ Groups   Name        Variance  Std.Dev.
+ trial    (Intercept) 0.0002148 0.01466 
+ reward   (Intercept) 0.0000000 0.00000 
+ Residual             0.1143406 0.33814 
+Number of obs: 4607, groups:  trial, 30; reward, 2
+
+Fixed effects:
+                     Estimate Std. Error t value Pr(>|z|)    
+(Intercept)          0.587761   0.010750  54.676  < 2e-16 ***
+spatialBin           0.006882   0.001566   4.394 1.11e-05 ***
+textureB             0.014793   0.014331   1.032   0.3020    
+textureC             0.021661   0.014390   1.505   0.1323    
+spatialBin:textureB -0.003152   0.002234  -1.411   0.1583    
+spatialBin:textureC -0.005462   0.002235  -2.444   0.0145 *  
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Correlation of Fixed Effects:
+            (Intr) sptlBn textrB textrC sptB:B
+spatialBin  -0.760                            
+textureB    -0.640  0.570                     
+textureC    -0.637  0.568  0.472              
+sptlBn:txtB  0.533 -0.701 -0.824 -0.399       
+sptlBn:txtC  0.533 -0.701 -0.399 -0.827  0.491
+convergence code: 0
+boundary (singular) fit: see ?isSingular
+
+[1] "Confidence Intervals (Wald)"
+                           1.5 %        98.5 %
+(Intercept)          0.564432540  0.6110890643
+spatialBin           0.003482810  0.0102809697
+textureB            -0.016307637  0.0458935271
+textureC            -0.009567197  0.0528890919
+spatialBin:textureB -0.007999240  0.0016959883
+spatialBin:textureC -0.010311973 -0.0006124084
+[1] "============ Cell: TT11\\cl-maze1.1, Cell ID: 0, alley ID: 11 =============== "
+Generalized linear mixed model fit by maximum likelihood (Laplace Approximation) ['glmerMod']
+ Family: Gamma  ( inverse )
+Formula: log(rate + 1) + 1 ~ spatialBin * texture + (1 | trial) + (1 |      reward)
+   Data: celldf
+Control: glmerControl(optimizer = "Nelder_Mead")
+
+     AIC      BIC   logLik deviance df.resid 
+  9198.7   9259.8  -4590.3   9180.7     6552 
+
+Scaled residuals: 
+    Min      1Q  Median      3Q     Max 
+-1.1529 -1.0190 -0.2346  0.9391  2.2169 
+
+Random effects:
+ Groups   Name        Variance  Std.Dev. 
+ trial    (Intercept) 1.874e-04 1.369e-02
+ reward   (Intercept) 3.630e-09 6.025e-05
+ Residual             1.103e-01 3.321e-01
+Number of obs: 6561, groups:  trial, 30; reward, 2
+
+Fixed effects:
+                      Estimate Std. Error t value Pr(>|z|)    
+(Intercept)          0.6400966  0.0093292  68.612   <2e-16 ***
+spatialBin           0.0025303  0.0013068   1.936   0.0528 .  
+textureB             0.0014821  0.0126752   0.117   0.9069    
+textureC             0.0155270  0.0125857   1.234   0.2173    
+spatialBin:textureB -0.0004229  0.0019132  -0.221   0.8251    
+spatialBin:textureC -0.0046479  0.0018847  -2.466   0.0137 *  
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Correlation of Fixed Effects:
+            (Intr) sptlBn textrB textrC sptB:B
+spatialBin  -0.741                            
+textureB    -0.625  0.546                     
+textureC    -0.630  0.550  0.457              
+sptlBn:txtB  0.507 -0.683 -0.806 -0.376       
+sptlBn:txtC  0.514 -0.693 -0.378 -0.810  0.474
+convergence code: 0
+Model failed to converge with max|grad| = 0.10912 (tol = 0.002, component 1)
+Model is nearly unidentifiable: very large eigenvalue
+ - Rescale variables?
+
+[1] "Confidence Intervals (Wald)"
+                           1.5 %       98.5 %
+(Intercept)          0.619851413  0.660341733
+spatialBin          -0.000305559  0.005366144
+textureB            -0.026024294  0.028988537
+textureC            -0.011785124  0.042839106
+spatialBin:textureB -0.004574610  0.003728839
+spatialBin:textureC -0.008737832 -0.000557979
