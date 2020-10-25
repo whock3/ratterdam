@@ -24,7 +24,22 @@ import ratterdam_DataFiltering as Filt
 import utility_fx as util
 
 
-def directionFilter(pos):#, spikes):
+def directionFilter(pos):
+    """
+    Returns position filtered by which direction the rat was facing
+
+    """
+    directions = np.diff(pos[:, 1:3], axis=0)
+    allo = np.arctan2(directions[:, 1], directions[:, 0])
+    posN = pos[:-1][np.logical_and((np.pi/4)<=allo, allo<(3/4*np.pi))]
+    posE = pos[:-1][np.logical_and((-np.pi/4)<=allo, allo<(np.pi/4))]
+    posS = pos[:-1][np.logical_and((-3/4*np.pi)<=allo, allo<(-1/4*np.pi))]
+    posW = pos[:-1][np.logical_or((3/4*np.pi)<=allo, allo<(-3/4*np.pi))]
+    
+    return [posN, posE, posS, posW] 
+
+
+def directionFilterS(pos, spikes):
     """
     Returns position and spikes filtered by which direction the rat was facing
 
@@ -36,23 +51,87 @@ def directionFilter(pos):#, spikes):
     posS = pos[:-1][np.logical_and((-3/4*np.pi)<=allo, allo<(-1/4*np.pi))]
     posW = pos[:-1][np.logical_or((3/4*np.pi)<=allo, allo<(-3/4*np.pi))]
     
-    #[spikesN, spikesE, spikesS, spikesW] = [[] for _ in range(4)]
-    #for spike in spikes:
-    #    if spike[0] in posN[:,0]:
-    #        spikesN.append(spike)
-    #    elif spike[0] in posE[:,0]:
-    #        spikesE.append(spike)
-    #    elif spike[0] in posS[:,0]:
-    #        spikesS.append(spike)
-    #    elif spike[0] in posW[:,0]:
-    #        spikesW.append(spike)
-    #[spikesN, spikesE, spikesS, spikesW] = [np.array(i) for i in [spikesN, spikesE, spikesS, spikesW]]
-    return [posN, posE, posS, posW] #, [spikesN, spikesE, spikesS, spikesW]
+    #North
+    filtTs = Filt.unitVelocityFilter(pos[:,0], posN, spikes[:,0])
+    spikexy = util.getPosFromTs(filtTs,pos)
+    spikesN = np.column_stack((filtTs,spikexy))
+    #East
+    filtTs = Filt.unitVelocityFilter(pos[:,0], posE, spikes[:,0])
+    spikexy = util.getPosFromTs(filtTs,pos)
+    spikesE = np.column_stack((filtTs,spikexy))
+    #South
+    filtTs = Filt.unitVelocityFilter(pos[:,0], posS, spikes[:,0])
+    spikexy = util.getPosFromTs(filtTs,pos)
+    spikesS = np.column_stack((filtTs,spikexy))
+    #West
+    filtTs = Filt.unitVelocityFilter(pos[:,0], posW, spikes[:,0])
+    spikexy = util.getPosFromTs(filtTs,pos)
+    spikesW = np.column_stack((filtTs,spikexy))    
+    return [posN, posE, posS, posW], [spikesN, spikesE, spikesS, spikesW]
+
+
+def dirFiltWindow(pos, spikes):
+    """
+    Returns position and spikes filtered by which direction the rat was facing
+    Direction based on average point in small windows
+    """
+    winsz = 10
+    directions = np.diff(pos[:, 1:3], axis=0)
+    dirx = [np.mean(directions[0+i:winsz+i, 0]) for i in range(len(directions))]
+    diry = [np.mean(directions[0+i:winsz+i, 1]) for i in range(len(directions))]
+    allo = np.arctan2(diry, dirx)
+    posN = pos[:-1][np.logical_and((np.pi/4)<=allo, allo<(3/4*np.pi))]
+    posE = pos[:-1][np.logical_and((-np.pi/4)<=allo, allo<(np.pi/4))]
+    posS = pos[:-1][np.logical_and((-3/4*np.pi)<=allo, allo<(-1/4*np.pi))]
+    posW = pos[:-1][np.logical_or((3/4*np.pi)<=allo, allo<(-3/4*np.pi))]
+    
+    #North
+    filtTs = Filt.unitVelocityFilter(pos[:,0], posN, spikes[:,0])
+    spikexy = util.getPosFromTs(filtTs,pos)
+    spikesN = np.column_stack((filtTs,spikexy))
+    #East
+    filtTs = Filt.unitVelocityFilter(pos[:,0], posE, spikes[:,0])
+    spikexy = util.getPosFromTs(filtTs,pos)
+    spikesE = np.column_stack((filtTs,spikexy))
+    #South
+    filtTs = Filt.unitVelocityFilter(pos[:,0], posS, spikes[:,0])
+    spikexy = util.getPosFromTs(filtTs,pos)
+    spikesS = np.column_stack((filtTs,spikexy))
+    #West
+    filtTs = Filt.unitVelocityFilter(pos[:,0], posW, spikes[:,0])
+    spikexy = util.getPosFromTs(filtTs,pos)
+    spikesW = np.column_stack((filtTs,spikexy))    
+    return [posN, posE, posS, posW], [spikesN, spikesE, spikesS, spikesW]
+
+
+def graphDirRatemaps(unit, suptitle):
+    """
+    Graphs ratemaps filtered by direction
+    """
+    #posDir, spikesDir = directionFilterS(unit.position, unit.spikes)
+    posDir, spikesDir = dirFiltWindow(unit.position, unit.spikes)
+    ns = []
+    for i in range(len(posDir)):
+        ns.append(util.makeRM(spikesDir[i], posDir[i]))
+            
+    fig, axs = plt.subplots(2,2,figsize=(8,6))
+    vmax = np.nanpercentile(ns, 95)
+    titles = ["North facing", "East facing", "South facing", "West facing"]
+    axs = axs.flatten()
+    for i in range(len(posDir)):
+        axs[i].set_title(titles[i])
+        axs[i].set_xlabel("x coordinates (cm)")
+        axs[i].set_ylabel("y coordinates (cm)")
+        im = axs[i].imshow(ns[i], cmap="jet", origin="lower", vmin=0, vmax=vmax)
+    fig.suptitle(suptitle, y=1.08)
+    cb = fig.colorbar(im)
+    cb.set_label("Rate (Hz)")
+    fig.tight_layout()
 
 
 def graphDirections(position, suptitle):
     """
-    Graphs rate maps (with no firing rate) and bar graphs of direction confounds
+    Graphs occupancy heat maps and bar graphs of direction confounds
     """
     pos = directionFilter(position)
     rbins, cbins = Def.wholeAlleyBins
@@ -88,7 +167,7 @@ def graphDirections(position, suptitle):
 
 def graphDirAndOcc(pos, alleyInterBounds, title):
     """
-    Makes 10 graphs: 4 rate maps (with no firing rate) of occupancy divided by direction
+    Makes 10 graphs: 4 heatmaps of occupancy divided by direction
                     4 bar graphs of points in each alley/intersection divided by direction
                     2 bar graphs comparing north vs south and east vs west
     """
@@ -388,7 +467,8 @@ def graphDirTime(pos, alleyInterBounds, title=""):
     """
     Graphs direction over time (2D histograms and line graphs)
     """
-    posDir = directionFilter(pos)
+    #posDir = directionFilter(pos)
+    posDir, _ = dirFiltWindow(pos, np.empty((0,3)))
     hists, axLimits = directionTime(pos, posDir, alleyInterBounds)
     xlabels = np.round(np.linspace(pos[0,0]/1e6, pos[-1,0]/1e6, 8), 0).astype(int)
     fig1 = plt.figure(figsize=(12,18))
