@@ -36,25 +36,25 @@ def loadRepeatingUnit(df, clustName, smoothing=2, vthresh=3):
     use sessionEpochInfo.txt, specific for open Ratterdam exp
     to get session ts and clip spikes/pos"""
     
-    with open(df+"sessionEpochInfo.txt","r") as f:
-        lines = f.readlines()
-    start, end = int(lines[0].split(',')[0]), int(lines[0].split(',')[1])
+    #with open(df+"sessionEpochInfo.txt","r") as f:
+    #    lines = f.readlines()
+    #start, end = int(lines[0].split(',')[0]), int(lines[0].split(',')[1])
     pos = util.read_pos(df)
     ts = np.asarray(sorted(list(pos.keys())))
     posx, posy = Parse.adjustPosCamera(df, pos, ts)
     position = np.column_stack((ts, posx, posy))
-    position = position[(position[:,0]>=start) & (position[:,0]<=end)]
+    #position = position[(position[:,0]>=start) & (position[:,0]<=end)]
     position = position[np.logical_or(position[:,1]>0, position[:,2]>0)]
     position = Filt.velocity_filtering(position, vthresh)
     clust = np.asarray(util.read_clust(df+clustName))
     clust = Filt.unitVelocityFilter(ts, position, clust)
-    clust = clust[(clust >= start) & (clust <= end)]
+    #clust = clust[(clust >= start) & (clust <= end)]
     spikexy = util.getPosFromTs(clust,position)
     spikes = np.column_stack((clust,spikexy))
     
 
     unit = Unit(spikes,position, clustName, smoothing)
-    unit = Filt.filterFields(unit)
+    #unit = Filt.filterFields(unit)
     if smoothing:
         unit.smoothFieldsFx()
     
@@ -117,7 +117,7 @@ class Unit():
         self.fields = []
         self.visits = []
         for i,pf in enumerate(self.repUnit.PF[:]):
-            border = placeFieldBorders.reorderBorder(pf.perimeter)
+            border = placeFieldBorders.reorderBorder(pf.perimeter, i)
             self.perimeters.append(border)
             #border = np.append(border, border[0]) # add the first point to close the contour
             contour = path.Path(border)
