@@ -108,25 +108,47 @@ def graphDirRatemaps(unit, suptitle):
     """
     Graphs ratemaps filtered by direction
     """
-    #posDir, spikesDir = directionFilterS(unit.position, unit.spikes)
-    posDir, spikesDir = dirFiltWindow(unit.position, unit.spikes)
+    posDir, spikesDir = directionFilterS(unit.position, unit.spikes)
+    #posDir, spikesDir = dirFiltWindow(unit.position, unit.spikes)
     ns = []
     for i in range(len(posDir)):
         ns.append(util.makeRM(spikesDir[i], posDir[i]))
             
     fig, axs = plt.subplots(2,2,figsize=(8,6))
-    vmax = np.nanpercentile(ns, 95)
-    titles = ["North facing", "East facing", "South facing", "West facing"]
-    axs = axs.flatten()
-    for i in range(len(posDir)):
-        axs[i].set_title(titles[i])
-        axs[i].set_xlabel("x coordinates (cm)")
-        axs[i].set_ylabel("y coordinates (cm)")
-        im = axs[i].imshow(ns[i], cmap="jet", origin="lower", vmin=0, vmax=vmax)
-    fig.suptitle(suptitle, y=1.08)
-    cb = fig.colorbar(im)
-    cb.set_label("Rate (Hz)")
-    fig.tight_layout()
+    vmax = np.nanpercentile(ns, 98)
+    if vmax > 1:
+        titles = ["North facing", "East facing", "South facing", "West facing"]
+        axs = axs.flatten()
+        for i in range(len(posDir)):
+            axs[i].set_title(titles[i])
+            axs[i].set_xlabel("x coordinates (cm)")
+            axs[i].set_ylabel("y coordinates (cm)")
+            im = axs[i].imshow(ns[i], cmap="jet", origin="lower", vmin=0, vmax=vmax)
+        fig.suptitle(suptitle+f"\nCutoff = 98th percentile, {round(vmax,1)} Hz", y=1.08)
+        cb = fig.colorbar(im)
+        cb.set_label("Rate (Hz)")
+        fig.tight_layout()
+    return fig, vmax
+    
+
+def bulkGraphDirRatemaps(units, df, ratDayTetrode, timestamp):
+    """
+    Makes multiple graphs using graphDirRatemaps
+    df = path to the tetrode folder
+    """
+    qualities = util.cellQuality(df)
+    
+    for i in range(len(units)):
+        if not qualities:
+            quality = "None"
+        else:
+            quality = qualities[str(i+1)]
+        fig, vmax = graphDirRatemaps(units[i], f"{ratDayTetrode} 1.{i+1}\nvthresh = 3 cm/s  Cell quality = {quality}")
+        if vmax > 1:
+            fig.savefig("C:/Users/Ruo-Yah Lai/Desktop/My folder/College/Junior/K lab research/Graphs/"
+                    + timestamp + " - " + f"{ratDayTetrode} 1.{i+1}" + ".png",
+                    bbox_inches="tight")
+        plt.close()
 
 
 def graphDirections(position, suptitle):
