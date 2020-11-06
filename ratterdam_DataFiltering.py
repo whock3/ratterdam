@@ -135,6 +135,6 @@ def filterFields(unit):
     perims = []
     for i in range(len(unit.perimeters)):
         if filterField(unit, i):
-            perims.append(reorderBorder(unit.repUnit.PF[i].perimeter, i))
+            perims.append(unit.perimeters[i])
     unit.perimeters = perims
     return unit

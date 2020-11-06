@@ -28,7 +28,8 @@ import scipy
 import ratterdam_DataFiltering as Filt
 
 
-def loadRepeatingUnit(df, clustName, smoothing=2):
+def loadRepeatingUnit(df, clustName, smoothing=2, vthresh=Def.velocity_filter_thresh):
+
     """take a path to a data dir
     load spikes and position into two np arrays
     spikes is (n,1) and pos is typical (3,n) cols of ts,x,y
@@ -45,7 +46,7 @@ def loadRepeatingUnit(df, clustName, smoothing=2):
     position = np.column_stack((ts, posx, posy))
     position = position[(position[:,0]>=start) & (position[:,0]<=end)]
     position = position[np.logical_or(position[:,1]>0, position[:,2]>0)]
-    position = Filt.velocity_filtering(position, Def.velocity_filter_thresh)
+    position = Filt.velocity_filtering(position, vthresh)
     clust = np.asarray(util.read_clust(df+clustName))
     clust = Filt.unitVelocityFilter(ts, position, clust)
     clust = clust[(clust >= start) & (clust <= end)]
