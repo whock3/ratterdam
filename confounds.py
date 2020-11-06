@@ -22,6 +22,7 @@ import ratterdam_Defaults as Def
 from ratterdam_ParseBehavior import adjustPosCamera
 import ratterdam_DataFiltering as Filt
 import utility_fx as util
+from RDP4_class import RDP4
 
 
 def directionFilter(pos):
@@ -104,29 +105,80 @@ def dirFiltWindow(pos, spikes):
     return [posN, posE, posS, posW], [spikesN, spikesE, spikesS, spikesW]
 
 
-def graphDirRatemaps(unit, suptitle):
+def dirFiltRDP(pos, spikes, epsilon=Def.ptsCm):
+    """
+    Returns position and spikes filtered by which direction the rat was facing
+    Trajectory is simplified with RDP and the direction of filtered out points
+    is based on the closest remaining points
+    """
+    posRDP = RDP4(pos, epsilon).ResultList
+    filtTs = Filt.unitVelocityFilter(pos[:,0], posRDP, spikes[:,0])
+    #spikesRDP = np.column_stack((filtTs, util.getPosFromTs(filtTs, pos)))
+    
+    directions = np.diff(posRDP[:, 1:3], axis=0)
+    allo = np.arctan2(directions[:, 1], directions[:, 0])
+    idxRDP = np.arange(len(pos))[np.isin(pos[:,0], posRDP[:,0])] #indices of pts kept after RDP
+    idxFilt = np.arange(len(pos))[~np.isin(pos[:,0], posRDP[:,0])] #indices of pts filtered out with RDP
+    idxSmaller = [idxRDP[bisect_left(idxRDP, i)-1] for i in idxFilt] #largest index in idxRDP that is smaller than each index in idxFilt
+    allIdx = sorted(list(idxRDP) + list(idxSmaller)) 
+    allAllo = np.array([allo[np.where(idxRDP == i)[0]][0] for i in allIdx[:-1]])
+    
+    posN = pos[:-1][np.logical_and((np.pi/4)<=allAllo, allAllo<(3/4*np.pi)),:]
+    posE = pos[:-1][np.logical_and((-np.pi/4)<=allAllo, allAllo<(np.pi/4))]
+    posS = pos[:-1][np.logical_and((-3/4*np.pi)<=allAllo, allAllo<(-1/4*np.pi))]
+    posW = pos[:-1][np.logical_or((3/4*np.pi)<=allAllo, allAllo<(-3/4*np.pi))]
+    
+    #North
+    filtTs = Filt.unitVelocityFilter(pos[:,0], posN, spikes[:,0])
+    spikexy = util.getPosFromTs(filtTs,pos)
+    spikesN = np.column_stack((filtTs,spikexy))
+    #East
+    filtTs = Filt.unitVelocityFilter(pos[:,0], posE, spikes[:,0])
+    spikexy = util.getPosFromTs(filtTs,pos)
+    spikesE = np.column_stack((filtTs,spikexy))
+    #South
+    filtTs = Filt.unitVelocityFilter(pos[:,0], posS, spikes[:,0])
+    spikexy = util.getPosFromTs(filtTs,pos)
+    spikesS = np.column_stack((filtTs,spikexy))
+    #West
+    filtTs = Filt.unitVelocityFilter(pos[:,0], posW, spikes[:,0])
+    spikexy = util.getPosFromTs(filtTs,pos)
+    spikesW = np.column_stack((filtTs,spikexy))    
+    return [posN, posE, posS, posW], [spikesN, spikesE, spikesS, spikesW]
+
+
+def graphDirRatemaps(unit, suptitle, epsilon=Def.ptsCm):
     """
     Graphs ratemaps filtered by direction
     """
-    posDir, spikesDir = directionFilterS(unit.position, unit.spikes)
+    #posDir, spikesDir = directionFilterS(unit.position, unit.spikes)
     #posDir, spikesDir = dirFiltWindow(unit.position, unit.spikes)
-    ns = []
+    posDir, spikesDir = dirFiltRDP(unit.position, unit.spikes, epsilon)
+    ns = [util.makeRM(unit.spikes, unit.position)]
     for i in range(len(posDir)):
         ns.append(util.makeRM(spikesDir[i], posDir[i]))
             
-    fig, axs = plt.subplots(2,2,figsize=(8,6))
+    fig = plt.figure(figsize=(8,9))
     vmax = np.nanpercentile(ns, 98)
     if vmax > 1:
         titles = ["North facing", "East facing", "South facing", "West facing"]
-        axs = axs.flatten()
-        for i in range(len(posDir)):
-            axs[i].set_title(titles[i])
-            axs[i].set_xlabel("x coordinates (cm)")
-            axs[i].set_ylabel("y coordinates (cm)")
-            im = axs[i].imshow(ns[i], cmap="jet", origin="lower", vmin=0, vmax=vmax)
-        fig.suptitle(suptitle+f"\nCutoff = 98th percentile, {round(vmax,1)} Hz", y=1.08)
-        cb = fig.colorbar(im)
+        gs = GridSpec(3, 2, figure=fig)
+        ax = fig.add_subplot(gs[0,:])
+        ax.set_title("Overall")
+        ax.set_xlabel("x coordinates (cm)")
+        ax.set_ylabel("y coordinates (cm)")
+        im = ax.imshow(ns[0], cmap="jet", origin="lower", vmin=0, vmax=vmax)
+        cb = fig.colorbar(im, ax=ax)
         cb.set_label("Rate (Hz)")
+        
+        for i in range(4):
+            ax = fig.add_subplot(gs[i//2+1,i%2])
+            ax.set_title(titles[i])
+            ax.set_xlabel("x coordinates (cm)")
+            ax.set_ylabel("y coordinates (cm)")
+            im = ax.imshow(ns[i+1], cmap="jet", origin="lower", vmin=0, vmax=vmax)
+        
+        fig.suptitle(suptitle+f"\nCutoff = 98th percentile, {round(vmax,1)} Hz", y=1.08)
         fig.tight_layout()
     return fig, vmax
     
@@ -148,7 +200,7 @@ def bulkGraphDirRatemaps(units, df, ratDayTetrode, timestamp):
             fig.savefig("C:/Users/Ruo-Yah Lai/Desktop/My folder/College/Junior/K lab research/Graphs/"
                     + timestamp + " - " + f"{ratDayTetrode} 1.{i+1}" + ".png",
                     bbox_inches="tight")
-        plt.close()
+        fig.close()
 
 
 def graphDirections(position, suptitle):
