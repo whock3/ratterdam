@@ -29,6 +29,7 @@ import ratterdam_DataFiltering as Filt
 
 
 def loadRepeatingUnit(df, clustName, smoothing=2, vthresh=Def.velocity_filter_thresh):
+
     """take a path to a data dir
     load spikes and position into two np arrays
     spikes is (n,1) and pos is typical (3,n) cols of ts,x,y
