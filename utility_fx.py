@@ -583,9 +583,9 @@ def genTimestamp(form='l'):
     """
     d = datetime.datetime.now()
     if form == 's':
-        return f"{d.year}{d.month}{d.day}"
+        return f"{d.year}{d.month:02d}{d.day:02d}"
     elif form =='l':
-        return f"{d.year}{d.month}{d.day}-{d.hour}{d.minute}{d.second}"
+        return f"{d.year}{d.month:02d}{d.day:02d}-{d.hour:02d}{d.minute:02d}{d.second:02d}"
     else:
         return "Keyword Error"
     
@@ -694,3 +694,26 @@ def checkInclusion(unit,ncompsperalley):
         alphaCorr = None
         include = False
     return include, alphaCorr, validalleys
+
+def cellQuality(df):
+    """
+    Returns a dictionary of the cells on a tetrode and their quality
+    """
+    try:
+        with open(df+"ClNotes","r") as f:
+            lines = f.readlines()
+        qualities = {}
+        qualityLabels = {
+            "Poor": 1,
+            "Marginal": 2,
+            "Fair": 3,
+            "Pretty Good": 4,
+            "Good": 5}
+        for line in lines:
+            line = line.split(",")
+            if line[1] != '""':
+                print(line, line[1].replace('"', ''))
+                qualities[line[0]] = qualityLabels[line[1].replace('"', '')]
+        return qualities
+    except:
+        return {}
