@@ -29,9 +29,9 @@ glmer_cell <- function(cellID, df){
 
 glmer_alley <- function(cellID, alleyID, df){
   celldf <- subset(df, cell == cellID | alley == alleyID)
-  mod <- glmer(log(rate+1)+1 ~ ns(spatialBin,3)*texture
-               + (1|trial)
-               + (1|reward), 
+  mod <- glmer(rate+1 ~ ns(spatialBin,3)*texture+reward
+               + (1|trial),
+               #+ (1|reward), 
                family=Gamma, 
                data = celldf, 
                control = glmerControl(optimizer='Nelder_Mead'),
@@ -39,4 +39,39 @@ glmer_alley <- function(cellID, alleyID, df){
                )
   
   return(mod)
+}
+
+lmer_alley_int <- function(mydf){
+  mod <- lmer(rate ~ ns(spatialBin,3)*texture+reward
+               + (1|trial),
+               data = mydf
+  )
+  
+  return(mod)
+}
+
+lmer_alley_main <- function(mydf){
+  mod <- lmer(rate ~ ns(spatialBin,3)+texture+reward
+              + (1|trial),
+              #+ (1|reward),
+              data = mydf
+  )
+  
+  return(mod)
+}
+
+lmer_alley_none <- function(mydf){
+  mod <- lmer(rate ~ ns(spatialBin,3)+reward
+              + (1|trial),
+              #+ (1|reward),
+              data = mydf
+  )
+  
+  return(mod)
+}
+
+predFun <- function(fittedmodel, df){
+  fit <- exp(predict(fittedmodel, newdata=df, re.form = NA))
+  return(fit)
+  
 }
