@@ -8,7 +8,7 @@ from matplotlib import path
 import numpy as np
 from RateMap import makeRM
 from collections import namedtuple
-from newAlleyBounds import alleyInterBounds, alleyInterType
+from newAlleyBounds import R781, R808, R859, alleyInterType
 import csv
 from string import ascii_uppercase
 
@@ -43,18 +43,19 @@ def PolyArea(x,y):
     return 0.5*np.abs(np.dot(x,np.roll(y,1))-np.dot(y,np.roll(x,1)))
 
 
-def repeatingPF(perims, spikes, pos):
+def repeatingPF(perims, spikes, pos, rat):
     """
     perims: subfields' perimeters
+    rat: named tuple R781, R808, or R859 from newAlleyBounds
     """
     subfields = [[] for _ in range(len(perims))]
     overlaps = [[] for _ in range(len(perims))]
     allSubfields = np.empty(0)
-    threshold = 0.7
+    threshold = 0.6
     for i,perim in enumerate(perims):
         fieldSize = PolyArea(perim[:,0], perim[:,1])
         for j in range(17):
-            alley = alleyInterBounds[str(j)]
+            alley = rat.alleyInterBounds[str(j)]
             aRect = Rectangle(alley[0][0], alley[1][0], alley[0][1], alley[1][1])
             alleyPerim = np.array([[aRect.xmin, aRect.ymin], [aRect.xmax, aRect.ymin],
                                    [aRect.xmax, aRect.ymax], [aRect.xmin, aRect.ymax]])
@@ -64,7 +65,7 @@ def repeatingPF(perims, spikes, pos):
                 subfields[i].append(alleyInterType[str(j)][1])
                 overlaps[i].append(j)
         for j in ascii_uppercase[:12]:
-            intersection = alleyInterBounds[j]
+            intersection = rat.alleyInterBounds[j]
             iRect = Rectangle(intersection[0][0], intersection[1][0], 
                               intersection[0][1], intersection[1][1])
             iPerim = np.array([[iRect.xmin, iRect.ymin], [iRect.xmax, iRect.ymin],
@@ -79,7 +80,7 @@ def repeatingPF(perims, spikes, pos):
         if len(set(subfields[i])) > 1: #if the subfield is in multiple location types
             masses = np.empty(0) #mass in each location
             for k, j in enumerate(overlaps[i]):
-                alley = alleyInterBounds[str(j)]
+                alley = rat.alleyInterBounds[str(j)]
                 aRect = Rectangle(alley[0][0], alley[1][0], alley[0][1], alley[1][1])
                 alleyPerim = np.array([[aRect.xmin, aRect.ymin], [aRect.xmax, aRect.ymin],
                                        [aRect.xmax, aRect.ymax], [aRect.xmin, aRect.ymax]])
@@ -90,11 +91,11 @@ def repeatingPF(perims, spikes, pos):
             print(horiz,vert,intxn)
         
             subfields[i] = []
-            if horiz > 0.25:
+            if horiz > 0.2:
                 subfields[i].append("horizontal")
-            if vert > 0.25:
+            if vert > 0.2:
                 subfields[i].append("vertical")
-            if intxn > 0.25:
+            if intxn > 0.2:
                 subfields[i].append("intersection")
         
         for j in subfields[i]:
@@ -102,18 +103,22 @@ def repeatingPF(perims, spikes, pos):
     
     repeat = False
     PFtype = ""
+    a = 0
     if len(np.where(allSubfields == "horizontal")[0]) > 1:
         repeat = True
         PFtype = PFtype + "horizontal"
+        a += 1
     if len(np.where(allSubfields == "vertical")[0]) > 1:
         repeat = True
         PFtype = PFtype + "vertical"
+        a += 1
     if len(np.where(allSubfields == "intersection")[0]) > 1:
         repeat = True
         PFtype = PFtype + "intersection"
+        a += 1
     
     repeatType = ""
-    if len(set(allSubfields)) < len(allSubfields)-1: #more than 1 type of location is repeated
+    if a > 1: #more than 1 type of location is repeated
         repeatType = "multiple"
         multLoc = [i for i in subfields if len(i)>1]
         for i,subfield1 in enumerate(multLoc):
