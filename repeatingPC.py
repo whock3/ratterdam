@@ -7,7 +7,7 @@ Created on Sat Aug  1 19:31:38 2020
 from matplotlib import path
 import numpy as np
 from RateMap import makeRM
-from collections import namedtuple
+from collections import namedtuple, Counter
 from newAlleyBounds import R781, R808, R859, alleyInterType
 import csv
 from string import ascii_uppercase
@@ -43,16 +43,15 @@ def PolyArea(x,y):
     return 0.5*np.abs(np.dot(x,np.roll(y,1))-np.dot(y,np.roll(x,1)))
 
 
-def repeatingPF(perims, spikes, pos, rat):
+def repeatingPF(unit, rat):
     """
-    perims: subfields' perimeters
     rat: named tuple R781, R808, or R859 from newAlleyBounds
     """
-    subfields = [[] for _ in range(len(perims))]
-    overlaps = [[] for _ in range(len(perims))]
-    allSubfields = np.empty(0)
+    subfields = [[] for _ in range(len(unit.perimeters))]
+    overlaps = [[] for _ in range(len(unit.perimeters))]
+    subfieldsAbbr = []
     threshold = 0.6
-    for i,perim in enumerate(perims):
+    for i,perim in enumerate(unit.perimeters):
         fieldSize = PolyArea(perim[:,0], perim[:,1])
         for j in range(17):
             alley = rat.alleyInterBounds[str(j)]
@@ -77,81 +76,98 @@ def repeatingPF(perims, spikes, pos, rat):
                 overlaps[i].append(j)
         
         print(subfields[i])
-        if len(set(subfields[i])) > 1: #if the subfield is in multiple location types
+        abbr = {"horizontal": "H", "vertical": "V", "intersection": "I"}
+        if len(set(subfields[i])) == 1: #if the subfield is in one location type
+            subfieldsAbbr.append(abbr[subfields[i][0]])
+        elif len(set(subfields[i])) > 1: #if the subfield is in multiple location types
             masses = np.empty(0) #mass in each location
             for k, j in enumerate(overlaps[i]):
                 alley = rat.alleyInterBounds[str(j)]
                 aRect = Rectangle(alley[0][0], alley[1][0], alley[0][1], alley[1][1])
                 alleyPerim = np.array([[aRect.xmin, aRect.ymin], [aRect.xmax, aRect.ymin],
                                        [aRect.xmax, aRect.ymax], [aRect.xmin, aRect.ymax]])
-                masses = np.hstack((masses, mass(perim, alleyPerim, spikes, pos)))
+                masses = np.hstack((masses, mass(perim, alleyPerim, unit.spikes, unit.position)))
             horiz = np.sum(masses[np.where(np.array(subfields[i]) == "horizontal")])
             vert = np.sum(masses[np.where(np.array(subfields[i]) == "vertical")])
             intxn = np.sum(masses[np.where(np.array(subfields[i]) == "intersection")])
             print(horiz,vert,intxn)
         
-            subfields[i] = []
+            #subfields[i] = []
+            subfieldsAbbr.append("")
             if horiz > 0.2:
-                subfields[i].append("horizontal")
+                #subfields[i].append("horizontal")
+                subfieldsAbbr[-1] += "H"
             if vert > 0.2:
-                subfields[i].append("vertical")
+                #subfields[i].append("vertical")
+                subfieldsAbbr[-1] += "V"
             if intxn > 0.2:
-                subfields[i].append("intersection")
+                #subfields[i].append("intersection")
+                subfieldsAbbr[-1] += "I"
         
-        for j in subfields[i]:
-            allSubfields = np.hstack((allSubfields, j))
+        #for j in subfields[i]:
+        #    allSubfields = np.hstack((allSubfields, j))
     
-    repeat = False
-    PFtype = ""
-    a = 0
-    if len(np.where(allSubfields == "horizontal")[0]) > 1:
-        repeat = True
-        PFtype = PFtype + "horizontal"
-        a += 1
-    if len(np.where(allSubfields == "vertical")[0]) > 1:
-        repeat = True
-        PFtype = PFtype + "vertical"
-        a += 1
-    if len(np.where(allSubfields == "intersection")[0]) > 1:
-        repeat = True
-        PFtype = PFtype + "intersection"
-        a += 1
-    
+    repeatTypeNumber = 0
     repeatType = ""
-    if a > 1: #more than 1 type of location is repeated
-        repeatType = "multiple"
-        multLoc = [i for i in subfields if len(i)>1]
-        for i,subfield1 in enumerate(multLoc):
-            for j,subfield2 in enumerate(multLoc):
-                if i == j:
-                    continue
-                if len(set(subfield1 + subfield2)) < len(subfield1 + subfield2)-1:
-                    repeatType = "complex"
-                    break
-            else:
-                continue
-            break
+    repeat = False
+    locCount = Counter(H=0, V=0, I=0, HV=0, HI=0, VI=0, HVI=0)
+    locCount.update(subfieldsAbbr)
+    for key, value in locCount.items():
+        if value > 1:
+            repeat = True
+            repeatTypeNumber += 1
+            if len(key) > 1:
+                repeatType = "complex"
+    if repeatTypeNumber > 1:
+        repeatType += "multiple"
+        
+    #repeat = False
+    #PFtype = ""
+    #a = 0
+    #if len(np.where(allSubfields == "horizontal")[0]) > 1:
+    #    repeat = True
+    #    PFtype = PFtype + "horizontal"
+    #    a += 1
+    #if len(np.where(allSubfields == "vertical")[0]) > 1:
+    #    repeat = True
+    #    PFtype = PFtype + "vertical"
+    #    a += 1
+    #if len(np.where(allSubfields == "intersection")[0]) > 1:
+    #    repeat = True
+    #    PFtype = PFtype + "intersection"
+    #    a += 1
     
-    print(allSubfields, subfields)
-    return repeat, PFtype, repeatType, overlaps
+    #repeatType = ""
+    #if a > 1: #more than 1 type of location is repeated
+    #    repeatType = "multiple"
+    #    multLoc = [i for i in subfields if len(i)>1]
+    #    for i,subfield1 in enumerate(multLoc):
+    #        for j,subfield2 in enumerate(multLoc):
+    #            if i == j:
+    #                continue
+    #            if len(set(subfield1 + subfield2)) < len(subfield1 + subfield2)-1:
+    #                repeatType = "complex"
+    #                break
+    #        else:
+    #            continue
+    #        break
+    
+    print(subfields)
+    return repeat, locCount, repeatType, overlaps
 
 
 #units from UnitClass2
-def repeatingPC(units, pos, title, unitNames, rat="", day="", tetrode=""):
-    repeats = np.empty(0, dtype=bool)
-    PFtypes = np.empty(0, dtype=str)
-    repeatTypes = np.empty(0, dtype=str)
-    for unit in units:
-        repeat, PFtype, repeatType, _ = repeatingPF(unit.perimeters, unit.spikes, pos)
-        repeats = np.hstack((repeats,repeat))
-        PFtypes = np.hstack((PFtypes, PFtype))
-        repeatTypes = np.hstack((repeatTypes, repeatType))
-    rows = len(unitNames)
+def repeatingPC(units, title, unitNames, rat):
+    """
+    rat: named tuple R781, R808, or R859 from newAlleyBounds
+    """
     with open(title+'.csv', "w", newline="") as csvfile:
         csvwriter = csv.writer(csvfile)
-        data = np.column_stack((np.full(rows,rat), np.full(rows,day), np.full(rows,tetrode), unitNames, repeats, PFtypes, repeatTypes))
-        csvwriter.writerow(["Rat number", "Day", "Tetrode number", "Unit", "Repetition?", "Repeated location", "Repeat type"])
-        csvwriter.writerows(data)
+        #data = np.column_stack((unitNames, repeats, subfieldsAbbrs, repeatTypes))
+        csvwriter.writerow(["Unit", "Repetition?", "H","V","I","HV","HI","VI","HVI", "Repeat type"])
+        for i,unit in enumerate(units):
+            repeat, c, repeatType, _ = repeatingPF(unit, rat)
+            csvwriter.writerow([unitNames[i], repeat, c["H"], c["V"], c["I"], c["HV"], c["HI"], c["VI"], c["HVI"], repeatType])
 
 
 def fieldLocation(unit, title):
