@@ -1,64 +1,36 @@
-## Thru 10/28/20 beofre SZ meeting. 
-
-#Params for whole analysis. Like number spatial bins,etc
-#nbin <-12 
-
-# cellID = 1
-# alleyID = 5
-# name <- unique(df[df$cell==cellID,]$name)
-# print(name)
-# celldf <- subset(df, cell == cellID | alley == alleyID)
-# mod <- glmer_alley(cellID, alleyID, df)
-# celldf$fit <- exp(predict(mod, newdata=celldf,re.form=NA))
-
-# dfA <- celldf[celldf$texture=='A',]
-# dfB <- celldf[celldf$texture=='B',]
-# dfC <- celldf[celldf$texture=='C',]
-# 
-# seA <- 1:nbin # this is not how to preallocate properly. but 'right' way didnt let me do vector math so idk
-# seB <- 1:nbin
-# seC <- 1:nbin
-# 
-# 
-# for (bin in seq(1,nbin)){
-#   subA <- dfA[dfA$spatialBin==bin-1,]
-#   subB <- dfB[dfB$spatialBin==bin-1,]
-#   subC <- dfC[dfC$spatialBin==bin-1,]
-#   
-#   seA[bin] <- sum((subA$rate-subA$fit)^2)/(nrow(subA)-2)
-#   seB[bin] <- sd(subB)/sqrt(length(subB))
-#   seC[bin] <- sd(subC)/sqrt(length(subC))
-# }
-# 
-# 
-# (g <- ggplot(NULL, aes(spatialBin, fit))+
-#       geom_line(data=dfA, col='red')+
-#       geom_line(data=dfB, col='blue')+
-#       geom_line(data=dfC, col='green')+
-#       geom_ribbon(data=dfA,aes(y = fit, ymin=fit-1.96*seA,
-#                       ymax=fit+1.96*seA),alpha=0.1,fill='red')+
-#       geom_ribbon(data=dfB,aes(y = fit, ymin=fit-1.96*seB,
-#                                ymax=fit+1.96*seB),alpha=0.1,fill='blue')+
-#       geom_ribbon(data=dfC,aes(y = fit, ymin=fit-1.96*seC,
-#                                ymax=fit+1.96*seC),alpha=0.1,fill='green')+
-#       ggtitle(sprintf("%s alley %s", name, alleyID ))
-# 
-# )
-# print(g)
-
-## 10/29/20
-
 # imports
 library(lme4)
 library(splines)
 library(ggplot2)
 library(lmtest)
+library(stringr)
+
 setwd("E:\\UserData\\Documents\\GitHub\\ratterdam\\")
 source("glmer_fx.R")
 
-# Choose where figs will go
-df <- read.csv("E:\\Ratterdam\\R_data\\R781BRD3.csv",header=TRUE)
-figbasepath <- "E:\\Ratterdam\\R_data\\results\\"
+# Read in data
+code <- "R886BRD2"
+database <- "E:\\Ratterdam\\R_data\\csv_vfilt2_p5stepsmooth_12bins\\"
+datapath <- sprintf("%s%s%s",database,code,".csv")
+df <- read.csv(datapath,header=TRUE)
+
+# Select output, create timestamp 
+figbasepath <- "E:\\Ratterdam\\R_data\\graphs\\"
+ts <- str_replace(Sys.time()," ","_")
+ts <- str_replace_all(ts, ":", "_")
+
+
+if(code=="R859BRD5"){
+  
+  df<-df[!df$alley==3,]
+  df<-df[!df$alley==5,]
+  df<-df[!df$alley==7,]
+}
+
+
+
+wdf <- data.frame(matrix(ncol=5))
+colnames(wdf) <- c("cellname", "alleyID", "low", "up", "fe")
 
 for(cellID in unique(df$cell)){
 
@@ -68,8 +40,13 @@ for(cellID in unique(df$cell)){
   celldf$rate <- log(celldf$rate+1)
   cellname <- unique(df[df$cell==cellID,]$name)
   alleys <- unique(celldf$alley)
+  nalleys <-length(alleys)
   
-  pdf(paste(figbasepath,"R781BRD3_",cellID,".pdf",sep=""),onefile=TRUE)
+  bonf <- 0.05/(9*nalleys) # 9 comparisons in alley (3 stim * 3 texture) * # alleys
+  cipct <- 1-bonf
+  z <- qnorm(cipct)
+  
+  pdf(paste(figbasepath,ts,"_",code,"_",cellID,".pdf",sep=""),onefile=TRUE)
   
   for(alleyID in alleys){
     
@@ -98,19 +75,20 @@ for(cellID in unique(df$cell)){
     celldf$fit <- predict(modi, newdata=celldf, re.form=NA)
     
     # for interaction model, Wald CI. txt A as default
-    ci <- confint(modi, method='Wald', level=0.995)
+    ci <- confint(modi, method='Wald', level=cipct)
     ci <- ci[-c(1,2),]
     fe <- fixef(modi)
     cidf <- data.frame("low"=ci[,1], "up"=ci[,2],"fe"=fe)
     cidf <- cidf[-c(1),]
     
     # do CI on model with B as default and concat 
-    cireord <- confint(modreord, method='Wald', level=0.995)
+    cireord <- confint(modreord, method='Wald', level=cipct)
     cireord <- cireord[-c(1,2),]
     fereord <- fixef(modreord)
     cireorddf <- data.frame("low"=cireord[,1], "up"=cireord[,2],"fe"=fereord)
-    ciall <- rbind(cidf, cireorddf[c("textureA", "ns(spatialBin, 3)1:textureC","ns(spatialBin, 3)2:textureC","ns(spatialBin, 3)3:textureC"),])
-    
+    ciall <- rbind(cidf, cireorddf[c("textureC", "ns(spatialBin, 3)1:textureC","ns(spatialBin, 3)2:textureC","ns(spatialBin, 3)3:textureC"),])
+    ndf <- data.frame(ciall,cellname,alleyID)
+    wdf <- rbind(wdf, ndf)
     
     # ggplot of wald CIs
     x = seq(1,nrow(ciall))
@@ -120,7 +98,7 @@ for(cellID in unique(df$cell)){
       scale_x_discrete(limits=row.names(ciall))+
       theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))+
       geom_hline(yintercept=0)+
-      ggtitle(sprintf("Cell %s Alley %s 99.5pct Wald CI",cellname, alleyID))
+      ggtitle(sprintf("Cell %s Alley %s %s Wald CI",cellname, alleyID, cipct))
     print(waldplot)
     
     # calc CI of fits. CI = 95%
@@ -128,9 +106,9 @@ for(cellID in unique(df$cell)){
     # then sqrt and mult by crit value to get CI of given pct 
     Designmat <- model.matrix(rate ~ ns(spatialBin, 3)*texture + reward, celldf)
     predvar <- diag(Designmat %*% vcov(modi) %*% t(Designmat))
-    celldf$fitCI <- sqrt(predvar)*2.58 #99.5
+    celldf$fitCI <- sqrt(predvar)*z
     
-    # ggplot of splines with 95% CI of fits
+    # ggplot of splines with CI of fits
     celldf <- celldf[celldf$reward=="0",]
     p <- ggplot(data=celldf, aes(x=spatialBin))+
       geom_line(aes(y=fit, color=texture,linetype=factor(reward)))+
@@ -143,7 +121,9 @@ for(cellID in unique(df$cell)){
 
 }
 
-
+# Write Wald CI data to csv
+dpath <- "E:\\Ratterdam\\R_data\\"
+write.csv(wdf,paste(dpath,ts,"_",code,"_wald.csv",sep=""),row.names=TRUE)
   
   
   
