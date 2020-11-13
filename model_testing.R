@@ -5,12 +5,15 @@ library(ggplot2)
 library(lmtest)
 library(stringr)
 
+
 setwd("E:\\UserData\\Documents\\GitHub\\ratterdam\\")
+source("cicheck.R")
 source("glmer_fx.R")
 
 # Read in data
 code <- "R886BRD2"
-database <- "E:\\Ratterdam\\R_data\\csv_vfilt2_p5stepsmooth_12bins\\"
+save <- FALSE # toggle to save multipage pdfs and wald csvs
+database <- "E:\\Ratterdam\\R_data\\csv_vfilt1_p5stepsmooth_12bins\\"
 datapath <- sprintf("%s%s%s",database,code,".csv")
 df <- read.csv(datapath,header=TRUE)
 
@@ -28,9 +31,13 @@ if(code=="R859BRD5"){
 }
 
 
-
+# set up dfs that will store data. first is wald info, second is ci overlap check outcome
+# for all cells/alleys (for wald and fitted curves)
 wdf <- data.frame(matrix(ncol=5))
 colnames(wdf) <- c("cellname", "alleyID", "low", "up", "fe")
+
+cicheckdf <- data.frame(matrix(ncol=4))
+colnames(cicheckdf) <- c("cell", "alley", "wald", "fit")
 
 for(cellID in unique(df$cell)){
 
@@ -46,7 +53,9 @@ for(cellID in unique(df$cell)){
   cipct <- 1-bonf
   z <- qnorm(cipct)
   
-  pdf(paste(figbasepath,ts,"_",code,"_",cellID,".pdf",sep=""),onefile=TRUE)
+  if(save==TRUE){
+  pdf(paste(figbasepath,ts,"_",code,"_",str_replace(cellname,"\\\\","-"),".pdf",sep=""),onefile=TRUE)
+  }
   
   for(alleyID in alleys){
     
@@ -99,7 +108,10 @@ for(cellID in unique(df$cell)){
       theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))+
       geom_hline(yintercept=0)+
       ggtitle(sprintf("Cell %s Alley %s %s Wald CI",cellname, alleyID, cipct))
+    
+    if(save==TRUE){
     print(waldplot)
+    }
     
     # calc CI of fits. CI = 95%
     # set up design matrix then multiply mat*var-cov mat * mat-1 to get var
@@ -108,22 +120,40 @@ for(cellID in unique(df$cell)){
     predvar <- diag(Designmat %*% vcov(modi) %*% t(Designmat))
     celldf$fitCI <- sqrt(predvar)*z
     
+    
+    # Check non-overlap between walds and 0, and fits and each other
+    fitoverlap <- checkAlleyNonoverlap(celldf, alleyID)
+    
+    waldoverlap <- checkWaldNonoverlap(ndf)
+    r <- data.frame("cell"=cellname, "alley"=alleyID,"wald"=waldoverlap,"fit"=fitoverlap)
+    cicheckdf <- rbind(cicheckdf, r)
+    
+    
     # ggplot of splines with CI of fits
     celldf <- celldf[celldf$reward=="0",]
     p <- ggplot(data=celldf, aes(x=spatialBin))+
       geom_line(aes(y=fit, color=texture,linetype=factor(reward)))+
       geom_ribbon(aes(y=fit, ymin=fit-fitCI, ymax=fit+fitCI, fill=texture), alpha=0.2)+
-      ggtitle(sprintf("Cell %s, Alley %s", cellname, alleyID))
+      ggtitle(sprintf("Cell %s, Alley %s", cellname, alleyID))+
+      scale_color_manual(values=c("red", "blue", "darkgreen"))+
+      scale_fill_manual(values=c("red", "blue", "darkgreen"))
+    
+    if(save==TRUE){
     print(p)
+    }
   }
   
+  if(save==TRUE){
   dev.off()
+  }
 
 }
-
-# Write Wald CI data to csv
+wdf <- wdf[-c(1),] # first row is nans bc how i init it. 
+if(save==TRUE){
+#Write Wald CI data to csv
 dpath <- "E:\\Ratterdam\\R_data\\"
 write.csv(wdf,paste(dpath,ts,"_",code,"_wald.csv",sep=""),row.names=TRUE)
-  
-  
+}
+
+
   
