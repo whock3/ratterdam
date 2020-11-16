@@ -71,20 +71,20 @@ def directionFilterS(pos, spikes):
     return [posN, posE, posS, posW], [spikesN, spikesE, spikesS, spikesW]
 
 
-def dirFiltWindow(pos, spikes):
+def dirFiltWindow(pos, spikes, stepsz, winsz=10):
     """
     Returns position and spikes filtered by which direction the rat was facing
     Direction based on average point in small windows
     """
-    winsz = 10
-    directions = np.diff(pos[:, 1:3], axis=0)
-    dirx = [np.mean(directions[0+i:winsz+i, 0]) for i in range(len(directions))]
-    diry = [np.mean(directions[0+i:winsz+i, 1]) for i in range(len(directions))]
+    avgx = np.array([np.mean(pos[0+i:winsz+i, 1]) for i in range(len(pos))])
+    avgy = np.array([np.mean(pos[0+i:winsz+i, 2]) for i in range(len(pos))])
+    dirx = avgx[stepsz:]-avgx[:-stepsz]
+    diry = avgy[stepsz:]-avgy[:-stepsz]
     allo = np.arctan2(diry, dirx)
-    posN = pos[:-1][np.logical_and((np.pi/4)<=allo, allo<(3/4*np.pi))]
-    posE = pos[:-1][np.logical_and((-np.pi/4)<=allo, allo<(np.pi/4))]
-    posS = pos[:-1][np.logical_and((-3/4*np.pi)<=allo, allo<(-1/4*np.pi))]
-    posW = pos[:-1][np.logical_or((3/4*np.pi)<=allo, allo<(-3/4*np.pi))]
+    posN = pos[:-stepsz][np.logical_and((np.pi/4)<=allo, allo<(3/4*np.pi))]
+    posE = pos[:-stepsz][np.logical_and((-np.pi/4)<=allo, allo<(np.pi/4))]
+    posS = pos[:-stepsz][np.logical_and((-3/4*np.pi)<=allo, allo<(-1/4*np.pi))]
+    posW = pos[:-stepsz][np.logical_or((3/4*np.pi)<=allo, allo<(-3/4*np.pi))]
     
     #North
     filtTs = Filt.unitVelocityFilter(pos[:,0], posN, spikes[:,0])
@@ -147,13 +147,13 @@ def dirFiltRDP(pos, spikes, epsilon=Def.ptsCm):
     return [posN, posE, posS, posW], [spikesN, spikesE, spikesS, spikesW]
 
 
-def graphDirRatemaps(unit, suptitle, epsilon=Def.ptsCm):
+def graphDirRatemaps(unit, suptitle, stepsz, winsz=10, epsilon=Def.ptsCm):
     """
     Graphs ratemaps filtered by direction
     """
     #posDir, spikesDir = directionFilterS(unit.position, unit.spikes)
-    #posDir, spikesDir = dirFiltWindow(unit.position, unit.spikes)
-    posDir, spikesDir = dirFiltRDP(unit.position, unit.spikes, epsilon)
+    posDir, spikesDir = dirFiltWindow(unit.position, unit.spikes, stepsz, winsz)
+    #posDir, spikesDir = dirFiltRDP(unit.position, unit.spikes, epsilon)
     ns = [util.makeRM(unit.spikes, unit.position)]
     for i in range(len(posDir)):
         ns.append(util.makeRM(spikesDir[i], posDir[i]))
