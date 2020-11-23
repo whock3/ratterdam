@@ -133,8 +133,11 @@ def filterField(unit, index, rateThresh=0.2, pctThresh=10):
     
 def filterFields(unit):
     perims = []
+    visits = []
     for i in range(len(unit.perimeters)):
         if filterField(unit, i):
             perims.append(unit.perimeters[i])
+            visits.append(unit.visits[i])
     unit.perimeters = perims
+    unit.visits = visits
     return unit

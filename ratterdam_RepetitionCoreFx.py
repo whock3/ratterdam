@@ -124,7 +124,18 @@ class Unit():
             contour = path.Path(border)
 
             PinC = self.position[contour.contains_points(self.position[:,1:])]
-            posVisits = getVisits(PinC[:,0])
+            
+            try:
+                posVisits = getVisits(PinC[:,0])
+            except:
+                points = np.asarray(list(zip(pf.perimeter[1]*binWidth+binWidth/2, pf.perimeter[0]*binWidth+binWidth/2)))
+                hull = ConvexHull(points)
+                vertices = np.append(hull.vertices, hull.vertices[0]) # add the first point to close the contour
+                self.perimeters[-1] = points[vertices]
+                contour = path.Path(points[vertices])
+                PinC = self.position[contour.contains_points(self.position[:,1:])]
+                posVisits = getVisits(PinC[:,0])
+            
             self.visits.append(posVisits)
             field_FR = []
             field_TS = [] # take middle ts 
@@ -135,7 +146,7 @@ class Unit():
                 field_TS.append(visit[0])
                 
             self.fields.append(np.column_stack((field_TS, field_FR)))
-                
+            
 def getVisits(data, maxgap=2*1e6):
     """
     """

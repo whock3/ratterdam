@@ -120,6 +120,14 @@ def repeatingPF(unit, rat):
                 repeatType = "complex"
     if repeatTypeNumber > 1:
         repeatType += "multiple"
+    
+    print(locCount)
+    PFtype = ""
+    for loc in locCount:
+        if locCount[loc] > 1:
+            PFtype = PFtype + loc + ", "
+    if len(PFtype) > 0:
+        PFtype = PFtype[:-2]
         
     #repeat = False
     #PFtype = ""
@@ -152,22 +160,27 @@ def repeatingPF(unit, rat):
     #            continue
     #        break
     
-    print(subfields)
-    return repeat, locCount, repeatType, overlaps
+    print(subfieldsAbbr)
+    return repeat, PFtype, repeatType, overlaps
 
 
 #units from UnitClass2
-def repeatingPC(units, title, unitNames, rat):
+def repeatingPC(units, title, filepath, unitNames, rat):
     """
+    units: list of units
     rat: named tuple R781, R808, or R859 from newAlleyBounds
+    
+    Prints whether there is repetition, location of repetition, and type of
+    repetition of each unit into a csv
     """
-    with open(title+'.csv', "w", newline="") as csvfile:
+    with open(filepath+title+'.csv', "w", newline="") as csvfile:
         csvwriter = csv.writer(csvfile)
         #data = np.column_stack((unitNames, repeats, subfieldsAbbrs, repeatTypes))
-        csvwriter.writerow(["Unit", "Repetition?", "H","V","I","HV","HI","VI","HVI", "Repeat type"])
+        csvwriter.writerow(["Unit", "Repetition?", "Repeated location", "Repeat type"])
         for i,unit in enumerate(units):
-            repeat, c, repeatType, _ = repeatingPF(unit, rat)
-            csvwriter.writerow([unitNames[i], repeat, c["H"], c["V"], c["I"], c["HV"], c["HI"], c["VI"], c["HVI"], repeatType])
+            repeat, PFtype, repeatType, _ = repeatingPF(unit, rat)
+            csvwriter.writerow([unitNames[i], repeat, PFtype, repeatType])
+            #csvwriter.writerow([unitNames[i], repeat, c["H"], c["V"], c["I"], c["HV"], c["HI"], c["VI"], c["HVI"], repeatType])
 
 
 def fieldLocation(unit, title):

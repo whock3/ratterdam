@@ -58,7 +58,7 @@ class Unit():
         field_FRs = []
         borders = []
         for i,pf in enumerate(self.repUnit.PF[:]):
-            border = reorderBorder(pf.perimeter)
+            border = reorderBorder(pf.perimeter, i)
             contour = path.Path(border)
             PinC = self.position[contour.contains_points(self.position[:,1:])]
             posVisits = getVisits(PinC[:,0])
