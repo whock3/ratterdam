@@ -88,9 +88,6 @@ class Unit():
         self.name = clustname
         self.spikes = s
         self.position = p
-        self.fields = []
-        self.visits = [] # nested list. each list is a subfield and values are themselves lists of points in visit
-        self.perimeters = [] # has had the convex alg run on it
         self.colors = cnames
         self.smoothing = smoothing
         self.repUnit = RateMapClass.RateMap(self) # a different unit class from the pf alg someone else wrote
@@ -117,6 +114,7 @@ class Unit():
     def findFields(self):
         self.fields = []
         self.visits = []
+        self.perimeters = []
         for i,pf in enumerate(self.repUnit.PF[:]):
             border = placeFieldBorders.reorderBorder(pf.perimeter, i)
             self.perimeters.append(border)

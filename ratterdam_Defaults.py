@@ -198,7 +198,7 @@ alleyBounds_PolygonTriEnds = {0:[(),(),(),(),(),()],}
 dataPathNub = "D:\\Ratterdam\\"
 figurePathNub = "C:\\Users\\whock\\Google Drive\\KnierimLab\\Ratterdam\\Figures\\"
 
-velocity_filter_thresh = 2#units are cm/s
+velocity_filter_thresh = 1#units are cm/s
 ptsCm_krieger= 4.85 # number of camera points equiv to a cm
 
 ptsCm_macaulay = 4.72
@@ -225,7 +225,7 @@ wholetrack_imshow_pct_cutoff = 95
 singlealley_imshow_pct_cutoff = 97
 
 # toggle as to whether to include rewarded trials when constructing the Core.Unit() data structure
-includeRewards = 2# flag to decide whether rewarded trials will be included in analysis. 0 - no rewards, 1 - only rewards, 2 - all trials
+includeRewards = 0# flag to decide whether rewarded trials will be included in analysis. 0 - no rewards, 1 - only rewards, 2 - all trials
 
 
 beltwayAlleys = [16,17,3,1,5,7,8,10,11]
