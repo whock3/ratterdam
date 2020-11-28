@@ -398,8 +398,8 @@ def plotPermutationResults(unit, bounds, stat, conditionName, globalCrossings, p
        
 if __name__ == '__main__':
     
-    rat = "R781"
-    expCode = "BRD3"
+    rat = "R886"
+    expCode = "BRD1"
     datafile = f"E:\\Ratterdam\\{rat}\\{rat}{expCode}\\"
     fpath = f"E:\\Ratterdam\{rat}\\permutation_tests\\{expCode}\\"
     stamp = util.genTimestamp()
