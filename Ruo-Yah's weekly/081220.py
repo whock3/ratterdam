@@ -67,7 +67,7 @@ def graphLive(pos, border=np.empty((0,2)), start=0):
     """
     Live plot of the rat running
     """
-    cm = np.array([1, 4.72, 4.72])
+    cm = np.array([1, 4.72, 4.72, 1])
     pos = pos/cm[None,:]
     border = border/4.72
     
@@ -88,7 +88,7 @@ def graphLive(pos, border=np.empty((0,2)), start=0):
             x = np.hstack((x, pos[i*150+j*30:i*150+j*30+30, 1]))
             y = np.hstack((y, pos[i*150+j*30:i*150+j*30+30, 2]))
             plt.scatter(x, y, s=2)
-            plt.title(pos[i*150+j*30+30,0])
+            plt.title(str(pos[i*150+j*30+30,0])+"\n"+str(pos[i*150+j*30+30,3]))
         
             plt.pause(0.3)
         

@@ -6,9 +6,11 @@ Created on Sat Aug  1 19:31:38 2020
 """
 from matplotlib import path
 import numpy as np
-from RateMap import makeRM
 from collections import namedtuple, Counter
 from newAlleyBounds import R781, R808, R859, alleyInterType
+import utility_fx as util
+from RateMap import makeRM
+import ratterdam_RepetitionCoreFx as RepCore
 import csv
 from string import ascii_uppercase
 
@@ -26,7 +28,7 @@ def mass(perim, alley, spikes, pos):
     """
     Finds the fraction of firing in an alley/intersection
     """
-    hist = makeRM(spikes, pos, smoothing_2d_sigma=0)
+    hist = makeRM(spikes, pos, smoothing_2d_sigma=0) #different from util.makeRM
     field = path.Path(perim)
     inField = field.contains_points(coordsBin)
     totalMass = np.nansum(hist.flatten()[inField])
@@ -75,7 +77,7 @@ def repeatingPF(unit, rat):
                 subfields[i].append(alleyInterType[j][0])
                 overlaps[i].append(j)
         
-        print(subfields[i])
+        #print(subfields[i])
         abbr = {"horizontal": "H", "vertical": "V", "intersection": "I"}
         if len(set(subfields[i])) == 1: #if the subfield is in one location type
             subfieldsAbbr.append(abbr[subfields[i][0]])
@@ -90,7 +92,7 @@ def repeatingPF(unit, rat):
             horiz = np.sum(masses[np.where(np.array(subfields[i]) == "horizontal")])
             vert = np.sum(masses[np.where(np.array(subfields[i]) == "vertical")])
             intxn = np.sum(masses[np.where(np.array(subfields[i]) == "intersection")])
-            print(horiz,vert,intxn)
+            #print(horiz,vert,intxn)
         
             #subfields[i] = []
             subfieldsAbbr.append("")
@@ -121,13 +123,6 @@ def repeatingPF(unit, rat):
     if repeatTypeNumber > 1:
         repeatType += "multiple"
     
-    print(locCount)
-    PFtype = ""
-    for loc in locCount:
-        if locCount[loc] > 1:
-            PFtype = PFtype + loc + ", "
-    if len(PFtype) > 0:
-        PFtype = PFtype[:-2]
         
     #repeat = False
     #PFtype = ""
@@ -160,8 +155,8 @@ def repeatingPF(unit, rat):
     #            continue
     #        break
     
-    print(subfieldsAbbr)
-    return repeat, PFtype, repeatType, overlaps
+    #print(subfieldsAbbr)
+    return repeat, locCount, repeatType, overlaps
 
 
 #units from UnitClass2
@@ -178,22 +173,60 @@ def repeatingPC(units, title, filepath, unitNames, rat):
         #data = np.column_stack((unitNames, repeats, subfieldsAbbrs, repeatTypes))
         csvwriter.writerow(["Unit", "Repetition?", "Repeated location", "Repeat type"])
         for i,unit in enumerate(units):
-            repeat, PFtype, repeatType, _ = repeatingPF(unit, rat)
+            repeat, locCount, repeatType, _ = repeatingPF(unit, rat)
+            PFtype = ""
+            for loc in locCount:
+                if locCount[loc] > 1:
+                    PFtype = PFtype + loc + ", "
+            if len(PFtype) > 0:
+                PFtype = PFtype[:-2]
             csvwriter.writerow([unitNames[i], repeat, PFtype, repeatType])
-            #csvwriter.writerow([unitNames[i], repeat, c["H"], c["V"], c["I"], c["HV"], c["HI"], c["VI"], c["HVI"], repeatType])
+            
+
+def repeatingPCAllLoc(units, title, filepath, unitNames, rat):
+    """
+    units: list of units
+    rat: named tuple R781, R808, or R859 from newAlleyBounds
+    
+    Prints whether there is repetition, lists all locations and location combinations
+    , and type of repetition of each unit into a csv
+    """
+    with open(filepath+title+'.csv', "w", newline="") as csvfile:
+        csvwriter = csv.writer(csvfile)
+        #data = np.column_stack((unitNames, repeats, subfieldsAbbrs, repeatTypes))
+        csvwriter.writerow(["Unit", "Repetition?", "H","V","I","HV","HI","VI","HVI", "Repeat type"])
+        for i,unit in enumerate(units):
+            repeat, c, repeatType, _ = repeatingPF(unit, rat)
+            csvwriter.writerow([unitNames[i], repeat, c["H"], c["V"], c["I"], c["HV"], c["HI"], c["VI"], c["HVI"], repeatType])
 
 
-def fieldLocation(unit, title):
+def fieldLocation(unit, title, rat, filepath):
     """
     Prints the alleys/intersections that each field occupies into a csv
     """
-    _,_,_,overlaps = repeatingPF(unit.perimeters,unit.spikes,unit.position)
-    with open(title, "w", newline="") as csvfile:
+    _,_,_,overlaps = repeatingPF(unit, rat)
+    with open(filepath+title, "w", newline="") as csvfile:
         csvwriter = csv.writer(csvfile)
         csvwriter.writerow(["Subfield", "Alleys/intersections"])
         for i,a in enumerate(overlaps):
             a = [str(x) for x in a]
             csvwriter.writerow([i,a])
+
+
+def bulkFieldLocation(file, title, timestamp, rat, df, df2, df3):
+    """
+    file: file name of the file with repetition tabulations
+    title: part of the title of the generated files (include rat and day)
+    rat: named tuple R781, R808, or R859 from newAlleyBounds
+    df: path to data
+    df2: path to repetition tabulations
+    df3: where to save the files
+    """
+    cells = util.readRepeatingCells(file, df2)
+    for cell in cells:
+        cellTitle = cell.replace("\\cl-maze", " ")
+        unit = RepCore.loadRepeatingUnit(df, cell)
+        fieldLocation(unit, f"{timestamp} - {title} {cellTitle} locations", rat, df3)
 
 
 Rectangle = namedtuple("Rectangle", "xmin ymin xmax ymax")

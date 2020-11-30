@@ -49,6 +49,7 @@ def loadRepeatingUnit2(df, clustName, smoothing=2, vthresh=Def.velocity_filter_t
     unit = Filt.filterFields(unit)
     if smoothing:
         unit.smoothFieldsFx()
+        
     unit.position = position
     return unit
 
@@ -105,12 +106,12 @@ def thetaSpeedNearField(unit, subfield):
     return postd
 
 
-def makeRM(spikes, pos, clip=99, smoothing_2d_sigma=2, bins = [50,50]):
+def makeRM(spikes, pos, rmax, cmax, smoothing_2d_sigma=2, bins = [50,50]):
     """
     For speed vs change in theta
     """
-    rmax = np.percentile(pos[:,2], clip)
-    cmax = max(abs(np.percentile(pos[:,1], 100-clip)), np.percentile(pos[:,1], clip))
+    #rmax = np.percentile(pos[:,2], clip)
+    #cmax = max(abs(np.percentile(pos[:,1], 100-clip)), np.percentile(pos[:,1], clip))
     rows = np.linspace(0, rmax, bins[0])
     cols = np.linspace(-cmax, cmax, bins[1])
     hs,xe,ye = np.histogram2d(spikes[:,2],spikes[:,1],bins=[rows, cols])
@@ -131,74 +132,74 @@ def graphRMSpeedTheta(unit, title, subfieldDim, clip=99, percentile=99, sigma=2)
     
     Graphs speed vs change in theta near subfields
     """
-    fig, axs = plt.subplots(subfieldDim[0], subfieldDim[1], figsize=(subfieldDim[1]*3,subfieldDim[0]*3))
-    ns = []
-    minmaxs = []
+    fig, axs = plt.subplots(subfieldDim[0], subfieldDim[1], figsize=(subfieldDim[1]*4,subfieldDim[0]*4))
+    thetas = []
+    speeds = []
+    postds = []
     for i in range(len(unit.perimeters)):
         postd = thetaSpeedNearField(unit, i)
-        spikets = Filt.unitVelocityFilter(unit.position[:,0], postd, unit.spikes[:,0])
-        spikexy = util.getPosFromTs(spikets,postd)
-        spikes = np.column_stack((spikets,spikexy))
-        n, minmax = makeRM(spikes, postd, clip, sigma)
-        ns.append(n)
-        minmaxs.append(minmax)
+        thetas = np.hstack((thetas, postd[:,1]))
+        speeds = np.hstack((speeds, postd[:,2]))
+        postds.append(postd)
+    rmax = np.percentile(speeds, clip)
+    cmax = max(abs(np.percentile(thetas, 100-clip)), np.percentile(thetas, clip))
     
-    vmax = np.nanpercentile(ns, percentile)
-    fig.suptitle(title + "\n" + f"Cutoff = {percentile}th percentile, {round(vmax,1)} Hz" + 
-                 f"\nClipped at {clip}th percentile of ∆θ/sec and ∆S/sec", y=1.08)
+    fig.suptitle(title + f"   vthresh = 3 cm/s\nClipped at {clip}th percentile of ∆θ/sec and ∆S/sec", y=1.05)
     axs = axs.flatten()
     for i in range(len(unit.perimeters)):
-        im = axs[i].imshow(ns[i], cmap="jet", origin="lower", vmin=0, vmax=vmax)#, extent=minmax)
+        spikets = Filt.unitVelocityFilter(unit.position[:,0], postds[i], unit.spikes[:,0])
+        spikexy = util.getPosFromTs(spikets,postds[i])
+        spikes = np.column_stack((spikets,spikexy))
+        n, minmax = makeRM(spikes, postds[i], rmax, cmax, sigma)
+        vmax = np.nanpercentile(n, percentile)
+        im = axs[i].imshow(n, cmap="jet", origin="lower", vmin=0, vmax=vmax)#, extent=minmax)
         axs[i].set_xlabel("∆θ/sec (deg/sec)")
         axs[i].set_ylabel("∆S/sec (cm/sec)")
         #ax.set_xlim(minmax[0], minmax[1])
         #ax.set_ylim(minmax[2], minmax[3])
         axs[i].set_xticks([0, 12.5, 25, 37.5, 50])
-        axs[i].set_xticklabels([-minmaxs[i][0], int(-minmaxs[i][0]/2), 0, int(minmaxs[i][0]/2), minmaxs[i][0]])
+        axs[i].set_xticklabels([-minmax[0], int(-minmax[0]/2), 0, int(minmax[0]/2), minmax[0]])
         axs[i].set_yticks([0, 12.5, 25, 37.5, 50])
-        axs[i].set_yticklabels([0, int(minmaxs[i][1]/4), int(minmaxs[i][1]/2), int(minmaxs[i][1]/4*3), minmaxs[i][1]])
-        axs[i].set_title(f"Subfield {i}")
-    cb = fig.colorbar(im)
-    cb.set_label("Rate (Hz)")
+        axs[i].set_yticklabels([0, int(minmax[1]/4), int(minmax[1]/2), int(minmax[1]/4*3), minmax[1]])
+        axs[i].set_title(f"Subfield {i}\nCutoff = {percentile}th %tile, {round(vmax,1)} Hz")
+        cb = fig.colorbar(im, ax=axs[i])
+        cb.set_label("Rate (Hz)")
     fig.tight_layout()
 
 
 def graphRM(unit, title="", percentile=98):
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(7.5,5))
     n = util.makeRM(unit.spikes, unit.position)
     vmax = np.nanpercentile(n, percentile)
     im = ax.imshow(n, cmap="jet", origin="lower", vmin=0, vmax=vmax)
     ax.set_xlabel("x coordinates (cm)")
     ax.set_ylabel("y coordinates (cm)")
-    colors = ["b","g","r","k","c","m","y","orange","b","g","r","k","c","m","y","orange"]
     for i in range(len(unit.perimeters)):
-        ax.plot(unit.perimeters[i][:,0]/Def.ptsCm, unit.perimeters[i][:,1]/Def.ptsCm, color=colors[i], 
-                label=f"Subfield {i}")
-    ax.legend()
-    ax.set_title(title+f"\nCutoff = {percentile}th percentile, {round(vmax,1)} Hz")
-    cb = fig.colorbar(im, ax=ax)
+        ax.plot(unit.perimeters[i][:,0]/Def.ptsCm, unit.perimeters[i][:,1]/Def.ptsCm, 
+                color=unit.colors[i], label=f"Subfield {i}")
+    ax.set_xlim(0, 170)
+    ax.legend(loc="lower right")
+    ax.set_title(title+f"\nvthresh = 3 cm/s\nCutoff = {percentile}th percentile, {round(vmax,1)} Hz")
+    cb = fig.colorbar(im)
     cb.set_label("Rate (Hz)")
     
     fig.tight_layout()
     
     
-def readRepeatingCells(file, df):
-    """
-    Returns tetrode\\cell for the cells with repeating fields according to 
-    the tabulations file
-    """
-    with open(df+file,"r") as f:
-        lines = f.readlines()
-        tabulations = [line.split(",") for line in lines]
-    tabulations = np.array(tabulations)
-    cells = tabulations[np.where(tabulations[:,1]=="True")[0], 0]
-    return cells
-
+def headDirOrientation(df):
+    with open(df+"cameraOrientationInfo.txt","r") as cam:
+         info = cam.readlines()
+    info = [i.rstrip() for i in info]
+    info = {info[0][0]:info[0][2:], info[1][0]:info[1][2:]}
+    if (info['x'] == 'None' and info['y'] == 'None') or (info['x'] != 'None' and info['y'] != 'None'):
+        return "cw"
+    elif (info['x'] == 'None' and info['y'] != 'None') or (info['x'] != 'None' and info['y'] == 'None'):
+        return "ccw"
 
 def bulkGraphs(file, title, timestamp, df, df2="W:/Ratterdam/R859/ratterdam_tabulations/", dfGraph="C:/Users/Ruo-Yah Lai/Desktop/My folder/College/Junior/K lab research/Graphs/Speed vs theta change/"):
     """
     file: file name of the file with repetition tabulations
-    title: part of the title of graphs
+    title: part of the title of graphs (include rat and day)
     df: path to data
     df2: path to repetition tabulations
     dfGraph: path to where to save the graphs
@@ -206,12 +207,12 @@ def bulkGraphs(file, title, timestamp, df, df2="W:/Ratterdam/R859/ratterdam_tabu
     Make speed vs change in head direction rate maps and regular rate maps
     """
     tooManyFields = []
-    cells = readRepeatingCells(file, df2)
+    cells = util.readRepeatingCells(file, df2)
     for cell in cells:
         cellTitle = cell.replace("\\cl-maze", " ")
         unit = loadRepeatingUnit2(df, cell)
         graphRM(unit, title+" "+cellTitle)
-        plt.savefig(dfGraph + timestamp + " - " + title + " " + cellTitle + ".png",
+        plt.savefig(dfGraph + f"{timestamp} - {title} {cellTitle}.png",
                     bbox_inches="tight")
         plt.close()
         if len(unit.perimeters) <= 2:
@@ -222,13 +223,15 @@ def bulkGraphs(file, title, timestamp, df, df2="W:/Ratterdam/R859/ratterdam_tabu
             subfieldDim = [2,3]
         elif 6 < len(unit.perimeters) <= 9:
             subfieldDim = [3,3]
-        elif 10 < len(unit.perimeters) <= 16:
+        elif 9 < len(unit.perimeters) <= 12:
+            subfieldDim = [3,4]
+        elif 12 < len(unit.perimeters) <= 16:
             subfieldDim = [4,4]
         else:
             tooManyFields.append([cell, len(unit.perimeters)])
             continue
-        graphRMSpeedTheta(unit, title+" "+cellTitle, subfieldDim, 98)
-        plt.savefig(dfGraph + timestamp + " - " + title + " " + cellTitle + ".png",
+        graphRMSpeedTheta(unit, f"{title} {cellTitle}\n+∆θ = {headDirOrientation(df)}", subfieldDim, 98)
+        plt.savefig(dfGraph + f"{timestamp} - {title} {cellTitle}.png",
                     bbox_inches="tight")
         plt.close()
     print(tooManyFields)
