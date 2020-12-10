@@ -7,18 +7,18 @@ library(stringr)
 
 
 setwd("E:\\UserData\\Documents\\GitHub\\ratterdam\\")
-source("cicheck.R")
-source("glmer_fx.R")
+source("E:\\UserData\\Documents\\GitHub\\ratterdam\\Beltway_R_Code\\cicheck.R")
+source("E:\\UserData\\Documents\\GitHub\\ratterdam\\Beltway_R_Code\\glmer_fx.R")
 
 # Read in data
 code <- "R886BRD2"
 save <- FALSE # toggle to save multipage pdfs and wald csvs
-database <- "E:\\Ratterdam\\R_data\\csv_vfilt1_p5stepsmooth_12bins\\"
-datapath <- sprintf("%s%s%s",database,code,".csv")
+database <- "E:\\Ratterdam\\R_data\\"
+datapath <- sprintf("%s%s%s",database,code,"_2vfilt_0.5stepsmooth_12bins_2R_3qual.csv")
 df <- read.csv(datapath,header=TRUE)
 
 # Select output, create timestamp 
-figbasepath <- "E:\\Ratterdam\\R_data\\graphs\\"
+figbasepath <- "E:\\Ratterdam\\R_data\\graphs\\201203_glmer_graphs\\"
 ts <- str_replace(Sys.time()," ","_")
 ts <- str_replace_all(ts, ":", "_")
 
@@ -65,12 +65,12 @@ for(cellID in unique(df$cell)){
     
     # run models
     modm <- lmer_alley_main(celldf)
-    modi <- lmer_alley_int(celldf)
+    modi <- glmer_alley_int(celldf)
     modn <- lmer_alley_none(celldf)
     
     # Reorder stimulus factors to make other comparisons
     celldf$texture <- factor(celldf$texture, levels = c("B", "A", "C"))
-    modreord <- lmer_alley_int(celldf)
+    modreord <- glmer_alley_int(celldf)
     celldf$texture <- factor(celldf$texture, levels = c("A","B","C"))
     
     
@@ -116,7 +116,7 @@ for(cellID in unique(df$cell)){
     # calc CI of fits. CI = 95%
     # set up design matrix then multiply mat*var-cov mat * mat-1 to get var
     # then sqrt and mult by crit value to get CI of given pct 
-    Designmat <- model.matrix(rate ~ ns(spatialBin, 3)*texture + reward, celldf)
+    Designmat <- model.matrix(rate+1 ~ ns(spatialBin, 3)*texture + reward, celldf)
     predvar <- diag(Designmat %*% vcov(modi) %*% t(Designmat))
     celldf$fitCI <- sqrt(predvar)*z
     

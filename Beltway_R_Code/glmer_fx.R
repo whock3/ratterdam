@@ -41,6 +41,18 @@ glmer_alley <- function(cellID, alleyID, df){
   return(mod)
 }
 
+glmer_alley_int <- function(df){
+  mod <- glmer(rate+1 ~ ns(spatialBin,3)*texture+reward
+               + (1|trial),
+               family=Gamma, 
+               data = df, 
+               control = glmerControl(optimizer='Nelder_Mead'),
+               nAGQ=0
+  )
+  
+  return(mod)
+}
+
 lmer_alley_int <- function(mydf){
   mod <- lmer(rate ~ ns(spatialBin,3)*texture+reward
                + (1|trial),
