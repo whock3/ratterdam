@@ -1,0 +1,26 @@
+Rat number,Day,Tetrode number,Unit,Repetition?,Repeated type
+R859,D3,,TT10\cl-maze1.3,True,horizontalverticalintersection
+R859,D3,,TT12\cl-maze1.1,True,intersection
+R859,D3,,TT12\cl-maze1.4,True,horizontalverticalintersection
+R859,D3,,TT1_0001\cl-maze1.1,True,horizontalverticalintersection
+R859,D3,,TT1_0001\cl-maze1.2,True,horizontalverticalintersection
+R859,D3,,TT1_0001\cl-maze1.4,True,horizontal
+R859,D3,,TT1_0001\cl-maze1.5,True,horizontalverticalintersection
+R859,D3,,TT3\cl-maze1.2,True,horizontalverticalintersection
+R859,D3,,TT3\cl-maze1.3,True,horizontalverticalintersection
+R859,D3,,TT3\cl-maze1.5,True,horizontalvertical
+R859,D3,,TT3\cl-maze1.6,True,horizontalverticalintersection
+R859,D3,,TT6\cl-maze1.1,True,horizontalintersection
+R859,D3,,TT6\cl-maze1.2,False,
+R859,D3,,TT6\cl-maze1.3,True,horizontalverticalintersection
+R859,D3,,TT6\cl-maze1.5,True,horizontalintersection
+R859,D3,,TT6\cl-maze1.6,True,horizontalverticalintersection
+R859,D3,,TT6\cl-maze1.7,True,vertical
+R859,D3,,TT6\cl-maze1.8,False,
+R859,D3,,TT7_0001\cl-maze1.4,True,horizontalintersection
+R859,D3,,TT7_0001\cl-maze1.6,True,horizontalverticalintersection
+R859,D3,,TT7_0001\cl-maze1.7,True,verticalintersection
+R859,D3,,TT8_0001\cl-maze1.1,True,horizontalverticalintersection
+R859,D3,,TT8_0001\cl-maze1.2,True,horizontalverticalintersection
+R859,D3,,TT8_0001\cl-maze1.3,True,horizontalverticalintersection
+R859,D3,,TT8_0001\cl-maze1.4,True,horizontalverticalintersection

@@ -162,7 +162,7 @@ def graphDirRatemaps(unit, suptitle, epsilon=Def.ptsCm):
     vmax = np.nanpercentile(ns, 98)
     if vmax > 1:
         titles = ["North facing", "East facing", "South facing", "West facing"]
-        gs = GridSpec(3, 2)
+        gs = GridSpec(3, 2, figure=fig)
         ax = fig.add_subplot(gs[0,:])
         ax.set_title("Overall")
         ax.set_xlabel("x coordinates (cm)")
