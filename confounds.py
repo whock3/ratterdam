@@ -32,6 +32,7 @@ def directionFilter(pos):
     """
     directions = np.diff(pos[:, 1:3], axis=0)
     allo = np.arctan2(directions[:, 1], directions[:, 0])
+    
     posN = pos[:-1][np.logical_and((np.pi/4)<=allo, allo<(3/4*np.pi))]
     posE = pos[:-1][np.logical_and((-np.pi/4)<=allo, allo<(np.pi/4))]
     posS = pos[:-1][np.logical_and((-3/4*np.pi)<=allo, allo<(-1/4*np.pi))]
@@ -47,28 +48,17 @@ def directionFilterS(pos, spikes):
     """
     directions = np.diff(pos[:, 1:3], axis=0)
     allo = np.arctan2(directions[:, 1], directions[:, 0])
-    posN = pos[:-1][np.logical_and((np.pi/4)<=allo, allo<(3/4*np.pi))]
-    posE = pos[:-1][np.logical_and((-np.pi/4)<=allo, allo<(np.pi/4))]
-    posS = pos[:-1][np.logical_and((-3/4*np.pi)<=allo, allo<(-1/4*np.pi))]
-    posW = pos[:-1][np.logical_or((3/4*np.pi)<=allo, allo<(-3/4*np.pi))]
     
-    #North
-    filtTs = Filt.unitVelocityFilter(pos[:,0], posN, spikes[:,0])
-    spikexy = util.getPosFromTs(filtTs,pos)
-    spikesN = np.column_stack((filtTs,spikexy))
-    #East
-    filtTs = Filt.unitVelocityFilter(pos[:,0], posE, spikes[:,0])
-    spikexy = util.getPosFromTs(filtTs,pos)
-    spikesE = np.column_stack((filtTs,spikexy))
-    #South
-    filtTs = Filt.unitVelocityFilter(pos[:,0], posS, spikes[:,0])
-    spikexy = util.getPosFromTs(filtTs,pos)
-    spikesS = np.column_stack((filtTs,spikexy))
-    #West
-    filtTs = Filt.unitVelocityFilter(pos[:,0], posW, spikes[:,0])
-    spikexy = util.getPosFromTs(filtTs,pos)
-    spikesW = np.column_stack((filtTs,spikexy))    
-    return [posN, posE, posS, posW], [spikesN, spikesE, spikesS, spikesW]
+    poss, spikess = [[], []] #N,E,S,W
+    andOr = [np.logical_and, np.logical_and, np.logical_and, np.logical_or]
+    angles = [3/4*np.pi, np.pi/4, -np.pi/4, -3/4*np.pi, 3/4*np.pi]
+    for i in range(4):
+        poss.append(pos[:-1][andOr[i](angles[i+1] <= allo, allo < angles[i])])
+        filtTs = Filt.unitVelocityFilter(pos[:,0], poss[i], spikes[:,0])
+        spikexy = util.getPosFromTs(filtTs,pos)
+        spikess.append(np.column_stack((filtTs,spikexy)))
+    
+    return poss, spikess
 
 
 def dirFiltWindow(pos, spikes, stepsz, winsz=10):
@@ -81,28 +71,17 @@ def dirFiltWindow(pos, spikes, stepsz, winsz=10):
     dirx = avgx[stepsz:]-avgx[:-stepsz]
     diry = avgy[stepsz:]-avgy[:-stepsz]
     allo = np.arctan2(diry, dirx)
-    posN = pos[:-stepsz][np.logical_and((np.pi/4)<=allo, allo<(3/4*np.pi))]
-    posE = pos[:-stepsz][np.logical_and((-np.pi/4)<=allo, allo<(np.pi/4))]
-    posS = pos[:-stepsz][np.logical_and((-3/4*np.pi)<=allo, allo<(-1/4*np.pi))]
-    posW = pos[:-stepsz][np.logical_or((3/4*np.pi)<=allo, allo<(-3/4*np.pi))]
     
-    #North
-    filtTs = Filt.unitVelocityFilter(pos[:,0], posN, spikes[:,0])
-    spikexy = util.getPosFromTs(filtTs,pos)
-    spikesN = np.column_stack((filtTs,spikexy))
-    #East
-    filtTs = Filt.unitVelocityFilter(pos[:,0], posE, spikes[:,0])
-    spikexy = util.getPosFromTs(filtTs,pos)
-    spikesE = np.column_stack((filtTs,spikexy))
-    #South
-    filtTs = Filt.unitVelocityFilter(pos[:,0], posS, spikes[:,0])
-    spikexy = util.getPosFromTs(filtTs,pos)
-    spikesS = np.column_stack((filtTs,spikexy))
-    #West
-    filtTs = Filt.unitVelocityFilter(pos[:,0], posW, spikes[:,0])
-    spikexy = util.getPosFromTs(filtTs,pos)
-    spikesW = np.column_stack((filtTs,spikexy))    
-    return [posN, posE, posS, posW], [spikesN, spikesE, spikesS, spikesW]
+    poss, spikess = [[], []] #N,E,S,W
+    andOr = [np.logical_and, np.logical_and, np.logical_and, np.logical_or]
+    angles = [3/4*np.pi, np.pi/4, -np.pi/4, -3/4*np.pi, 3/4*np.pi]
+    for i in range(4):
+        poss.append(pos[:-1][andOr[i](angles[i+1] <= allo, allo < angles[i])])
+        filtTs = Filt.unitVelocityFilter(pos[:,0], poss[i], spikes[:,0])
+        spikexy = util.getPosFromTs(filtTs,pos)
+        spikess.append(np.column_stack((filtTs,spikexy)))
+    
+    return poss, spikess
 
 
 def dirFiltRDP(pos, spikes, epsilon=Def.ptsCm):
@@ -123,36 +102,24 @@ def dirFiltRDP(pos, spikes, epsilon=Def.ptsCm):
     allIdx = sorted(list(idxRDP) + list(idxSmaller)) 
     allAllo = np.array([allo[np.where(idxRDP == i)[0]][0] for i in allIdx[:-1]])
     
-    posN = pos[:-1][np.logical_and((np.pi/4)<=allAllo, allAllo<(3/4*np.pi)),:]
-    posE = pos[:-1][np.logical_and((-np.pi/4)<=allAllo, allAllo<(np.pi/4))]
-    posS = pos[:-1][np.logical_and((-3/4*np.pi)<=allAllo, allAllo<(-1/4*np.pi))]
-    posW = pos[:-1][np.logical_or((3/4*np.pi)<=allAllo, allAllo<(-3/4*np.pi))]
+    poss, spikess = [[], []] #N,E,S,W
+    andOr = [np.logical_and, np.logical_and, np.logical_and, np.logical_or]
+    angles = [3/4*np.pi, np.pi/4, -np.pi/4, -3/4*np.pi, 3/4*np.pi]
+    for i in range(4):
+        poss.append(pos[:-1][andOr[i](angles[i+1] <= allAllo, allAllo < angles[i])])
+        filtTs = Filt.unitVelocityFilter(pos[:,0], poss[i], spikes[:,0])
+        spikexy = util.getPosFromTs(filtTs,pos)
+        spikess.append(np.column_stack((filtTs,spikexy)))
     
-    #North
-    filtTs = Filt.unitVelocityFilter(pos[:,0], posN, spikes[:,0])
-    spikexy = util.getPosFromTs(filtTs,pos)
-    spikesN = np.column_stack((filtTs,spikexy))
-    #East
-    filtTs = Filt.unitVelocityFilter(pos[:,0], posE, spikes[:,0])
-    spikexy = util.getPosFromTs(filtTs,pos)
-    spikesE = np.column_stack((filtTs,spikexy))
-    #South
-    filtTs = Filt.unitVelocityFilter(pos[:,0], posS, spikes[:,0])
-    spikexy = util.getPosFromTs(filtTs,pos)
-    spikesS = np.column_stack((filtTs,spikexy))
-    #West
-    filtTs = Filt.unitVelocityFilter(pos[:,0], posW, spikes[:,0])
-    spikexy = util.getPosFromTs(filtTs,pos)
-    spikesW = np.column_stack((filtTs,spikexy))    
-    return [posN, posE, posS, posW], [spikesN, spikesE, spikesS, spikesW]
+    return poss, spikess
 
 
 def graphDirRatemaps(unit, suptitle, stepsz, winsz=10, epsilon=Def.ptsCm):
     """
     Graphs ratemaps filtered by direction
     """
-    #posDir, spikesDir = directionFilterS(unit.position, unit.spikes)
-    posDir, spikesDir = dirFiltWindow(unit.position, unit.spikes, stepsz, winsz)
+    posDir, spikesDir = directionFilterS(unit.position, unit.spikes)
+    #posDir, spikesDir = dirFiltWindow(unit.position, unit.spikes, stepsz, winsz)
     #posDir, spikesDir = dirFiltRDP(unit.position, unit.spikes, epsilon)
     ns = [util.makeRM(unit.spikes, unit.position)]
     for i in range(len(posDir)):

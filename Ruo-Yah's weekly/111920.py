@@ -161,10 +161,13 @@ def graphRMSpeedTheta(unit, title, subfieldDim, clip=99, percentile=99, sigma=2)
         axs[i].set_xticklabels([-minmax[0], int(-minmax[0]/2), 0, int(minmax[0]/2), minmax[0]])
         axs[i].set_yticks([0, 12.5, 25, 37.5, 50])
         axs[i].set_yticklabels([0, int(minmax[1]/4), int(minmax[1]/2), int(minmax[1]/4*3), minmax[1]])
-        axs[i].set_title(f"Subfield {i}\nCutoff = {percentile}th %tile, {round(vmax,1)} Hz")
+        axs[i].set_title(f"Subfield {i}\nCutoff = {percentile}th %tile, {round(vmax,1)} Hz", c=unit.colors[i])
         cb = fig.colorbar(im, ax=axs[i])
         cb.set_label("Rate (Hz)")
     fig.tight_layout()
+    
+    for i in range(len(unit.perimeters), subfieldDim[0]*subfieldDim[1]):
+        axs[i].axis("off")
 
 
 def graphRM(unit, title="", percentile=98):
