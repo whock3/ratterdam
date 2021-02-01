@@ -131,7 +131,27 @@ class RateMap():
             PF.com = com
 
             # Find perimeter
-            PF_perimeter = np.where(binary_dilation(PF.mask, structure=generate_binary_structure(2, 2))!=binary_fill_holes(PF.mask)) #binary expanded - original
+            # increase resolution of PF.mask by inserting a column of zeros between every 2 columns in PF.mask and inserting a row of zeros between every 2 rows
+            r, c = PF.mask.shape
+            PFmaskExpanded = np.zeros((r*2,c*2), dtype=PF.mask.dtype)
+            PFmaskExpanded[::2, ::2] = PF.mask
+            
+            # filling in the new pixels using values to the left and right
+            for i in range(0,r*2,2):
+                for j in range(1,c*2-1,2):
+                    PFmaskExpanded[i,j] = PFmaskExpanded[i,j-1] and PFmaskExpanded[i,j+1]
+                    
+            # filling in the new pixels using values above and below
+            for i in range(1,r*2-1,2):
+                for j in range(c*2):
+                    PFmaskExpanded[i,j] = PFmaskExpanded[i-1,j] and PFmaskExpanded[i+1,j]
+                    
+            # adding rows and columns of zeros at the ends of PFmaskExpanded
+            PFmaskExpanded = np.vstack((np.zeros((1,PFmaskExpanded.shape[1])), PFmaskExpanded))
+            PFmaskExpanded = np.hstack((np.zeros((PFmaskExpanded.shape[0],1)), PFmaskExpanded))
+            
+            PF_perimeter = np.where(binary_dilation(PFmaskExpanded, structure=generate_binary_structure(2, 2))!=binary_fill_holes(PFmaskExpanded)) #binary expanded - original
+            #PF_perimeter = np.where(binary_dilation(PF.mask, structure=generate_binary_structure(2, 2))!=binary_fill_holes(PF.mask)) #binary expanded - original
             perimeter = PF_perimeter
             PF.perimeter = perimeter
             
