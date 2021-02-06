@@ -34,7 +34,7 @@ def windowSize(pos, title=""):
     hist = np.histogram2d(speed2, dist2, bins=[np.arange(0,52.5,2.5),np.arange(0,1.8,0.05)])[0]
     vmax = np.percentile(hist,99)
     im = ax.imshow(hist, origin="lower", vmin=0, vmax=vmax)
-    print(max(speed2), max(dist2))
+    print(max(speed2), max(dist2), np.mean(dist2), np.mean(dist))
     ax.set_xticks(np.arange(-0.5,34.5,4))
     ax.set_xticklabels(np.arange(0,1.8,0.2).round(1))
     ax.set_yticks(np.arange(-0.5,21.5,2))
