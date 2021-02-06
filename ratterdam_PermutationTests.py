@@ -11,12 +11,6 @@ import matplotlib.colors as colors
 from scipy.ndimage import gaussian_filter as gauss # for smoothing ratemaps
 import sys, os, csv
 
-if socket.gethostname() == 'Tolman':
-    codeDirBase = 'C:\\Users\\whockei1\\Google Drive'
-elif socket.gethostname() == 'DESKTOP-BECTOJ9':
-    codeDirBase = 'C:\\Users\\whock\\Google Drive'
-    
-sys.path.insert(0, codeDirBase + '\\KnierimLab\\Ratterdam\\Code')
 import utility_fx as util
 import ratterdam_ParseBehavior as Parse
 import ratterdam_Defaults as Def
@@ -150,28 +144,19 @@ def global_FWER_alpha(nulls, unit, alpha=0.05): # fwerModifier should be 3 (txts
     FWERalphaSelected = None
     globalLower, globalUpper = None, None
     
-    validalleys = []
-    for a in [16, 17, 3, 1, 5, 7, 8, 10, 11]:
-        valid = Filt.checkMinimumPassesActivity(unit, a, pass_thresh=12)
-        validalleys.append(valid)
-    multCompFactor = sum(validalleys)
     
-    if multCompFactor == 0:
-        pass
 
-    else:
-        fwerModifier = 3*multCompFactor
-        FWERalpha = (alpha / fwerModifier)  # nb this is a proportion (decimal) not a list cutoff (integer)
-        alphaIncrements = np.linspace(0.017, 1e-4, 50) # start at 0.017 because thats the largest the adj p value could be: 0.05/(3*1)
-        fwerSatisfied = False
-        for adjustedAlpha in alphaIncrements:
-            if not fwerSatisfied:
-                lowerBand, upperBand = computeBandThresh(nulls, adjustedAlpha, 'lower'), computeBandThresh(nulls, adjustedAlpha, 'upper')
-                propCrossings = computeGlobalCrossings(nulls, lowerBand, upperBand)
-                if propCrossings < FWERalpha: 
-                    fwerSatisfied = True
-                    FWERalphaSelected = adjustedAlpha
-                    globalLower, globalUpper = lowerBand, upperBand
+    FWERalpha = unit.acorr  # nb this is a proportion (decimal) not a list cutoff (integer)
+    alphaIncrements = np.linspace(0.017, 1e-4, 50) # start at 0.017 because thats the largest the adj p value could be: 0.05/(3*1)
+    fwerSatisfied = False
+    for adjustedAlpha in alphaIncrements:
+        if not fwerSatisfied:
+            lowerBand, upperBand = computeBandThresh(nulls, adjustedAlpha, 'lower'), computeBandThresh(nulls, adjustedAlpha, 'upper')
+            propCrossings = computeGlobalCrossings(nulls, lowerBand, upperBand)
+            if propCrossings < FWERalpha: 
+                fwerSatisfied = True
+                FWERalphaSelected = adjustedAlpha
+                globalLower, globalUpper = lowerBand, upperBand
                 
 
 
@@ -207,7 +192,7 @@ def genNNulls(n, rms, labels, txtX, txtY):
     now to be the binwise diff of avg(txtA) - avg(txtB)
     Returns np array nXl where l is length of 1d RM in bins
     """
-    shuffpos = True # toggle to shuffle bins within field
+    shuffpos = False # toggle to shuffle bins within field
     nulls = np.empty((0,Def.singleAlleyBins[0]-1)) # by convention long dim is first
     
     if shuffpos:
@@ -334,32 +319,28 @@ def unitPermutationTest_AllPairsAllAlleys(unit, nnulls,fpath, logger=True, plot=
     crossings = {i:{pair:{'global':"XXX", 'pointwise':"XXX"} for pair in pairs} for i in [1,3,5,7,8,10,11,16,17]}
     
     axCounter = 0 
-    for alley in [1,3,5,7,8,10,11,16,17]:
+    for alley in unit.validAlleys:
         
-        valid = Filt.checkMinimumPassesActivity(unit, alley, pass_thresh=12)
-        if valid:
         
-            print(f"Running Permutation test in alley {alley}")
-        
-            for pair in pairs:
+        print(f"Running Permutation test in alley {alley}")
+    
+        for pair in pairs:
+            
+            txtX, txtY = pair[0], pair[1]
+            globalCrossings, pointwiseCrossings, bounds, stat = unitPermutationTest_SinglePair(unit, alley, txtX, txtY, nnulls, 
+                                                                                       plot=False, returnInfo=True)
+            if globalCrossings is not None:
+                crossings[alley][pair]['global'] = globalCrossings
+                crossings[alley][pair]['pointwise'] = pointwiseCrossings
                 
-                txtX, txtY = pair[0], pair[1]
-                globalCrossings, pointwiseCrossings, bounds, stat = unitPermutationTest_SinglePair(unit, alley, txtX, txtY, nnulls, 
-                                                                                           plot=False, returnInfo=True)
-                if globalCrossings is not None:
-                    crossings[alley][pair]['global'] = globalCrossings
-                    crossings[alley][pair]['pointwise'] = pointwiseCrossings
-                    
-                conditionName = unit.name + "_" + str(alley) + "_" + pair
-                    
-                if plot != False and bounds[0] is not None:
-                    # the plot keyword will tell plotting fx whether to save sep or leave live for sep file to save
-                    plotPermutationResults(unit, bounds, stat, conditionName, globalCrossings, pointwiseCrossings, fig.axes[axCounter])
+            conditionName = unit.name + "_" + str(alley) + "_" + pair
                 
-                axCounter += 1 # increment to get the next subplot next iteration.
+            if plot != False and bounds[0] is not None:
+                # the plot keyword will tell plotting fx whether to save sep or leave live for sep file to save
+                plotPermutationResults(unit, bounds, stat, conditionName, globalCrossings, pointwiseCrossings, fig.axes[axCounter])
+            
+            axCounter += 1 # increment to get the next subplot next iteration.
                 
-        else:
-            print(f"Insufficient activity in alley {alley}")
                 
     plt.suptitle(f"Permutation Test Results for {unit.name}")
                          
@@ -417,8 +398,8 @@ def plotPermutationResults(unit, bounds, stat, conditionName, globalCrossings, p
        
 if __name__ == '__main__':
     
-    rat = "R781"
-    expCode = "BRD3"
+    rat = "R886"
+    expCode = "BRD1"
     datafile = f"E:\\Ratterdam\\{rat}\\{rat}{expCode}\\"
     fpath = f"E:\\Ratterdam\{rat}\\permutation_tests\\{expCode}\\"
     stamp = util.genTimestamp()
@@ -438,10 +419,11 @@ if __name__ == '__main__':
                 unit.loadData_raw()
                 validalleys = []
                 for a in [16, 17, 3, 1, 5, 7, 8, 10, 11]:
-                    valid = Filt.checkMinimumPassesActivity(unit, a, pass_thresh=12)
-                    validalleys.append(valid)
-                if sum(validalleys) > 0:         
+                    valid, acorr, alleys = util.checkInclusion(unit, 3)
+                if valid:
                     print(clustname)
+                    unit.acorr = acorr
+                    unit.validAlleys = alleys
                     unitPermutationTest_AllPairsAllAlleys(unit, 1000, fpath)
                 else:
                     print(f"{clustname} not run")
