@@ -16,7 +16,7 @@ import utility_fx as util
 import ratterdam_ParseBehavior as Parse
 import ratterdam_DataFiltering as Filt
 import ratterdam_Defaults as Def
-sys.path.insert(0, 'E:\\UserData\\Documents\\GitHub\\ratterdam\\')
+
 
 
 class UnitData():
@@ -247,7 +247,7 @@ if __name__ == '__main__':
     rat = "R859"
     expCode = "BRD5"
     datafile = f"E:\\Ratterdam\\{rat}\\{rat}{expCode}\\"
-    clustname = 'TT13\\cl-maze1.4'
+    clustname = 'TT1\\cl-maze1.6'
       
     print(f"Beginning {rat} {expCode} {clustname}")
     alleyTracking, alleyVisits,  txtVisits, p_sess, ts_sess = Parse.getDaysBehavioralData(datafile, expCode)
