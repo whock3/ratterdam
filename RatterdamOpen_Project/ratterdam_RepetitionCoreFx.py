@@ -350,8 +350,12 @@ def makeSemaphores(fieldArray,  wnSize=5*1e6*60, wnStep=2*1e6*60):
         for i in range(nf):
             for j in range(nf):
                 x = np.linspace(start, end, 100)
-                ainterp, binterp = pchip_fields[i](x), pchip_fields[j](x) 
-                diff = np.abs(np.mean(ainterp)-np.mean(binterp))
+                ainterp, binterp = pchip_fields[i](x), pchip_fields[j](x)
+                if len(fieldArray) > 1:
+                    diff = np.abs(np.mean(ainterp)-np.mean(binterp))
+                else:
+                    # i.e. if there's only one field then the data point is just that fields rate in that window
+                    diff = np.mean(ainterp)
                 diffmat[i,j] = diff
         diffmats.append(diffmat)
     diffmats = np.asarray(diffmats)

@@ -16,7 +16,7 @@ import utility_fx as util
 import ratterdam_ParseBehavior as Parse
 import ratterdam_DataFiltering as Filt
 import ratterdam_Defaults as Def
-sys.path.insert(0, 'E:\\UserData\\Documents\\GitHub\\ratterdam\\')
+
 
 
 class UnitData():
@@ -92,7 +92,7 @@ class UnitData():
                 visitsOcc = self.position[(self.position[:,0]>self.alleyVisits[alley-1][visit][0])&(self.position[:,0]<=self.alleyVisits[alley-1][visit][1])]
                 visitsSpk = self.spikes[(self.spikes[:,0]>self.alleyVisits[alley-1][visit][0])&(self.spikes[:,0]<=self.alleyVisits[alley-1][visit][1])]
                 
-                #The above gets all spikes and occs within a lap. WH EDit 5/29/20 and see Analysis&Code notebook for more info
+                #The above gets all spikes and occs within a lap. WH EDit 5/29/20 and see Analysis&Code notebook I for more info
                 # Now I will use the txt file with lap starts I create to set lap time bounds and get EVERYTHING in that for all alleys
                 # Here below you apply alleybounds a a cookie cutter to punch out only whats in the alley
                 # Previously I had, for legacy reasons, more complicated approach that took those lap times then
@@ -245,9 +245,9 @@ class BehavioralData():
 if __name__ == '__main__':
     
     rat = "R859"
-    expCode = "BRD3"
+    expCode = "BRD5"
     datafile = f"E:\\Ratterdam\\{rat}\\{rat}{expCode}\\"
-    clustname = 'TT7\\cl-maze1.2'
+    clustname = 'TT1\\cl-maze1.6'
       
     print(f"Beginning {rat} {expCode} {clustname}")
     alleyTracking, alleyVisits,  txtVisits, p_sess, ts_sess = Parse.getDaysBehavioralData(datafile, expCode)
