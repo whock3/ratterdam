@@ -71,8 +71,27 @@ alleyInterBounds = {'0':[[v2, v3],[h5, h6]],
               'K':[[v5, v6],[h1,h2]],
               'L':[[v7, v8],[h1,h2]]}
 
-alleyBounds = namedtuple("alleyBounds", "cityBlocks alleyLines alleyInterBounds")
-R781 = alleyBounds(cityBlocks, alleyLines, alleyInterBounds)
+#intersection + alley + intersection
+IAI = {"A0B":[[v1, v4],[h5, h6]],
+       "E1F":[[v1, v4],[h3, h4]],
+       "A2E":[[v1, v2],[h3, h6]],
+       "B3F":[[v3, v4],[h3, h6]],
+       "B4C":[[v3, v6],[h5, h6]],
+       "C5G":[[v5, v6],[h3, h6]],
+       "C6D":[[v5, v8],[h5, h6]],
+       "D7H":[[v7, v8],[h3, h6]],
+       "G8H":[[v5, v8],[h3, h4]],
+       "H9L":[[v7, v8],[h1, h4]],
+       "K10L":[[v5, v8],[h1, h2]],
+       "G11K":[[v5, v6],[h1, h4]],
+       "F12G":[[v3, v6],[h3, h4]],
+       "J13K":[[v3, v6],[h1, h2]],
+       "F14J":[[v3, v4],[h1, h4]],
+       "I15J":[[v1, v4],[h1, h2]],
+       "E16I":[[v1, v2],[h1, h4]]}
+
+alleyBounds = namedtuple("alleyBounds", "cityBlocks alleyLines alleyInterBounds IAI")
+R781 = alleyBounds(cityBlocks, alleyLines, alleyInterBounds, IAI)
 
 #R808
 v1, v2, v3, v4, v5, v6, v7, v8 = R808V
@@ -130,7 +149,26 @@ alleyInterBounds = {'0':[[v2, v3],[h5, h6]],
               'K':[[v5, v6],[h1,h2]],
               'L':[[v7, v8],[h1,h2]]}
 
-R808 = alleyBounds(cityBlocks, alleyLines, alleyInterBounds)
+#intersection + alley + intersection
+IAI = {"A0B":[[v1, v4],[h5, h6]],
+       "E1F":[[v1, v4],[h3, h4]],
+       "A2E":[[v1, v2],[h3, h6]],
+       "B3F":[[v3, v4],[h3, h6]],
+       "B4C":[[v3, v6],[h5, h6]],
+       "C5G":[[v5, v6],[h3, h6]],
+       "C6D":[[v5, v8],[h5, h6]],
+       "D7H":[[v7, v8],[h3, h6]],
+       "G8H":[[v5, v8],[h3, h4]],
+       "H9L":[[v7, v8],[h1, h4]],
+       "K10L":[[v5, v8],[h1, h2]],
+       "G11K":[[v5, v6],[h1, h4]],
+       "F12G":[[v3, v6],[h3, h4]],
+       "J13K":[[v3, v6],[h1, h2]],
+       "F14J":[[v3, v4],[h1, h4]],
+       "I15J":[[v1, v4],[h1, h2]],
+       "E16I":[[v1, v2],[h1, h4]]}
+
+R808 = alleyBounds(cityBlocks, alleyLines, alleyInterBounds, IAI)
 
 #R859
 v1, v2, v3, v4, v5, v6, v7, v8 = R859V
@@ -188,7 +226,26 @@ alleyInterBounds = {'0':[[v2, v3],[h5, h6]],
               'K':[[v5, v6],[h1,h2]],
               'L':[[v7, v8],[h1,h2]]}
 
-R859 = alleyBounds(cityBlocks, alleyLines, alleyInterBounds)
+#intersection + alley + intersection
+IAI = {"A0B":[[v1, v4],[h5, h6]],
+       "E1F":[[v1, v4],[h3, h4]],
+       "A2E":[[v1, v2],[h3, h6]],
+       "B3F":[[v3, v4],[h3, h6]],
+       "B4C":[[v3, v6],[h5, h6]],
+       "C5G":[[v5, v6],[h3, h6]],
+       "C6D":[[v5, v8],[h5, h6]],
+       "D7H":[[v7, v8],[h3, h6]],
+       "G8H":[[v5, v8],[h3, h4]],
+       "H9L":[[v7, v8],[h1, h4]],
+       "K10L":[[v5, v8],[h1, h2]],
+       "G11K":[[v5, v6],[h1, h4]],
+       "F12G":[[v3, v6],[h3, h4]],
+       "J13K":[[v3, v6],[h1, h2]],
+       "F14J":[[v3, v4],[h1, h4]],
+       "I15J":[[v1, v4],[h1, h2]],
+       "E16I":[[v1, v2],[h1, h4]]}
+
+R859 = alleyBounds(cityBlocks, alleyLines, alleyInterBounds, IAI)
 
 
 alleyInterType = {'A':['intersection'],
