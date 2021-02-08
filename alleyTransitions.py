@@ -5,7 +5,7 @@ Created on Fri Aug 14 21:13:25 2020
 @author: Ruo-Yah Lai
 """
 
-from newAlleyBounds import alleyInterBounds, alleyLines
+from newAlleyBounds import R781, R808, R859
 import matplotlib.pyplot as plt
 from matplotlib import cm
 from matplotlib.colors import Normalize
@@ -107,14 +107,26 @@ def egoAllo(ego, allo):
     #put into a new array with [ts,x,y,location,whether it's the last pt of the visit]
     #remove these points from the overall list
 #sort the array by ts
-def alleyTransitions(pos, graph=False, minTime=0.5e6):
+def alleyTransitions(pos, rat, graph=False, minTime=0.5e6):
+    """
+    Finds turns based on crossing alley bounds 
+    rat : named tuple R781, R808, or R859 from newAlleyBounds
+
+
+    Returns
+    -------
+    posNew : [ts, x, y, 1st or last pt of visit, alley/intersection]
+    turns : [allo before turn, ego, allo after turn, ts of exit, ts of entry,
+             alley exited, intersection, alley entered]
+
+    """
     letters = [i for i in ascii_uppercase[:12]]
     a = np.hstack((np.arange(17).astype(str), letters))
     posList = deepcopy(pos)
     posNew = np.empty((0,5)) #ts, x, y, 1st or last pt of visit, alley/intersection
     alleys = []
     for i in a:
-        alley = alleyInterBounds[str(i)]
+        alley = rat.alleyInterBounds[str(i)]
         alley = Rectangle(alley[0][0], alley[0][1], alley[1][0], alley[1][1])
         alleys.append(alley)
         inAlley = np.all((alley.xmin < posList[:,1], posList[:,1] < alley.xmax,
@@ -171,10 +183,10 @@ def alleyTransitions(pos, graph=False, minTime=0.5e6):
     
     turns = np.empty((0,8)) #allo before turn, ego, allo after turn, ts of exit, ts of entry, alley exited, intersection, alley entered
     entries = np.where(posNewF[:,3] == 1)[0]
-
+    
     for Exit in np.where(posNewF[:,3] == 2)[0]: #for each alley exit
         
-        if Exit+1 == len(posNewF):
+        if len(entries[entries > Exit]) == 0:
             break
         entry = min(entries[entries > Exit])
         
@@ -195,14 +207,14 @@ def alleyTransitions(pos, graph=False, minTime=0.5e6):
                 
         turns = np.vstack((turns, (allo1, ego, allo2, posNew[Exit,0], posNew[entry,0], posNew[Exit,4], intersection, posNew[entry,4])))
         
-    if graph == True:
+    if graph:
         fig, ax = plt.subplots()
         ax.plot(posNewF[:,1], posNewF[:,2])
         ax.scatter(posNewF[0,1], posNewF[0,2], marker = "+", color = "r", label = "first", zorder=2)
         ax.scatter(posNewF[-1,1], posNewF[-1,2], marker = "x", color = "r", label = "last", zorder=2)
     
         for i in range(14):
-            plt.plot(alleyLines[i,:,0], alleyLines[i,:,1], color="k", alpha=0.5)
+            plt.plot(rat.alleyLines[i,:,0], rat.alleyLines[i,:,1], color="k", alpha=0.5)
     
         #exits = np.where(turns[:,5].astype(int) == 2)[0]
         for turn in turns:
