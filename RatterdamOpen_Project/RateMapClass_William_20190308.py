@@ -131,6 +131,7 @@ class RateMap():
             PF.com = com
 
             # Find perimeter
+            #ryl edit 1/2021: increase resolution of PF.mask before using binary_dilation to find the perimeter
             # increase resolution of PF.mask by inserting a column of zeros between every 2 columns in PF.mask and inserting a row of zeros between every 2 rows
             r, c = PF.mask.shape
             PFmaskExpanded = np.zeros((r*2,c*2), dtype=PF.mask.dtype)
