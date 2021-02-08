@@ -70,7 +70,8 @@ def reorderBorder(border, field):
         if perf_counter()-startTime > 5:
             print(f"Field {field} took too long")
             break
-    return newBorder*binWidth+binWidth/2
+        
+    return newBorder*binWidth/2 #the binWidth for borders is half the original binWidth
 
 
 

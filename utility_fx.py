@@ -717,3 +717,15 @@ def cellQuality(df):
         return qualities
     except:
         return {}
+
+def readRepeatingCells(file, df):
+    """
+    Returns tetrode\\cell for the cells with repeating fields according to 
+    the tabulations file
+    """
+    with open(df+file,"r") as f:
+        lines = f.readlines()
+        tabulations = [line.split(",") for line in lines]
+    tabulations = np.array(tabulations)
+    cells = tabulations[np.where(tabulations[:,1]=="True")[0], 0]
+    return cells

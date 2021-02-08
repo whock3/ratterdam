@@ -142,5 +142,4 @@ def filterFields(unit):
     unit.fields = []
     unit.perimeters = perims
     unit.fields = fields
-    
     return unit
