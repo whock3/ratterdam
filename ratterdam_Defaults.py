@@ -3,6 +3,8 @@ This file contains default parameters for main ratterdam scripts.
 Values can be changed to alter analysis pipeline behavior
 """
 import sys
+import newAlleyBounds as nab
+
 sys.path.insert(0, 'E:\\UserData\\Documents\\GitHub\\ratterdam\\')
 
 alleyBounds_byEye = {0:[[150, 250],[350, 400]],
@@ -174,7 +176,8 @@ alleyBounds_retroflective_onRim_manuallyshifted2={0: [[145, 250], [332, 415]],
  15: [[145, 250], [87, 158]],
  16: [[97, 174], [135, 230]]}
 
-alleyBounds = alleyBounds_retroflective_onRim_manuallyshifted2
+#alleyBounds = alleyBounds_retroflective_onRim_manuallyshifted2
+alleyBounds = nab.R859.IAI
 #format is [n1...n8] where each is loc of IR/alley point that defines intersection. ni = [xi, yi]
 intersectionBounds = {'A':[[105, 385], [165, 385], [165, 385], [140, 340], [105, 340]],
                       'B':[[210, 385], [295, 390], [295, 352], [270, 340], [230, 340], [210, 345]],
@@ -204,8 +207,13 @@ ptsCm_krieger= 4.85 # number of camera points equiv to a cm
 ptsCm_macaulay = 4.72
 ptsCm = ptsCm_macaulay
 
+
 #old bins = 15,30
-singleAlleyBins = [13,3]
+cmPerBin = 1.5 # this is how many cm each bin should be long. This is chosen here by user. 
+rewardZoneLength = 36 # size in cm of reward zone. This is hardcoded based on the alleybounds used
+                      # and as of 2-12-21 using IAI (intersection-alley-intersection) def thats ~36cm long
+longbin = round(rewardZoneLength/cmPerBin)
+singleAlleyBins = [longbin+1,8]   # used [13,x] for single alley 
 wholeAlleyBins = [round(int(480/ptsCm)),int(round(640/ptsCm))]
 
 # Smoothing values to use

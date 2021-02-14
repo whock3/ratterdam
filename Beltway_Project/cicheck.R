@@ -51,15 +51,21 @@ checkAlleyNonoverlap <- function(celldf, alley){
 }
 
 checkWaldNonoverlap <- function(walddf){
-  conditions = c("ns(spatialBin, 3)1:textureC1",
-                 "ns(spatialBin, 3)2:textureC1",
-                 "ns(spatialBin, 3)3:textureC1",
-                 "ns(spatialBin, 3)1:textureB",
-                 "ns(spatialBin, 3)2:textureB",
-                 "ns(spatialBin, 3)3:textureB",
-                 "ns(spatialBin, 3)1:textureC",
-                 "ns(spatialBin, 3)2:textureC",
-                 "ns(spatialBin, 3)3:textureC"
+  conditions = c("ns(spatialBin, 5)1:textureB",
+                 "ns(spatialBin, 5)2:textureB",
+                 "ns(spatialBin, 5)3:textureB",
+                 "ns(spatialBin, 5)4:textureB",
+                 "ns(spatialBin, 5)5:textureB",
+                 "ns(spatialBin, 5)1:textureC",
+                 "ns(spatialBin, 5)2:textureC",
+                 "ns(spatialBin, 5)3:textureC",
+                 "ns(spatialBin, 5)4:textureC",
+                 "ns(spatialBin, 5)5:textureC",
+                 "ns(spatialBin, 5)1:textureC1",
+                 "ns(spatialBin, 5)2:textureC1",
+                 "ns(spatialBin, 5)3:textureC1",
+                 "ns(spatialBin, 5)4:textureC1",
+                 "ns(spatialBin, 5)5:textureC1"
                  )
   nonoverlap <- FALSE
   for(cond in conditions){

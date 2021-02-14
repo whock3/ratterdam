@@ -54,7 +54,7 @@ glmer_alley_int <- function(df){
 }
 
 lmer_alley_int <- function(mydf){
-  mod <- lmer(rate ~ ns(spatialBin,3)*texture+reward
+  mod <- lmer(rate ~ ns(spatialBin,6)*texture+reward
                + (1|trial),
                data = mydf
   )

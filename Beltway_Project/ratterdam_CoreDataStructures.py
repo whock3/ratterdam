@@ -244,10 +244,10 @@ class BehavioralData():
     
 if __name__ == '__main__':
     
-    rat = "R859"
-    expCode = "BRD5"
+    rat = "R781"
+    expCode = "BRD3"
     datafile = f"E:\\Ratterdam\\{rat}\\{rat}{expCode}\\"
-    clustname = 'TT1\\cl-maze1.6'
+    clustname = 'TT6\\cl-maze1.4'
       
     print(f"Beginning {rat} {expCode} {clustname}")
     alleyTracking, alleyVisits,  txtVisits, p_sess, ts_sess = Parse.getDaysBehavioralData(datafile, expCode)
