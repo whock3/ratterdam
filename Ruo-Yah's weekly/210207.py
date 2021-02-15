@@ -70,8 +70,9 @@ def rateDir(unit, title):
         subfieldDim = [3,3]
     fig, axs = plt.subplots(subfieldDim[0], subfieldDim[1])
     axs = axs.flatten()
-    sig = ""
+    
     for i in range(len(axs)):
+        sig = ""
         rmNoNan = []
         for j in range(4):
             rmNoNan.append(rm[i][j].flatten()[~np.isnan(rm[i][j].flatten())])
