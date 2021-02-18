@@ -141,13 +141,28 @@ for subdir, dirs, fs in os.walk(datafile):
                             
                             mask = np.ma.masked_invalid(data)
                             avg = mask.mean(axis=0) # ignores inf and nan
-                            err = np.std(mask,axis=0)/np.sqrt(np.sum(~mask.mask,axis=0))
+                            
+                            
+                            err = np.std(mask,axis=0)/np.sqrt(data.shape[0])
                             
                             ax2.plot(avg,color=c)
                             ax2.fill_between(range(len(avg)), avg+err, avg-err, color=c,alpha=0.5)
                             
                             ax2.tick_params(axis='x', labelsize=14)
                             ax2.tick_params(axis='y', labelsize=14)
+                            
+                            
+                        # calculate where lickport and texture ends are, annotate
+                        lp = (Def.singleAlleyBins[0]-1)/2
+                        IRoffset = 7/Def.cmPerBin # 7 is hardcoded based on dimensions of track. Lickport to IR is 7cm. 
+                        txtL, txtR = lp - IRoffset, lp + IRoffset
+                        
+                        #annotate
+                        ylim = ax2.get_ylim()[1]
+                        ax2.vlines(lp,0,ylim,color='green',alpha=0.5)
+                        ax2.vlines(txtL,0,ylim,color='black',alpha=0.5)
+                        ax2.vlines(txtR,0,ylim,color='black',alpha=0.5)
+                            
                             
                             
                         ##################################

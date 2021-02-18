@@ -7,24 +7,24 @@ library(stringr)
 
 
 setwd("E:\\UserData\\Documents\\GitHub\\ratterdam\\")
-source("E:\\UserData\\Documents\\GitHub\\ratterdam\\Beltway_R_Code\\cicheck.R")
-source("E:\\UserData\\Documents\\GitHub\\ratterdam\\Beltway_R_Code\\glmer_fx.R")
+source("E:\\UserData\\Documents\\GitHub\\ratterdam\\Beltway_Project\\cicheck.R")
+source("E:\\UserData\\Documents\\GitHub\\ratterdam\\Beltway_Project\\glmer_fx.R")
 
 # Read in data
-code <- "R886BRD2"
-save <- FALSE # toggle to save multipage pdfs and wald csvs
+code <- "R808BRD7"
+save <- TRUE # toggle to save multipage pdfs and wald csvs
 database <- "E:\\Ratterdam\\R_data\\"
-datapath <- sprintf("%s%s%s",database,code,"_2vfilt_0.5stepsmooth_12bins_2R_3qual.csv")
+datapath <- sprintf("%s%s",database,"20210215-172434_R808BRD7_1vfilt_0.5stepsmooth_24bins_2R_3qual.csv")
 df <- read.csv(datapath,header=TRUE)
 
 # Select output, create timestamp 
-figbasepath <- "E:\\Ratterdam\\R_data\\graphs\\201203_glmer_graphs\\"
+figbasepath <- "E:\\Ratterdam\\R_data\\graphs\\210213_lmer_graphs\\"
 ts <- str_replace(Sys.time()," ","_")
 ts <- str_replace_all(ts, ":", "_")
 
 
 if(code=="R859BRD5"){
-  
+
   df<-df[!df$alley==3,]
   df<-df[!df$alley==5,]
   df<-df[!df$alley==7,]
@@ -39,6 +39,8 @@ colnames(wdf) <- c("cellname", "alleyID", "low", "up", "fe")
 cicheckdf <- data.frame(matrix(ncol=4))
 colnames(cicheckdf) <- c("cell", "alley", "wald", "fit")
 
+nsplineknots <- 6 # set number spline knots 
+
 for(cellID in unique(df$cell)){
 
   
@@ -49,7 +51,7 @@ for(cellID in unique(df$cell)){
   alleys <- unique(celldf$alley)
   nalleys <-length(alleys)
   
-  bonf <- 0.05/(9*nalleys) # 9 comparisons in alley (3 stim * 3 texture) * # alleys
+  bonf <- 0.17/(3*nsplineknots*nalleys) 
   cipct <- 1-bonf
   z <- qnorm(cipct)
   
@@ -65,12 +67,12 @@ for(cellID in unique(df$cell)){
     
     # run models
     modm <- lmer_alley_main(celldf)
-    modi <- glmer_alley_int(celldf)
+    modi <- lmer_alley_int(celldf)
     modn <- lmer_alley_none(celldf)
     
     # Reorder stimulus factors to make other comparisons
     celldf$texture <- factor(celldf$texture, levels = c("B", "A", "C"))
-    modreord <- glmer_alley_int(celldf)
+    modreord <- lmer_alley_int(celldf)
     celldf$texture <- factor(celldf$texture, levels = c("A","B","C"))
     
     
@@ -95,7 +97,7 @@ for(cellID in unique(df$cell)){
     cireord <- cireord[-c(1,2),]
     fereord <- fixef(modreord)
     cireorddf <- data.frame("low"=cireord[,1], "up"=cireord[,2],"fe"=fereord)
-    ciall <- rbind(cidf, cireorddf[c("textureC", "ns(spatialBin, 3)1:textureC","ns(spatialBin, 3)2:textureC","ns(spatialBin, 3)3:textureC"),])
+    ciall <- rbind(cidf, cireorddf[c("textureC", "ns(spatialBin, 6)1:textureC","ns(spatialBin, 6)2:textureC","ns(spatialBin, 6)3:textureC","ns(spatialBin, 6)4:textureC","ns(spatialBin, 6)5:textureC","ns(spatialBin, 6)6:textureC"),])
     ndf <- data.frame(ciall,cellname,alleyID)
     wdf <- rbind(wdf, ndf)
     
@@ -116,18 +118,18 @@ for(cellID in unique(df$cell)){
     # calc CI of fits. CI = 95%
     # set up design matrix then multiply mat*var-cov mat * mat-1 to get var
     # then sqrt and mult by crit value to get CI of given pct 
-    Designmat <- model.matrix(rate+1 ~ ns(spatialBin, 3)*texture + reward, celldf)
+    Designmat <- model.matrix(rate ~ ns(spatialBin, 6)*texture + reward, celldf)
     predvar <- diag(Designmat %*% vcov(modi) %*% t(Designmat))
     celldf$fitCI <- sqrt(predvar)*z
     
     
     # Check non-overlap between walds and 0, and fits and each other
-    fitoverlap <- checkAlleyNonoverlap(celldf, alleyID)
-    
-    waldoverlap <- checkWaldNonoverlap(ndf)
-    r <- data.frame("cell"=cellname, "alley"=alleyID,"wald"=waldoverlap,"fit"=fitoverlap)
-    cicheckdf <- rbind(cicheckdf, r)
-    
+    # fitoverlap <- checkAlleyNonoverlap(celldf, alleyID)
+    # 
+    # waldoverlap <- checkWaldNonoverlap(ndf)
+    # r <- data.frame("cell"=cellname, "alley"=alleyID,"wald"=waldoverlap,"fit"=fitoverlap)
+    # cicheckdf <- rbind(cicheckdf, r)
+    # 
     
     # ggplot of splines with CI of fits
     celldf <- celldf[celldf$reward=="0",]

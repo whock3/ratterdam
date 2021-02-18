@@ -3,10 +3,11 @@ from numpy.linalg import norm as npNorm
 import scipy.ndimage
 from scipy.interpolate import interp1d
 import datetime
-from collections import Counter
+from collections import Counter, OrderedDict
 from bisect import bisect_left
 import scipy.ndimage
 from matplotlib.colors import LinearSegmentedColormap
+
 import ratterdam_CoreDataStructures as Core
 import ratterdam_ParseBehavior as Parse
 import ratterdam_Defaults as Def
@@ -330,18 +331,34 @@ def weird_smooth(U,sigma):
     return Z
 
 def getClustList(datafile):
+    
     """
     Given an absolute path to a data directory
     return a list of clusters in format
     TT{1-16}\\cl-maze1.n
+    
+    For each unit, get the clust quality 1-5(best)
+    from the ClNotes in the data dir and add
+    to a list whose order matches the order
+    of units in clustList
+    
+    returns: clustList - list of units
+             clustQuals - list of quals, same order as clustList
     """
+    
     clustList = []
+    clustQuals = []
     for subdir, dirs, fs in os.walk(datafile):
         for f in fs:
             if 'cl-maze1' in f and 'OLD' not in f and 'Undefined' not in f:
+                #get name and add to list
                 clustname = subdir[subdir.index("TT"):] + "\\" + f
                 clustList.append(clustname)
-    return clustList
+                # get quality 1-5(best) and add to list
+                qual = cellQuality(subdir+"\\")[clustname.split('.')[1]]
+                clustQuals.append(qual)
+                
+    return clustList, clustQuals
 
 def readUnitsToLoad():
     """
@@ -645,7 +662,7 @@ def distance(p0, p1):
 def consecutive(data, stepsize=1):
     return np.split(data, np.where(np.diff(data) != stepsize)[0]+1)
 
-def findField(unit,alley,sthresh=3,rthresh=0.5,pctThresh=None):
+def findField(unit,alley,sthresh=3*Def.cmPerBin,rthresh=0.5,pctThresh=None):
     """
     Identify a field as a set of sthresh or more contiguous bins
     greater than some thresh
@@ -702,7 +719,7 @@ def cellQuality(df):
     try:
         with open(df+"ClNotes","r") as f:
             lines = f.readlines()
-        qualities = {}
+        qualities = OrderedDict()
         qualityLabels = {
             "Poor": 1,
             "Marginal": 2,
@@ -712,7 +729,6 @@ def cellQuality(df):
         for line in lines:
             line = line.split(",")
             if line[1] != '""':
-                print(line, line[1].replace('"', ''))
                 qualities[line[0]] = qualityLabels[line[1].replace('"', '')]
         return qualities
     except:
