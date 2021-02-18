@@ -27,7 +27,7 @@ import pandas as pd
 from collections import OrderedDict
 
 rat = 'R808'
-expCode = 'BRD6'
+expCode = 'BRD7'
 datafile = f'E:\\Ratterdam\\{rat}\\{rat}{expCode}\\'
 
 qualThresh = 3

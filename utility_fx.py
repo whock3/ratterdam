@@ -662,7 +662,7 @@ def distance(p0, p1):
 def consecutive(data, stepsize=1):
     return np.split(data, np.where(np.diff(data) != stepsize)[0]+1)
 
-def findField(unit,alley,sthresh=3,rthresh=0.5,pctThresh=None):
+def findField(unit,alley,sthresh=3*Def.cmPerBin,rthresh=0.5,pctThresh=None):
     """
     Identify a field as a set of sthresh or more contiguous bins
     greater than some thresh

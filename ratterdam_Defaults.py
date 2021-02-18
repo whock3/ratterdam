@@ -177,7 +177,7 @@ alleyBounds_retroflective_onRim_manuallyshifted2={0: [[145, 250], [332, 415]],
  16: [[97, 174], [135, 230]]}
 
 #alleyBounds = alleyBounds_retroflective_onRim_manuallyshifted2
-alleyBounds = nab.R859.IAI
+alleyBounds = nab.R808.IAI
 #format is [n1...n8] where each is loc of IR/alley point that defines intersection. ni = [xi, yi]
 intersectionBounds = {'A':[[105, 385], [165, 385], [165, 385], [140, 340], [105, 340]],
                       'B':[[210, 385], [295, 390], [295, 352], [270, 340], [230, 340], [210, 345]],
@@ -233,7 +233,7 @@ wholetrack_imshow_pct_cutoff = 95
 singlealley_imshow_pct_cutoff = 97
 
 # toggle as to whether to include rewarded trials when constructing the Core.Unit() data structure
-includeRewards = 0# flag to decide whether rewarded trials will be included in analysis. 0 - no rewards, 1 - only rewards, 2 - all trials
+includeRewards = 2# flag to decide whether rewarded trials will be included in analysis. 0 - no rewards, 1 - only rewards, 2 - all trials
 
 
 beltwayAlleys = [16,17,3,1,5,7,8,10,11]
