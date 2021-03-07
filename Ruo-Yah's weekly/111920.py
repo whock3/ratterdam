@@ -33,11 +33,17 @@ def loadRepeatingUnit2(df, clustName, smoothing=2, vthresh=Def.velocity_filter_t
     start, end = int(lines[0].split(',')[0]), int(lines[0].split(',')[1])
     pos = util.read_pos(df)
     ts = np.asarray(sorted(list(pos.keys())))
-    posx, posy = Parse.adjustPosCamera(df, pos, ts)
+    
+    #filter out points at (0,0)
+    posx = [pos[i][0] for i in ts]
+    posy = [pos[i][1] for i in ts]
     headDir = [pos[i][2] for i in ts]
     position = np.column_stack((ts, posx, posy, headDir))
-    position = position[(position[:,0]>=start) & (position[:,0]<=end)]
     position = position[np.logical_or(position[:,1]>0, position[:,2]>0)]
+    
+    posx, posy = Parse.adjustPosCamera(df, position)
+    position = np.column_stack((position[:,0], posx, posy, position[:,3]))
+    position = position[(position[:,0]>=start) & (position[:,0]<=end)]
     position = Filt.velocity_filtering(position, vthresh)
     clust = np.asarray(util.read_clust(df+clustName))
     clust = Filt.unitVelocityFilter(ts, position, clust)

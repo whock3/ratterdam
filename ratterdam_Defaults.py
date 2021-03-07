@@ -198,7 +198,7 @@ alleyBounds_PolygonTriEnds = {0:[(),(),(),(),(),()],}
 dataPathNub = "D:\\Ratterdam\\"
 figurePathNub = "C:\\Users\\whock\\Google Drive\\KnierimLab\\Ratterdam\\Figures\\"
 
-velocity_filter_thresh = 1#units are cm/s
+velocity_filter_thresh = 3#units are cm/s
 ptsCm_krieger= 4.85 # number of camera points equiv to a cm
 
 ptsCm_macaulay = 4.72

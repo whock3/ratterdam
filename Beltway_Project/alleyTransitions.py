@@ -299,13 +299,15 @@ def turnsInField(turns, spikes, filename, subfield, title=""):
     axcb.set_label("Rate (Hz)")
 
 
-def turnsInFieldIO(turns, spikes, filename, subfield, title=""):
+#updated code in 100820
+def turnsInFieldIO(turns, spikes, filename, subfield, title="", df="C:/Users/Ruo-Yah Lai/Desktop/My folder/College/Junior/K lab research/R859 OD3/"):
     """
     Graphs the turns associated with a subfield, separated by into/inside/out of
     turns: from alleyTransitions
     filename: the file with which locations a field is in
+    df: where is the file with which locations a field is in
     """
-    with open("C:/Users/Ruo-Yah Lai/Desktop/My folder/College/Junior/K lab research/R859 OD3/"+filename, "r") as csv_file:
+    with open(df+filename, "r") as csv_file:
         data_iter = csv.reader(csv_file)
         data = [data for data in data_iter]
     fieldLoc = ast.literal_eval(data[subfield+1][1])
