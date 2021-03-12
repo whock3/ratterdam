@@ -330,7 +330,7 @@ def weird_smooth(U,sigma):
     Z=VV/WW
     return Z
 
-def getClustList(datafile):
+def getClustList(datafile,quals=True):
     
     """
     Given an absolute path to a data directory
@@ -354,9 +354,10 @@ def getClustList(datafile):
                 #get name and add to list
                 clustname = subdir[subdir.index("TT"):] + "\\" + f
                 clustList.append(clustname)
+                if quals:
                 # get quality 1-5(best) and add to list
-                qual = cellQuality(subdir+"\\")[clustname.split('.')[1]]
-                clustQuals.append(qual)
+                    qual = cellQuality(subdir+"\\")[clustname.split('.')[1]]
+                    clustQuals.append(qual)
                 
     return clustList, clustQuals
 
