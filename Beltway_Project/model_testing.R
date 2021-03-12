@@ -12,7 +12,7 @@ source("E:\\UserData\\Documents\\GitHub\\ratterdam\\Beltway_Project\\glmer_fx.R"
 
 # Read in data
 code <- "R808BRD7"
-save <- TRUE # toggle to save multipage pdfs and wald csvs
+save <- FALSE # toggle to save multipage pdfs and wald csvs
 database <- "E:\\Ratterdam\\R_data\\"
 datapath <- sprintf("%s%s",database,"20210215-172434_R808BRD7_1vfilt_0.5stepsmooth_24bins_2R_3qual.csv")
 df <- read.csv(datapath,header=TRUE)
