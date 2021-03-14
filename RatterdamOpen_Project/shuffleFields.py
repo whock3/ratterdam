@@ -16,7 +16,7 @@ from placeFieldBorders import reorderBorder
 from newAlleyBounds import R859
 
 
-def shuffleField(unit, subfield, rat, title="", graph=False):
+def shuffleFields(unit, rat, title="", graph=False):
     """
     Moves a field to a new location and assign firing rates to the new pixels
     using the firing rates in the original pixels
@@ -25,11 +25,6 @@ def shuffleField(unit, subfield, rat, title="", graph=False):
     """
     x = int(xmax/binWidth)
     y = int(ymax/binWidth)
-    
-    #find the field's area
-    fieldPerim = path.Path(unit.perimeters[subfield])
-    inField = fieldPerim.contains_points(coords)
-    area = np.sum(inField)
     
     #find pixels with sampling, excluding pixels outside of the track
     binaryArena = np.where(np.isnan(unit.repUnit.rateMap2D), False, True) #rows=y, cols=x
@@ -46,67 +41,83 @@ def shuffleField(unit, subfield, rat, title="", graph=False):
         onTrack[:,col] = False
     binaryArena = np.where(onTrack, binaryArena, False)
     
-    #find new center of mass
-    newCom = [0,0]
-    while ~binaryArena[newCom[1], newCom[0]]:
-        newCom = [randint(0,x-1), randint(0,y-1)] #[x,y]
+    newFieldDilMasks = []
+    newFields = []
+    for subfield in range(len(unit.perimeters)):
+        #find and sort firing rates in the original field
+        field = np.where(unit.repUnit.PF[subfield].mask, unit.repUnit.rateMap2D, np.nan)
+        fieldNonNaN = field[~np.isnan(field)]
+        fieldRates = sorted(fieldNonNaN, reverse=True)
 
-    #dilate and mask until new area >= original area
-    newFieldDilMask = np.zeros((y,x), dtype=bool) #rows=y, cols=x
-    newFieldDilMask[newCom[1], newCom[0]] = True
-    while np.sum(newFieldDilMask) < area:
-        newFieldMask = newFieldDilMask
-        dilated = binary_dilation(newFieldMask, structure=generate_binary_structure(2, 2)) #dilate in all directions, including diagonals
-        newFieldDilMask = np.where(binaryArena, dilated, False)
-    
-    #remove pixels from the last dilation until new area = original area
-    while np.sum(newFieldDilMask) > area:
-        lastDil = np.where(newFieldDilMask != newFieldMask)
-        lastDil = list(zip(lastDil[0], lastDil[1]))
-        removePx = choice(lastDil)
-        newFieldDilMask[removePx[0], removePx[1]] = False
-    
-    #find and sort firing rates in the original field
-    field = np.where(unit.repUnit.PF[subfield].mask, unit.repUnit.rateMap2D, np.nan)
-    fieldNonNaN = field[~np.isnan(field)]
-    fieldRates = sorted(fieldNonNaN, reverse=True)
-    
-    #assign highest firing rate to the center of the new field
-    newFieldDilMask2 = np.zeros((y,x), dtype=bool) #rows=y, cols=x
-    newField = np.where(newFieldDilMask2, 0, np.nan) #with values, not just True or False
-    newCenter = center_of_mass(newFieldDilMask)
-    newCenter = (int(round(newCenter[0])), int(round(newCenter[1]))) #(y,x)
-    newField[newCenter[0], newCenter[1]] = fieldRates[0]
-    newFieldDilMask2[newCenter[0], newCenter[1]] = True
-    fieldRates.pop(0)
-    
-    #assign firing rates to the pixels in the new field
-    while np.sum(newFieldDilMask2) < area:
-        #dilate from the pixels of the field with values and remove pixels outside of the field
-        newFieldMask2 = newFieldDilMask2
-        dilated = binary_dilation(newFieldMask2, structure=generate_binary_structure(2, 2))
-        newFieldDilMask2 = np.where(newFieldDilMask, dilated, False)
-        lastDil = np.where(newFieldDilMask2 != newFieldMask2)
-        lastDil = list(zip(lastDil[0], lastDil[1]))
+        #find the field's area
+        #fieldPerim = path.Path(unit.perimeters[subfield])
+        #inField = fieldPerim.contains_points(coords)
+        #area = np.sum(unit.repUnit.PF[subfield].mask)
+        area = len(fieldRates)
         
-        #randomly assign rates to the pixels in the last dilation
-        while len(lastDil) != 0:
-            randomPx = choice(lastDil)
-            lastDil.remove(randomPx)
-            newField[randomPx[0], randomPx[1]] = fieldRates[0]
-            fieldRates.pop(0)
+        #find new center of mass
+        newCom = [0,0]
+        while ~binaryArena[newCom[1], newCom[0]]:
+            newCom = [randint(0,x-1), randint(0,y-1)] #[x,y]
+    
+        #dilate and mask until new area >= original area
+        newFieldDilMask = np.zeros((y,x), dtype=bool) #rows=y, cols=x
+        newFieldDilMask[newCom[1], newCom[0]] = True
+        while np.sum(newFieldDilMask) < area:
+            newFieldMask = newFieldDilMask
+            dilated = binary_dilation(newFieldMask, structure=generate_binary_structure(2, 2)) #dilate in all directions, including diagonals
+            newFieldDilMask = np.where(binaryArena, dilated, False)
+        
+        #remove pixels from the last dilation until new area = original area
+        while np.sum(newFieldDilMask) > area:
+            lastDil = np.where(newFieldDilMask != newFieldMask)
+            lastDil = list(zip(lastDil[0], lastDil[1]))
+            removePx = choice(lastDil)
+            newFieldDilMask[removePx[0], removePx[1]] = False
+        
+        #assign highest firing rate to the center of the new field
+        newFieldDilMask2 = np.zeros((y,x), dtype=bool) #rows=y, cols=x
+        newField = np.where(newFieldDilMask2, 0, np.nan) #with values, not just True or False
+        newCenter = center_of_mass(newFieldDilMask)
+        newCenter = (int(round(newCenter[0])), int(round(newCenter[1]))) #(y,x)
+        newField[newCenter[0], newCenter[1]] = fieldRates[0]
+        newFieldDilMask2[newCenter[0], newCenter[1]] = True
+        fieldRates.pop(0)
+        
+        #assign firing rates to the pixels in the new field
+        while np.sum(newFieldDilMask2) < area:
+            #dilate from the pixels of the field with values and remove pixels outside of the field
+            newFieldMask2 = newFieldDilMask2
+            dilated = binary_dilation(newFieldMask2, structure=generate_binary_structure(2, 2))
+            newFieldDilMask2 = np.where(newFieldDilMask, dilated, False)
+            lastDil = np.where(newFieldDilMask2 != newFieldMask2)
+            lastDil = list(zip(lastDil[0], lastDil[1]))
+            
+            #randomly assign rates to the pixels in the last dilation
+            while len(lastDil) != 0:
+                randomPx = choice(lastDil)
+                lastDil.remove(randomPx)
+                newField[randomPx[0], randomPx[1]] = fieldRates[0]
+                fieldRates.pop(0)
+        
+        #remove pixels in the new field from available pixels for the next field
+        binaryArena = np.where(newFieldDilMask, False, binaryArena)
+        
+        newFieldDilMasks.append(newFieldDilMask)
+        newFields.append(newField)
         
     if graph:
         fig, ax = plt.subplots()
-        ax.imshow(unit.repUnit.rateMap2D, origin='lower', aspect='auto', interpolation='None', 
-                  cmap="jet", vmax=np.nanpercentile(unit.repUnit.rateMap2D, 98),
-                  extent=[xedges[0], xedges[-1], yedges[0], yedges[-1]])
-        ax.plot(unit.perimeters[subfield][:,0], unit.perimeters[subfield][:,1],color="k", label="original")
-        ax.imshow(newField, origin='lower', aspect='auto', interpolation='None', 
-                  cmap="jet", vmax=np.nanpercentile(unit.repUnit.rateMap2D, 98),
-                  extent=[xedges[0], xedges[-1], yedges[0], yedges[-1]])
-        newPerim = findPerim(newFieldDilMask)
-        ax.plot(newPerim[:,0], newPerim[:,1], color="r", label="new")
+        vmax = np.nanpercentile(unit.repUnit.rateMap2D, 98)
+        sampled = np.where(np.isnan(unit.repUnit.rateMap2D), np.nan, 0)
+        ax.imshow(sampled, origin='lower', aspect='auto', interpolation='None', 
+                  cmap="jet", vmax=vmax, extent=[xedges[0], xedges[-1], yedges[0], yedges[-1]])
+        #ax.plot(unit.perimeters[subfield][:,0], unit.perimeters[subfield][:,1],color="k", label="original")
+        for subfield in range(len(unit.perimeters)):
+            ax.imshow(newFields[subfield], origin='lower', aspect='auto', interpolation='None', 
+                      cmap="jet", vmax=vmax, extent=[xedges[0], xedges[-1], yedges[0], yedges[-1]])
+            newPerim = findPerim(newFieldDilMasks[subfield])
+            ax.plot(newPerim[:,0], newPerim[:,1], color=unit.colors[subfield], label=f"{subfield}")
         ax.set_title(title)
         ax.legend()
         ax.axis("equal")    
