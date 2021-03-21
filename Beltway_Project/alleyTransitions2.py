@@ -247,36 +247,35 @@ def turnsInFieldIO(turns, unit, fieldLocs, subfield):
     return turns2
 
 
-def closestTurnToVisit(unit, rat, filename, df):
+def closestTurnToVisit(turns, field):
     """
     Finds the turns immediately before or after the 1st ts of each visit to a field
     """
-    turns = alleyTransitions(unit.position, rat)
     #with open(df+filename, "r") as csv_file:
     #    data_iter = csv.reader(csv_file)
     #    fieldLocs = [data for data in data_iter]
-    prevTurns = []
-    nextTurns = []
-    for subfield in range(len(unit.visits)):
-        prevTurns.append([])
-        nextTurns.append([])
-        #turns2 = turnsInFieldIO(turns, unit, fieldLocs, subfield)
-        turnsF = turns[:,:5].astype(float)
-        
-        for visit in unit.visits[subfield]:
-            turnsBefore = turns[turnsF[:,4] < visit[0]] #ts of entry < 1st ts of visit
-            turnsAfter = turns[turnsF[:,3] > visit[0]] #ts of exit > 1st ts of visit
-            if len(turnsBefore) > 0: 
-                prevTurns[-1].append(turnsBefore[-1])
-            else:
-                prevTurns[-1].append(np.empty((0,9)))
-            if len(turnsAfter) > 0:
-                nextTurns[-1].append(turnsAfter[0])
-            else:
-                nextTurns[-1].append(np.empty((0,9)))
+    prevTurnAllo, prevTurnEgo, nextTurnAllo, nextTurnEgo = [], [], [], []
+    
+    #turns2 = turnsInFieldIO(turns, unit, fieldLocs, subfield)
+    turnsF = turns[:,:5].astype(float)
+    
+    for visitTs in field[:,0]:
+        turnsBefore = turnsF[turnsF[:,4] < visitTs] #ts of entry < 1st ts of visit
+        turnsAfter = turnsF[turnsF[:,3] > visitTs] #ts of exit > 1st ts of visit
+        if len(turnsBefore) > 0:
+            prevTurnAllo.append(turnsBefore[-1, 2])
+            prevTurnEgo.append(turnsBefore[-1, 1])
+        else:
+            prevTurnAllo.append(0)
+            prevTurnEgo.append(0)
+        if len(turnsAfter) > 0:
+            nextTurnAllo.append(turnsAfter[0, 2])
+            nextTurnEgo.append(turnsAfter[0, 1])
+        else:
+            nextTurnAllo.append(0)
+            nextTurnEgo.append(0)
                 
-            
-    return prevTurns, nextTurns
+    return prevTurnAllo, prevTurnEgo, nextTurnAllo, nextTurnEgo
             
         
 def alleyTransitions2(pos, rat, graph=False, minTime=0.5e6):
