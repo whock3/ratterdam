@@ -14,7 +14,7 @@ path <- "C:\\Users\\Ruo-Yah Lai\\Desktop\\My folder\\College\\Junior\\K lab rese
 df <- read.csv(path,header=TRUE)
 
 exp <- "R781D2"
-cellname <- "TT9\\cl-maze1.4"
+cellname <- "TT2\\cl-maze1.1"
 celldf <- subset(df, cell == cellname)
 
 # get rid of epoch 0, it's a py artefact from bisecting approach to finding 
@@ -59,13 +59,13 @@ mod <- lmer(rate ~ ns(direction,nsplineknots):epoch + (1+ns(direction,nsplinekno
 celldf$fit <- predict(mod, newdata=celldf, re.form=NA)
 
 #Designmat <- model.matrix(rate ~ ns(direction,nsplineknots):epoch + (ns(direction,nsplineknots)|field) + (epoch|field), celldf)
-Designmat <- model.matrix(rate ~ ns(direction,nsplineknots):epoch, celldf)
+Designmat <- model.matrix(rate ~ ns(direction,nsplineknots):epoch, data=celldf)
 predvar <- diag(Designmat %*% vcov(mod) %*% t(Designmat))
 celldf$fitCI <- sqrt(predvar)*z
 
 # interaction plot w spline fits
 p <- ggplot(celldf, aes(x=direction, y=rate, color=as.factor(epoch)))+
-  geom_line(aes(direction, fit, group=epoch))+
+  geom_line(aes(direction, fit, group=as.factor(epoch)))+
   geom_ribbon(aes(y=fit, ymin=fit-fitCI, ymax=fit+fitCI, fill=as.factor(epoch)), alpha=0.2)+
   ggtitle(sprintf("%s %s", exp, cellname))+
   geom_point(size=2,alpha=0.5)
@@ -74,9 +74,10 @@ print(p)
 
 
 #individual plots by group 
-#(mm_plot <- ggplot(celldf, aes(x = direction, y = rate, color = as.factor(epoch))) +
-#    facet_wrap(~field, nrow=2) +   # a panel for each mountain range
-#    geom_point(alpha = 0.5) +
-#    geom_line(data = cbind(celldf, pred = predict(mod)), aes(y = pred), size = 1)  # adding predicted line from mixed model 
-#)
-#print(mm_plot)
+(mm_plot <- ggplot(celldf, aes(x = direction, y = rate, color = as.factor(epoch))) +
+    facet_wrap(~field, nrow=2) +   # a panel for each mountain range
+    geom_point(alpha = 0.5) +
+    geom_ribbon(aes(y=fit, ymin=fit-fitCI, ymax=fit+fitCI, fill=as.factor(epoch)), alpha=0.2) +
+    geom_line(data = cbind(celldf, pred = predict(mod)), aes(y = pred), size = 1)  # adding predicted line from mixed model 
+)
+print(mm_plot)

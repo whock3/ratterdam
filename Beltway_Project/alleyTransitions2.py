@@ -259,6 +259,8 @@ def closestTurnToVisit(turns, field):
     #turns2 = turnsInFieldIO(turns, unit, fieldLocs, subfield)
     turnsF = turns[:,:5].astype(float)
     
+    noNextCount, noPrevCount = 0, 0
+    
     for visitTs in field[:,0]:
         turnsBefore = turnsF[turnsF[:,4] < visitTs] #ts of entry < 1st ts of visit
         turnsAfter = turnsF[turnsF[:,3] > visitTs] #ts of exit > 1st ts of visit
@@ -268,12 +270,14 @@ def closestTurnToVisit(turns, field):
         else:
             prevTurnAllo.append(0)
             prevTurnEgo.append(0)
+            noPrevCount += 1
         if len(turnsAfter) > 0:
             nextTurnAllo.append(turnsAfter[0, 2])
             nextTurnEgo.append(turnsAfter[0, 1])
         else:
             nextTurnAllo.append(0)
             nextTurnEgo.append(0)
+            noNextCount += 1
                 
     return prevTurnAllo, prevTurnEgo, nextTurnAllo, nextTurnEgo
             

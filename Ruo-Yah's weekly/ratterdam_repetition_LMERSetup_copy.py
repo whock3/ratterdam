@@ -71,7 +71,7 @@ rat = "R781"
 day = "D2"
 #savepath = f'E:\\Ratterdam\\{rat}\\ratterdam_plots\\{day}\\decoding\\'
 df = f'E:\Ratterdam\\{rat}\\{rat}_RatterdamOpen_{day}\\'
-clustList, _ = util.getClustList(df, quals=False)
+clustList = util.getClustList(df)
 population = {}
 for clust in clustList:
     try:
@@ -101,9 +101,10 @@ elif rat == "R886":
     ratAlleyBounds = R886
 
 for unitname, unit in population.items():
-    
     _, turns = alleyTransitions(unit.position, ratAlleyBounds)
-    print(unit.name)
+    break
+
+for unitname, unit in population.items():
     
     for i, field in enumerate(unit.fields):
         
