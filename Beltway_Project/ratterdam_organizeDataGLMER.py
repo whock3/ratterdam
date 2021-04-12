@@ -26,8 +26,8 @@ import ratterdam_DataFiltering as Filt
 import pandas as pd
 from collections import OrderedDict
 
-rat = 'R808'
-expCode = 'BRD7'
+rat = 'R859'
+expCode = 'BRD5'
 datafile = f'E:\\Ratterdam\\{rat}\\{rat}{expCode}\\'
 
 qualThresh = 3
@@ -48,26 +48,64 @@ for i,clust in enumerate(clustlist):
             unit.acorr = acorr
             unit.validAlleys = alleys
             population[clust] = unit
-            
+
+
 
 # Create "Long Form" of Data. Single Day
 #  Nested Structure: Cell > trial > texture > reward > spatial bin. 
             
-cells, cellNames, trials, textures, rewards, spatialBins, alleys, firingRate = [], [], [], [], [], [], [], []
-nbins = Def.singleAlleyBins[0]-1
-for cellID, (unitname, unit) in enumerate(population.items()):
-    print(unitname)
-    for alley in unit.validAlleys:
-        for i,visit in enumerate(unit.alleys[alley]):
-            alleys.extend([alley]*nbins)
-            cells.extend([cellID]*nbins)
-            cellNames.extend([unitname]*nbins)
-            trials.extend([i]*nbins)
-            txt = visit['metadata']['stimulus']
-            textures.extend([txt]*nbins)
-            rewards.extend([visit['metadata']['reward']]*nbins)
-            spatialBins.extend(range(nbins))
-            firingRate.extend(visit['ratemap1d'])
+#%% Create dataframe 
+            
+# Reassignment fx, toggles and params
+alleyReassignmentSchedule = {1:[2,4,6,8,9],
+                            2:[1,4,6,8,9],
+                            4:[1,2,6,8,9],
+                            6:[1,2,4,8,9],                           
+                            8:[1,2,4,6,9],
+                            9:[1,2,4,6,8]}
+            
+def getReassignmentData(unit, alley, reassignmentOrder, i):
+    newalley = alleyReassignmentSchedule[Def.beltwayAlleyLookup[alley]][reassignmentOrder]
+    newvisit = unit.alleys[alleyLookup_rev[newalley]][i] 
+    return newvisit['metadata']['stimulus'], newvisit['metadata']['reward']            
+            
+doingReassignment = True
+reassignmentOrder = 4
+alleyLookup_rev = {v:k for k,v in Def.beltwayAlleyLookup.items()}
+
+if doingReassignment == True:
+    cells, cellNames, trials, textures, rewards, spatialBins, alleys, firingRate = [], [], [], [], [], [], [], []
+    nbins = Def.singleAlleyBins[0]-1
+    for cellID, (unitname, unit) in enumerate(population.items()):
+        print(unitname)
+        for alley in unit.validAlleys:
+            if alley in [16,17,1,7,10,11]:
+                for i,visit in enumerate(unit.alleys[alley]):
+                    reTxt, reR = getReassignmentData(unit, alley, reassignmentOrder, i)
+                    alleys.extend([alley]*nbins)
+                    cells.extend([cellID]*nbins)
+                    cellNames.extend([unitname]*nbins)
+                    trials.extend([i]*nbins)
+                    textures.extend([reTxt]*nbins)
+                    rewards.extend([reR]*nbins)
+                    spatialBins.extend(range(nbins))
+                    firingRate.extend(visit['ratemap1d'])
+else:
+    cells, cellNames, trials, textures, rewards, spatialBins, alleys, firingRate = [], [], [], [], [], [], [], []
+    nbins = Def.singleAlleyBins[0]-1
+    for cellID, (unitname, unit) in enumerate(population.items()):
+        print(unitname)
+        for alley in unit.validAlleys:
+            for i,visit in enumerate(unit.alleys[alley]):
+                alleys.extend([alley]*nbins)
+                cells.extend([cellID]*nbins)
+                cellNames.extend([unitname]*nbins)
+                trials.extend([i]*nbins)
+                txt = visit['metadata']['stimulus']
+                textures.extend([txt]*nbins)
+                rewards.extend([visit['metadata']['reward']]*nbins)
+                spatialBins.extend(range(nbins))
+                firingRate.extend(visit['ratemap1d'])
             
 firingRate = np.log(np.asarray(firingRate)+1)
 data = {'rate':firingRate, 'cell':cells, 'name':cellNames, 'alley': alleys, 'trial':trials, 'texture':textures, 'reward':rewards, 'spatialBin':spatialBins}
@@ -78,6 +116,6 @@ alldata.dropna(inplace=True)
 stamp = util.genTimestamp()
 filename = f"{stamp}_{rat}{expCode}_{Def.velocity_filter_thresh}vfilt_\
 {Def.smoothing_1d_sigma}stepsmooth_{Def.singleAlleyBins[0]-1}bins_\
-{Def.includeRewards}R_{qualThresh}qual.csv"
+{Def.includeRewards}R_{qualThresh}qual_Reassign{reassignmentOrder}{doingReassignment}.csv"
                
-alldata.to_csv(f"E:\\Ratterdam\\R_data\\{filename}", header=True, index=False)
+alldata.to_csv(f"E:\\Ratterdam\\R_data_beltway\\{filename}", header=True, index=False)

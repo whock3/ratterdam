@@ -73,20 +73,25 @@ rat = "R859"
 day = "D2"
 savepath = f'E:\\Ratterdam\\{rat}\\ratterdam_plots\\{day}\\decoding\\'
 df = f'E:\Ratterdam\\{rat}\\{rat}_RatterdamOpen_{day}\\'
-clustList,_ = util.getClustList(df)
+clustList, clustQuals = util.getClustList(df)
 population = {}
-for clust in clustList:
-    try:
-        print(clust)
-        unit = RepCore.loadRepeatingUnit(df, clust, smoothing=1)
-        rm = util.makeRM(unit.spikes, unit.position)
-        if np.nanpercentile(rm, 95) > 1.:
-            population[clust] = unit
-            print(f"{clust} included")
-        else:
-            print(f"{clust} is not included")
-    except:
-        pass
+qualThresh = 3
+
+for i,clust in enumerate(clustList):
+    
+    if clustQuals[i] >= qualThresh:
+   
+        try:
+            print(clust)
+            unit = RepCore.loadRepeatingUnit(df, clust, smoothing=1)
+            rm = util.makeRM(unit.spikes, unit.position)
+            if np.nanpercentile(rm, 95) > 1.:
+                population[clust] = unit
+                print(f"{clust} included")
+            else:
+                print(f"{clust} is not included")
+        except:
+            pass
     
 #%% 
 # Create pandas data frame and save it 

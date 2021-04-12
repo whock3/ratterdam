@@ -1,0 +1,93 @@
+# Shuffling LMER Analysis
+# WH Mid March 2021
+# Run LMER analysis on data with shuffled texture lables within an alley
+# Compare distribution of effects (e.g. coefficients) to empirical
+
+# imports
+library(lme4)
+library(splines)
+library(ggplot2)
+library(lmtest)
+library(stringr)
+
+
+setwd("E:\\UserData\\Documents\\GitHub\\ratterdam\\")
+source("E:\\UserData\\Documents\\GitHub\\ratterdam\\Beltway_Project\\cicheck.R")
+source("E:\\UserData\\Documents\\GitHub\\ratterdam\\Beltway_Project\\glmer_fx.R")
+source("E:\\UserData\\Documents\\GitHub\\ratterdam\\Beltway_Project\\ratterdam_RunLMER.R")
+
+code <- "R859BRD3"
+save <- FALSE # toggle to save multipage pdfs and wald csvs
+database <- "E:\\Ratterdam\\R_data_beltway\\"
+datapath <- sprintf("%s%s",database,"20210214-173855_R859BRD3_1vfilt_0.5stepsmooth_24bins_2R_3qual.csv")
+df <- read.csv(datapath,header=TRUE)
+
+nshuffles <- 1000
+
+
+for (cellname in unique(df$name)){
+  
+  print(cellname)
+
+  # load cell and define key variables
+  celldf <- df[df$name==cellname,]
+  
+  nalleys <- length(unique(celldf$alley))
+
+  #loop over alleys 
+  for (a in unique(celldf$alley)){
+    
+    print(a)
+    celldf_a <- celldf[celldf$alley==a,]
+    celldf_a_copy <- data.frame(celldf_a) # used to shuffle, keep original trial structure in celldf_a 
+    
+    
+    celldf_a <- lmer_routine(celldf_a, nalleys) # nalleys is number of alleys w activity and used for bonferroni corr
+    empirical <- calcAlleyMaxSD(celldf_a, a)
+    
+    
+    # Create trial list
+    ntrials <- length(unique(celldf_a$trial))
+    trialList <- data.frame(texture=factor())
+    for (i in 0:ntrials-1){
+      stim <- unique(celldf_a[celldf_a$trial==i,]$texture)
+      trialList <- rbind(trialList, paste(stim))
+    }
+    
+    
+    shuffledData <- vector(mode='logical', length = nshuffles)
+
+    # shuffle loop
+    for (i in 1:nshuffles){
+      
+      shuffledTrials <- trialList[sample(1:ntrials),]
+      
+      for (j in 1:ntrials){
+        celldf_a_copy[celldf_a$trial==j-1,]$texture <- shuffledTrials[j]
+      }
+  
+        
+        celldf_a_copy <- lmer_routine(celldf_a_copy, nalleys)
+        #shuffledData[i] <- calcAlleyMaxSD(celldf_a_copy, a)
+        shuffledData[i] <- checkAlleyNonoverlap(celldf_a_copy,a)
+
+    }
+    print(sum(shuffledData))
+    # pct95 <- quantile(sort(shuffledData),0.95)
+    # title <- sprintf("Cell %s Alley %s",cellname,a)
+    # hist(shuffledData, main=title, xlab="Max SD Between Conditions", ylab="Frequency")
+    # abline(v=c(empirical, pct95), col=c("red", "black"))
+    
+  }
+
+
+}
+
+
+
+
+
+
+
+
+

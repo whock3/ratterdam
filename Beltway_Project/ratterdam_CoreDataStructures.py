@@ -105,7 +105,7 @@ class UnitData():
                 # rewarded and exclude it. This is to prevent reward-related
                 # firing rate confounds. 
                 nrtrialnum = None
-                
+           
                 interval = Parse.checkInterval(visitsOcc[0,0],[i[0] for i in self.alleyVisits[alley-1]]+[self.alleyVisits[alley-1][-1][1]])
                 reward = stimData['rewards'][alley-1][interval]
 
@@ -244,10 +244,10 @@ class BehavioralData():
     
 if __name__ == '__main__':
     
-    rat = "R781"
+    rat = "R859"
     expCode = "BRD3"
     datafile = f"E:\\Ratterdam\\{rat}\\{rat}{expCode}\\"
-    clustname = 'TT6\\cl-maze1.4'
+    clustname = 'TT8\\cl-maze1.4'
       
     print(f"Beginning {rat} {expCode} {clustname}")
     alleyTracking, alleyVisits,  txtVisits, p_sess, ts_sess = Parse.getDaysBehavioralData(datafile, expCode)

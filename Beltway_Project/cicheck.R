@@ -9,14 +9,21 @@ singleCIbounds <- function(celldf, alley, b, stim){
   
 }
 
-checkSingleNonoverlap <- function(ciA, ciB){
-  # ciA,B are lists where its [upper, lower] ci bound
-  if(ciA[1] < ciB[2]){
-    nonoverlap = TRUE
-    
-  }
-  else if(ciA[2] > ciB[1]){
-    nonoverlap = TRUE
+checkSingleNonoverlap <- function(ciX, ciY){
+  # ciX,Y are lists where its [upper, lower] ci bound
+  
+  #length will be 0 if there is no sample, i.e. no sampling at that bin for that txt
+  if (length(ciX) > 0 & length(ciY) > 0){
+    if(ciX[1] < ciY[2]){
+      nonoverlap = TRUE
+      
+    }
+    else if(ciX[2] > ciY[1]){
+      nonoverlap = TRUE
+    }
+    else{
+      nonoverlap = FALSE
+    }
   }
   else{
     nonoverlap = FALSE
@@ -26,10 +33,9 @@ checkSingleNonoverlap <- function(ciA, ciB){
 }
 
 checkAlleyNonoverlap <- function(celldf, alley){
-  #celldf may or may not be alreayd filtered by alley
-  # (possibly redundant) filtering done in fx
-  celldf <- celldf[celldf$alley==alley,]
   bins <- seq(0,max(celldf$spatialBin))
+  
+  alleynonoverlap <- FALSE
   
   for(b in bins){
     cia <- singleCIbounds(celldf, alley, b, 'A')
@@ -40,9 +46,6 @@ checkAlleyNonoverlap <- function(celldf, alley){
     cao <- checkSingleNonoverlap(cic,cia)
     if(abo == TRUE || bco == TRUE || cao == TRUE){
       alleynonoverlap = TRUE
-    }
-    else{
-      alleynonoverlap = FALSE
     }
     
   }
@@ -79,4 +82,48 @@ checkWaldNonoverlap <- function(walddf){
   return(nonoverlap)
   
   
+}
+
+
+calcAlleyMaxSD <- function(celldf, alley) {
+
+  celldf <- celldf[celldf$alley==alley,]
+  nbins <- length(unique(celldf$spatialBin))
+  
+  overallMaxDist <- 0 
+  
+  for (b in 0:(nbins-1)){
+  
+  aci=unique(celldf[celldf$spatialBin==b & celldf$texture=='A',]$fitCI)
+  afit=unique(celldf[celldf$spatialBin==b & celldf$texture=='A',]$fit)
+  
+  bci=unique(celldf[celldf$spatialBin==b & celldf$texture=='B',]$fitCI)
+  bfit=unique(celldf[celldf$spatialBin==b & celldf$texture=='B',]$fit)
+  
+  cci=unique(celldf[celldf$spatialBin==b & celldf$texture=='C',]$fitCI)
+  cfit=unique(celldf[celldf$spatialBin==b & celldf$texture=='C',]$fit)
+  
+  ab_dist = mean(c((abs(afit-bfit)/aci),(abs(afit-bfit)/bci)))
+  bc_dist = mean(c((abs(bfit-cfit)/bci),(abs(bfit-cfit)/cci)))
+  ca_dist = mean(c((abs(cfit-afit)/cci),(abs(cfit-afit)/aci)))
+  
+  dists <- c(ab_dist, bc_dist, ca_dist)
+  dists <- dists[!is.na(dists)]
+  
+  
+  if (length(dists > 0)){
+  
+    max_dist <- max(dists)
+    
+    if (max_dist > overallMaxDist){
+      
+      overallMaxDist <- max_dist
+      }
+  
+    }
+  
+  }
+  
+  
+  return(overallMaxDist)
 }

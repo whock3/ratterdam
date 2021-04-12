@@ -11,24 +11,24 @@ source("E:\\UserData\\Documents\\GitHub\\ratterdam\\Beltway_Project\\cicheck.R")
 source("E:\\UserData\\Documents\\GitHub\\ratterdam\\Beltway_Project\\glmer_fx.R")
 
 # Read in data
-code <- "R808BRD7"
+code <- "R859BRD5"
 save <- FALSE # toggle to save multipage pdfs and wald csvs
-database <- "E:\\Ratterdam\\R_data\\"
-datapath <- sprintf("%s%s",database,"20210215-172434_R808BRD7_1vfilt_0.5stepsmooth_24bins_2R_3qual.csv")
+database <- "E:\\Ratterdam\\R_data_beltway\\"
+datapath <- sprintf("%s%s",database,"20210318-184038_R859BRD5_1vfilt_0.5stepsmooth_24bins_2R_3qual_Reassign4True.csv")
 df <- read.csv(datapath,header=TRUE)
 
 # Select output, create timestamp 
-figbasepath <- "E:\\Ratterdam\\R_data\\graphs\\210213_lmer_graphs\\"
+figbasepath <- "E:\\Ratterdam\\R_data_beltway\\graphs\\210317_reassignmentAnalysis\\"
 ts <- str_replace(Sys.time()," ","_")
 ts <- str_replace_all(ts, ":", "_")
 
 
-if(code=="R859BRD5"){
-
-  df<-df[!df$alley==3,]
-  df<-df[!df$alley==5,]
-  df<-df[!df$alley==7,]
-}
+# if(code=="R859BRD5"){
+# 
+#   df<-df[!df$alley==3,]
+#   df<-df[!df$alley==5,]
+#   df<-df[!df$alley==7,]
+# }
 
 
 # set up dfs that will store data. first is wald info, second is ci overlap check outcome
@@ -51,7 +51,7 @@ for(cellID in unique(df$cell)){
   alleys <- unique(celldf$alley)
   nalleys <-length(alleys)
   
-  bonf <- 0.17/(3*nsplineknots*nalleys) 
+  bonf <- 0.17/(3*nsplineknots*nalleys*5) #*8 for reassignment analysis
   cipct <- 1-bonf
   z <- qnorm(cipct)
   
@@ -153,7 +153,7 @@ for(cellID in unique(df$cell)){
 wdf <- wdf[-c(1),] # first row is nans bc how i init it. 
 if(save==TRUE){
 #Write Wald CI data to csv
-dpath <- "E:\\Ratterdam\\R_data\\"
+dpath <- "E:\\Ratterdam\\R_data_beltway\\"
 write.csv(wdf,paste(dpath,ts,"_",code,"_wald.csv",sep=""),row.names=TRUE)
 }
 
