@@ -228,6 +228,15 @@ def plotRoutine_RepPF_TempDyn(unit, nf=99, time='time', save=False, savepath=[])
         
 def interpolateField(fields,name,wnSize=5*1e6*60, wnStep=2*1e6*60,s=5,k=3,plot=True, ret=False):
     """
+    
+    DEPRECATED: This uses a spline (splev/splrep) which is prone to under and
+                overshooting real curve. Instead using a PCHIP spline interpolation
+                which is less sensitive to this in the makeSemaphores() 
+                Implemented using pchip in scipy around 9/23/20 (but this deprecation notice added 3/19/21)
+    
+    
+    ----------------------------
+    
     Input: A unit object with attribute fields (list of [ts,fr] arrays])
            wnSize - size of sliding window in time units (minutes)
            wnStep - shift of sliding window in time units (minutes)

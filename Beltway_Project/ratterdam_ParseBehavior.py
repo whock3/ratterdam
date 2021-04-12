@@ -383,6 +383,7 @@ def loadBeltwayData(basedir,stimFiles, expCode):
             rows[i] = [x for x in rows[i] if x != '']
             
             
+            
         sessionLen = len(rows[3])
             
         stimData["lapStarts"] = [float(i) for i in rows[3][1:sessionLen]]
