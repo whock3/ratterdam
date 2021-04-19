@@ -18,6 +18,9 @@ import ratterdam_Defaults as Def
 import utility_fx as util
 from ratterdam_RepetitionCoreFx import loadRepeatingUnit
 from confounds import graphDirRatemaps
+import pandas as pd
+import statsmodels.api as sm
+from statsmodels.formula.api import ols
 
 
 def graphVisits(unit, subfield, title=""):
@@ -135,6 +138,37 @@ def rateDir(unit, title, test):
     
     return fig, tukeys
 
+
+
+def rateDir2D(unit, title=""):
+    """
+    Calculates the interaction between field and direction using 2-way ANOVA
+    """
+    visitRates = []
+    for i in range(len(unit.perimeters)): #i = subfield
+        contour = path.Path(unit.perimeters[i])
+        PinC = unit.position[contour.contains_points(unit.position[:,1:])]
+        SinC = unit.spikes[contour.contains_points(unit.spikes[:,1:])]
+        for visit in range(len(unit.visits[i])):
+            
+            visitPos = np.logical_and(PinC[:,0] >= unit.visits[i][visit][0],
+                                      PinC[:,0] <= unit.visits[i][visit][-1])
+            visitSpk = np.logical_and(SinC[:,0] >= unit.visits[i][visit][0],
+                                      SinC[:,0] <= unit.visits[i][visit][-1])
+            
+            posDir, spikesDir = directionFilterS(PinC[visitPos], SinC[visitSpk])
+            for j in range(4):
+                if len(posDir[j]) == 0:
+                    pass
+                else:
+                    visitRate = len(spikesDir[j]) / len(posDir[j]) * 30
+                    visitRates.append([i,j,visitRate])
+    visitRates = np.array(visitRates)
+    visitRates_ = pd.DataFrame(visitRates, columns = ["Field", "Dir", "Rate"])
+    
+    model = ols('Rate ~ C(Field) + C(Dir) + C(Field):C(Dir)', data=visitRates_)
+    return sm.stats.anova_lm(model.fit(), typ=2)
+        
 
 def readCells(file, df):
     """

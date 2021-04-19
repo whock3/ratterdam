@@ -21,6 +21,7 @@ import bisect
 import pandas as pd
 from alleyTransitions2 import alleyTransitions, closestTurnToVisit
 from newAlleyBounds import R781, R808, R859, R886
+from directionality import rateDir2D
 
 
 # Define functions and parameters
@@ -68,23 +69,26 @@ def calcFieldDirections(pos, field):
 # Load data into dictionary
 
 rat = "R781"
-day = "D2"
+day = "D4"
 #savepath = f'E:\\Ratterdam\\{rat}\\ratterdam_plots\\{day}\\decoding\\'
 df = f'E:\Ratterdam\\{rat}\\{rat}_RatterdamOpen_{day}\\'
-clustList = util.getClustList(df)
+clustList, clustQuals = util.getClustList(df)
 population = {}
-for clust in clustList:
-    try:
-        print(clust)
-        unit = RepCore.loadRepeatingUnit(df, clust, smoothing=1)
-        rm = util.makeRM(unit.spikes, unit.position)
-        if np.nanpercentile(rm, 95) > 1.:
-            population[clust] = unit
-            print(f"{clust} included")
-        else:
-            print(f"{clust} is not included")
-    except:
-        pass
+qualThresh = 0
+
+for i,clust in enumerate(clustList):
+    if clustQuals[i] >= qualThresh:
+        try:
+            print(clust)
+            unit = RepCore.loadRepeatingUnit(df, clust, smoothing=1)
+            rm = util.makeRM(unit.spikes, unit.position)
+            if np.nanpercentile(rm, 95) > 1.:
+                population[clust] = unit
+                print(f"{clust} included")
+            else:
+                print(f"{clust} is not included")
+        except:
+            pass
     
 #%% 
 # Create pandas data frame and save it 
@@ -101,25 +105,35 @@ elif rat == "R886":
     ratAlleyBounds = R886
 
 for unitname, unit in population.items():
-    _, turns = alleyTransitions(unit.position, ratAlleyBounds)
+    #_, turns = alleyTransitions(unit.position, ratAlleyBounds)
     break
-
+count = [0,0,0]
+numberOfCells = 0
 for unitname, unit in population.items():
-    
-    for i, field in enumerate(unit.fields):
+    try:
+        ANOVA = rateDir2D(unit)
+        for i in range(3):
+            if ANOVA["PR(>F)"][i] < 0.05:
+                count[i] += 1
+        numberOfCells += 1
+    except:
+        print("no ANOVA")
+        pass
+print(count, numberOfCells)
+    #for i, field in enumerate(unit.fields):
         
-        rates.extend(field[:,1])
-        cells.extend([unitname]*field.shape[0])
-        fields.extend([i]*field.shape[0])
-        directions.extend(calcFieldDirections(unit.position, field))
-        epochs.extend(calcFieldEpochs(unit, field))
+        #rates.extend(field[:,1])
+        #cells.extend([unitname]*field.shape[0])
+        #fields.extend([i]*field.shape[0])
+        #directions.extend(calcFieldDirections(unit.position, field))
+        #epochs.extend(calcFieldEpochs(unit, field))
         
-        pta, pte, nta, nte = closestTurnToVisit(turns, field)
-        prevTurnAllo.extend(pta)
-        prevTurnEgo.extend(pte)
-        nextTurnAllo.extend(nta)
-        nextTurnEgo.extend(nte)
-
+        #pta, pte, nta, nte = closestTurnToVisit(turns, field)
+        #prevTurnAllo.extend(pta)
+        #prevTurnEgo.extend(pte)
+        #nextTurnAllo.extend(nta)
+        #nextTurnEgo.extend(nte)
+"""
 data = {'rate':rates, 
         'cell':cells, 
         'field':fields,
@@ -139,3 +153,4 @@ stamp = util.genTimestamp()
 filename = f"{stamp}_{rat}{day}_{Def.velocity_filter_thresh}vfilt_.csv"
                
 alldata.to_csv(f"C:\\Users\\Ruo-Yah Lai\\Desktop\\My folder\\College\\Junior\\K lab research\\Graphs\\LMER\\{filename}", header=True, index=False)
+"""

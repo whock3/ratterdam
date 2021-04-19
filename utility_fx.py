@@ -329,19 +329,40 @@ def weird_smooth(U,sigma):
     Z=VV/WW
     return Z
 
-def getClustList(datafile):
+def getClustList(datafile,quals=True):
+    
     """
     Given an absolute path to a data directory
     return a list of clusters in format
     TT{1-16}\\cl-maze1.n
+    
+    For each unit, get the clust quality 1-5(best)
+    from the ClNotes in the data dir and add
+    to a list whose order matches the order
+    of units in clustList
+    
+    returns: clustList - list of units
+             clustQuals - list of quals, same order as clustList
     """
+    
     clustList = []
+    clustQuals = []
     for subdir, dirs, fs in os.walk(datafile):
         for f in fs:
             if 'cl-maze1' in f and 'OLD' not in f and 'Undefined' not in f:
+                #get name and add to list
                 clustname = subdir[subdir.index("TT"):] + "\\" + f
                 clustList.append(clustname)
-    return clustList
+                if quals:
+                # get quality 1-5(best) and add to list
+                    try:
+                        qual = cellQuality(subdir+"\\")[clustname.split('.')[1]]
+                        clustQuals.append(qual)
+                    except:
+                        clustQuals.append(0)
+                
+    return clustList, clustQuals
+
 
 def readUnitsToLoad():
     """
