@@ -35,25 +35,25 @@ datasets = [("R781","BRD2"),
             ("R886","BRD2")
             ]
 
-rat = 'R859'
-expCode = 'BRD5'
-datafile = f'E:\\Ratterdam\\{rat}\\{rat}{expCode}\\'
-
-qualThresh = 3
-alleyTracking, alleyVisits,  txtVisits, p_sess, ts_sess = Parse.getDaysBehavioralData(datafile, expCode)
-clustlist, clustQuals = util.getClustList(datafile) # clustList and clustQuals share same order. ith entry in each is the name and qual of same cell. 
-population = OrderedDict()
-
-# Load Data
-for i,clust in enumerate(clustlist):
-    if clustQuals[i] >= qualThresh:
-        unit = Core.UnitData(clust, datafile, expCode, Def.alleyBounds, alleyVisits, txtVisits, p_sess, ts_sess)
-        unit.loadData_raw()
-        validalleys = []
-        valid, acorr, alleys = util.checkInclusion(unit, 3) # 2nd arg to util.checkInclusion is how many comps made per alley. This 
-                                                            # value (usually 3) is not being saved here and is defined in the relevant R code so ignore it here
-        if valid:
-            print(clust)
-            unit.acorr = acorr
-            unit.validAlleys = alleys
-            population[clust] = unit
+for rat,expCode in datasets:
+    print(rat, expCode)
+    datafile = f'E:\\Ratterdam\\{rat}\\{rat}{expCode}\\'
+    
+    qualThresh = 3
+    alleyTracking, alleyVisits,  txtVisits, p_sess, ts_sess = Parse.getDaysBehavioralData(datafile, expCode)
+    clustlist, clustQuals = util.getClustList(datafile) # clustList and clustQuals share same order. ith entry in each is the name and qual of same cell. 
+    population = OrderedDict()
+    
+    # Load Data
+    for i,clust in enumerate(clustlist):
+        if clustQuals[i] >= qualThresh:
+            unit = Core.UnitData(clust, datafile, expCode, Def.alleyBounds, alleyVisits, txtVisits, p_sess, ts_sess)
+            unit.loadData_raw()
+            validalleys = []
+            valid, acorr, alleys = util.checkInclusion(unit, 3) # 2nd arg to util.checkInclusion is how many comps made per alley. This 
+                                                                # value (usually 3) is not being saved here and is defined in the relevant R code so ignore it here
+            if valid:
+                print(clust)
+                unit.acorr = acorr
+                unit.validAlleys = alleys
+                population[clust] = unit

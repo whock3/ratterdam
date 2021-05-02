@@ -692,19 +692,37 @@ def findField(unit,alley,sthresh=3*Def.cmPerBin,rthresh=0.5,pctThresh=None):
         field_idx = None
     return field, field_idx
 
-def checkInclusion(unit,ncompsperalley):
+def checkInclusion(unit,ncompsperalley,pass_thresh,passCheck=True,fieldCheck=True):
     """
     Apply inclusion criteria to a unit, deciding which(if any)
     alleys will be included in analysis. If 0, cell is not used.
+    
+    ncompsperalley - number of comparisons you make per alley to help define bonferroni correction
+    pass_thresh - number of passes that have min firing of 1 hz
+    passCheck - is passcheck being done
+    fieldCheck - is fieldcheck being done
+    
+    passcheck checks for N passes (trials) with min firing 
+    fieldcheck checks for at least n contiguous bins of overall field w min firing
+    
+    
     return: inclusion bool, adj alpha, alley(s) to be included
-    adj alpha is 0.05 / (# alleys included * # comparisons per alley (arg: ncompsperalley))
+    adj alpha is 0.05 / (# alleys included * # comparisons per alley
+    
+    
     """
+    
+    
     validalleys = []
     for alley in Def.beltwayAlleys:
-        passesCheck = Filt.checkMinimumPassesActivity(unit, alley, pass_thresh=12)
-        fieldCheck, _ = findField(unit, alley)
-        if passesCheck is True and fieldCheck is True:
+        
+        
+        passesCheckResult = Filt.checkMinimumPassesActivity(unit, alley, pass_thresh=pass_thresh)
+        fieldCheckResult, _ = findField(unit, alley)
+        if passesCheckResult is True and fieldCheckResult is True:
             validalleys.append(alley)
+            
+            
     if len(validalleys)>0:
         alphaCorr = 0.05/(len(validalleys)*ncompsperalley)
         include = True
