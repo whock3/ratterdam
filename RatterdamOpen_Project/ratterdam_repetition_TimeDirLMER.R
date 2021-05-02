@@ -61,14 +61,14 @@ for (cellname in unique(df$cell)){
     
     mod <- NULL
     
-    u <- try(mod <- lmer(rate ~ histdir*epoch + (1+histdir|field) + (1+epoch|field), data=celldf))
+    u <- try(mod <- lmer(rate ~ histdir*field + (1+histdir|epoch) + (1+field|epoch), data=celldf))
     if (!is.null(mod)){
       celldf$fit <- predict(mod, newdata=celldf, re.form=NA)
       
       #Designmat <- model.matrix(rate ~ ns(direction,nsplineknots):epoch + (ns(direction,nsplineknots)|field) + (epoch|field), celldf)
-      Designmat <- model.matrix(rate ~ histdir*epoch, celldf)
-      predvar <- diag(Designmat %*% vcov(mod) %*% t(Designmat))
-      celldf$fitCI <- sqrt(predvar)*z
+      # Designmat <- model.matrix(rate ~ histdir*field, celldf)
+      # predvar <- diag(Designmat %*% vcov(mod) %*% t(Designmat))
+      # celldf$fitCI <- sqrt(predvar)*z
       
       # interaction plot w spline fits
       # p <- ggplot(celldf, aes(x=histdir, y=rate, color=as.factor(epoch)))+
@@ -94,24 +94,24 @@ for (cellname in unique(df$cell)){
       title <- sprintf("%s_%s", exp, cellname)
       title <- gsub("\\\\","-",title)
       
-      png(file=sprintf("%s%s_overall.png",savepath,title))
-      p <- ggplot(celldf, aes(x=histdir, y=fit, fill=epoch))+
-            geom_bar(position='dodge',stat='identity')+
-            geom_errorbar(aes(ymin=fit-fitCI, ymax=fit+fitCI),position='dodge')+
-            ggtitle(title)
-      print(p)
-      dev.off()
+      #png(file=sprintf("%s%s_overall.png",savepath,title))
+      # p <- ggplot(celldf, aes(x=histdir, y=fit, fill=epoch))+
+      #       geom_bar(position='dodge',stat='identity')+
+      #       geom_errorbar(aes(ymin=fit-(sd(rate)/sqrt(length(rate))), ymax=fit+(sd(rate)/sqrt(length(rate)))),position='dodge')+
+      #       ggtitle(title)
+      # print(p)
+      # #dev.off()
       
       
-      png(file=sprintf("%s%s_fields.png",savepath,title))
-      fp <- ggplot(celldf, aes(x=histdir, y=fit, fill=epoch))+
-        facet_wrap(~field, nrow=3)+
+      #png(file=sprintf("%s%s_fields.png",savepath,title))
+      fp <- ggplot(celldf, aes(x=field, y=fit, fill=as.factor(histdir)))+
+        facet_wrap(~epoch, nrow=3)+
         geom_bar(position='dodge',stat='identity')+
-        geom_errorbar(aes(ymin=fit-fitCI, ymax=fit+fitCI),position='dodge')+
+        geom_errorbar(aes(ymin=fit-(sd(rate)/sqrt(length(rate))), ymax=fit+(sd(rate)/sqrt(length(rate)))),position='dodge')+
         ggtitle(title)
       
       print(fp)
-      dev.off()
+      #dev.off()
     
     }
     

@@ -41,6 +41,8 @@ clustList, clustQuals = util.getClustList(df)
 population = {}
 qualThresh = 3
 
+print(clustList)
+
 for i,clust in enumerate(clustList):
     
     if clustQuals[i] >= qualThresh:

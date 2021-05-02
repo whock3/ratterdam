@@ -22,7 +22,7 @@ import ratterdam_visBasic as Vis
 from scipy.interpolate import interp1d
 
 
-rat = "R781"
+rat = "R886"
 expCode = "BRD3"
 
 
