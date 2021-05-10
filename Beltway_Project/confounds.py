@@ -15,9 +15,8 @@ from string import ascii_uppercase
 from collections import namedtuple
 from copy import deepcopy
 from bisect import bisect_left
-from alleyTransitions import alleyTransitions
+from alleyTransitions import alleyTransitions, crossBorder, crossBorder2
 from newAlleyBounds import R781, R808, R859
-from alleyTransitions import crossBorder, crossBorder2
 import ratterdam_Defaults as Def
 from ratterdam_ParseBehavior import adjustPosCamera
 import ratterdam_DataFiltering as Filt
@@ -28,6 +27,7 @@ from RDP4_class import RDP4
 def directionFilter(pos):
     """
     Returns position filtered by which direction the rat was facing
+    Doesn't include spikes
 
     """
     directions = np.diff(pos[:, 1:3], axis=0)

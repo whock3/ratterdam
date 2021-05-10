@@ -46,6 +46,11 @@ def intersect(A,B,C,D):
     return ccw(A,C,D) != ccw(B,C,D) and ccw(A,B,C) != ccw(A,B,D)
 
 def crossBorder(pos1, pos2, alley):
+    """
+    Returns which of the alley's borders (NESW) is crossed when going
+    from pos1 to pos2
+    
+    """
     if intersect((alley.xmin,alley.ymax), (alley.xmax,alley.ymax), pos1[1:3], pos2[1:3]):
         border = 0 #North
     elif intersect((alley.xmax,alley.ymin), (alley.xmax,alley.ymax), pos1[1:3], pos2[1:3]):
@@ -75,6 +80,7 @@ def crossBorder2(pos1, pos2, border1, border2):
 def turn(a, b):
     """
     First border crossed is a. Second border crossed is b.
+    a and b are which border (NESW) of an alley is crossed and from crossBorder
     """
     if abs(a-b) == 2:
         egoturn = "s"
@@ -164,6 +170,7 @@ def alleyTransitions(pos, rat, graph=False, minTime=0.5e6):
     posNew = posNew[posNew[:,0].argsort()]
     posNewF = posNew[:,:4].astype(float) #ts, x, y, 1st/last pt of visit
     
+    #these 3 files are also in E drive/Ratterdam/RYL
     with open("C:/Users/Ruo-Yah Lai/Desktop/My folder/College/Junior/K lab research/Alley transitions egocentric.csv","r") as file:
         data_iter = csv.reader(file)
         trsnEgo = [data for data in data_iter]
@@ -421,6 +428,8 @@ def bulkGraphs(turns,spikes1,spikes2,spikes4,spikes5,spikes6,spikes7,spikes8,tim
 Rectangle = namedtuple("Rectangle", "xmin xmax ymin ymax")
 
 
+#Listing the possible turns
+#possibleTurnsA and possibleTurnsI dimensions: into/inside/out of/through, straight/right/back/left, north/east/south/west
 into0 = [[False, False, False, True],
          [False, True, False, False],
          [False, False, False, False],
