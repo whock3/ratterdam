@@ -358,7 +358,7 @@ def getClustList(datafile,quals=True):
                     try:
                         qual = cellQuality(subdir+"\\")[clustname.split('.')[1]]
                         clustQuals.append(qual)
-                    except:
+                    except KeyError:
                         clustQuals.append(0)
                 
     return clustList, clustQuals
@@ -748,5 +748,5 @@ def readRepeatingCells(file, df):
         lines = f.readlines()
         tabulations = [line.split(",") for line in lines]
     tabulations = np.array(tabulations)
-    cells = tabulations[np.where(tabulations[:,1]=="True")[0], 0]
+    cells = tabulations[np.where(np.char.lower(tabulations[:,1])=="true")[0], 0]
     return cells

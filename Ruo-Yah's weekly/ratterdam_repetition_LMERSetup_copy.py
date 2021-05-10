@@ -68,27 +68,33 @@ def calcFieldDirections(pos, field):
 
 # Load data into dictionary
 
-rat = "R781"
-day = "D4"
+rat = "R886"
+day = "D3"
 #savepath = f'E:\\Ratterdam\\{rat}\\ratterdam_plots\\{day}\\decoding\\'
 df = f'E:\Ratterdam\\{rat}\\{rat}_RatterdamOpen_{day}\\'
 clustList, clustQuals = util.getClustList(df)
+dfRep = "E:\\Ratterdam\\R859\\ratterdam_tabulations\\"
+clustListRep = util.readRepeatingCells(f"{rat}{day}_tabulations.csv", dfRep)
 population = {}
 qualThresh = 0
 
+clustListGoodQual = []
 for i,clust in enumerate(clustList):
     if clustQuals[i] >= qualThresh:
-        try:
-            print(clust)
-            unit = RepCore.loadRepeatingUnit(df, clust, smoothing=1)
-            rm = util.makeRM(unit.spikes, unit.position)
-            if np.nanpercentile(rm, 95) > 1.:
-                population[clust] = unit
-                print(f"{clust} included")
-            else:
-                print(f"{clust} is not included")
-        except:
-            pass
+        clustListGoodQual.append(clust)
+clustListRep = list(set(clustListGoodQual)&set(clustListRep))
+for i,clust in enumerate(clustListRep):
+    try:
+        print(clust)
+        unit = RepCore.loadRepeatingUnit(df, clust, smoothing=1)
+        rm = util.makeRM(unit.spikes, unit.position)
+        if np.nanpercentile(rm, 95) > 1.:
+            population[clust] = unit
+            print(f"{clust} included")
+        else:
+            print(f"{clust} is not included")
+    except:
+        pass
     
 #%% 
 # Create pandas data frame and save it 
@@ -104,22 +110,26 @@ elif rat == "R859":
 elif rat == "R886":
     ratAlleyBounds = R886
 
-for unitname, unit in population.items():
+#for unitname, unit in population.items():
     #_, turns = alleyTransitions(unit.position, ratAlleyBounds)
-    break
+    #break
+
 count = [0,0,0]
-numberOfCells = 0
+totalCells = 0
+oneField = 0
 for unitname, unit in population.items():
     try:
         ANOVA = rateDir2D(unit)
         for i in range(3):
             if ANOVA["PR(>F)"][i] < 0.05:
                 count[i] += 1
-        numberOfCells += 1
+        totalCells += 1
     except:
-        print("no ANOVA")
-        pass
-print(count, numberOfCells)
+        if len(unit.perimeters) <= 1:
+            oneField += 1
+        else:
+            print(f"failed ANOVA: {unitname}")
+print(f"{count}, rep: {len(clustListRep)}, totalwANOVA: {totalCells}, one field: {oneField}")
     #for i, field in enumerate(unit.fields):
         
         #rates.extend(field[:,1])
