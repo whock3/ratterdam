@@ -41,7 +41,7 @@ for i,clust in enumerate(clustlist):
         unit = Core.UnitData(clust, datafile, expCode, Def.alleyBounds, alleyVisits, txtVisits, p_sess, ts_sess)
         unit.loadData_raw()
         validalleys = []
-        valid, acorr, alleys = util.checkInclusion(unit, 3) # 2nd arg to util.checkInclusion is how many comps made per alley. This 
+        valid, acorr, alleys = util.checkInclusion(unit, 3, 10,fieldCheck=False) # 2nd arg to util.checkInclusion is how many comps made per alley. This 
                                                             # value (usually 3) is not being saved here and is defined in the relevant R code so ignore it here
         if valid:
             print(clust)
@@ -69,7 +69,7 @@ def getReassignmentData(unit, alley, reassignmentOrder, i):
     newvisit = unit.alleys[alleyLookup_rev[newalley]][i] 
     return newvisit['metadata']['stimulus'], newvisit['metadata']['reward']            
             
-doingReassignment = True
+doingReassignment = False
 reassignmentOrder = 4
 alleyLookup_rev = {v:k for k,v in Def.beltwayAlleyLookup.items()}
 
@@ -112,10 +112,29 @@ data = {'rate':firingRate, 'cell':cells, 'name':cellNames, 'alley': alleys, 'tri
 alldata = pd.DataFrame(data=data)
 alldata.dropna(inplace=True) 
 
+# Remove spatial bins which do not have enough sampling across textures to
+# accurately estimate the mean firing rate. Rationale 5/10/21 is that low # samples
+# that co-occur w firing on those trials (eg scanning at the end of an expanded alley bounds)
+# gives low/no variance or CIs and trivially a CI overlap check returns a pass.
+samplethresh = 5
+for unitName in alldata['name'].unique():
+    udf = alldata.loc[alldata['name']==unitName]
+    for alley in udf['alley'].unique():
+        for sb in range(Def.singleAlleyBins[0]-1):
+           na = udf.loc[(udf['alley']==alley) & (udf['spatialBin']==sb) & (udf['texture']=='A')].shape[0] 
+           nb = udf.loc[(udf['alley']==alley) & (udf['spatialBin']==sb) & (udf['texture']=='B')].shape[0]
+           nc = udf.loc[(udf['alley']==alley) & (udf['spatialBin']==sb) & (udf['texture']=='C')].shape[0] 
+           if na >= samplethresh and nb >= samplethresh and nc >= samplethresh:
+               pass
+           else:
+               alldata = alldata.drop(alldata[(alldata['name']==unitName)&(alldata['alley']==alley)&(alldata['spatialBin']==sb)].index)
+
+        
+
 #save data
 stamp = util.genTimestamp()
 filename = f"{stamp}_{rat}{expCode}_{Def.velocity_filter_thresh}vfilt_\
 {Def.smoothing_1d_sigma}stepsmooth_{Def.singleAlleyBins[0]-1}bins_\
-{Def.includeRewards}R_{qualThresh}qual_Reassign{reassignmentOrder}{doingReassignment}.csv"
+{Def.includeRewards}R_{qualThresh}qual.csv"
                
 alldata.to_csv(f"E:\\Ratterdam\\R_data_beltway\\{filename}", header=True, index=False)

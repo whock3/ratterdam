@@ -16,10 +16,10 @@ source("E:\\UserData\\Documents\\GitHub\\ratterdam\\Beltway_Project\\cicheck.R")
 source("E:\\UserData\\Documents\\GitHub\\ratterdam\\Beltway_Project\\glmer_fx.R")
 source("E:\\UserData\\Documents\\GitHub\\ratterdam\\Beltway_Project\\ratterdam_RunLMER.R")
 
-code <- "R859BRD3"
+code <- "R859BRD5"
 save <- FALSE # toggle to save multipage pdfs and wald csvs
 database <- "E:\\Ratterdam\\R_data_beltway\\"
-datapath <- sprintf("%s%s",database,"20210214-173855_R859BRD3_1vfilt_0.5stepsmooth_24bins_2R_3qual.csv")
+datapath <- sprintf("%s%s",database,"20210513-111730_R859BRD5_0vfilt_0.5stepsmooth_24bins_2R_3qual.csv")
 df <- read.csv(datapath,header=TRUE)
 
 nshuffles <- 1000
@@ -36,14 +36,14 @@ for (cellname in unique(df$name)){
 
   #loop over alleys 
   for (a in unique(celldf$alley)){
-    
+    u <- try({
     print(a)
     celldf_a <- celldf[celldf$alley==a,]
     celldf_a_copy <- data.frame(celldf_a) # used to shuffle, keep original trial structure in celldf_a 
     
     
     celldf_a <- lmer_routine(celldf_a, nalleys) # nalleys is number of alleys w activity and used for bonferroni corr
-    empirical <- calcAlleyMaxSD(celldf_a, a)
+    #empirical <- calcAlleyMaxSD(celldf_a, a)
     
     
     # Create trial list
@@ -54,29 +54,36 @@ for (cellname in unique(df$name)){
       trialList <- rbind(trialList, paste(stim))
     }
     
-    
-    shuffledData <- vector(mode='logical', length = nshuffles)
+    shuffresults <- 0
 
     # shuffle loop
     for (i in 1:nshuffles){
       
-      shuffledTrials <- trialList[sample(1:ntrials),]
+      shuffledTrials <- data.frame(trialList[sample(1:ntrials),])
       
       for (j in 1:ntrials){
-        celldf_a_copy[celldf_a$trial==j-1,]$texture <- shuffledTrials[j]
+        celldf_a_copy[celldf_a$trial==j-1,]$texture <- shuffledTrials[j,]
+        #celldf_a_copy[celldf_a$trial==j-1,]$reward <- celldf_a[celldf_a$trial==j-1,]$reward
+        
       }
   
         
         celldf_a_copy <- lmer_routine(celldf_a_copy, nalleys)
-        #shuffledData[i] <- calcAlleyMaxSD(celldf_a_copy, a)
-        shuffledData[i] <- checkAlleyNonoverlap(celldf_a_copy,a)
+        celldf_a_copy_no_r <- data.frame(celldf_a_copy[celldf_a_copy$reward=="0",])
+        
+        outcome <- checkAlleyNonoverlap(celldf_a_copy_no_r,a)
+        if(outcome==TRUE){
+          shuffresults <- shuffresults +1 
+        }
 
     }
-    print(sum(shuffledData))
+    print(shuffresults/nshuffles)
     # pct95 <- quantile(sort(shuffledData),0.95)
     # title <- sprintf("Cell %s Alley %s",cellname,a)
     # hist(shuffledData, main=title, xlab="Max SD Between Conditions", ylab="Frequency")
     # abline(v=c(empirical, pct95), col=c("red", "black"))
+    
+    },silent=FALSE)
     
   }
 

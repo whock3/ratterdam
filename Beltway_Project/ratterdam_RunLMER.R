@@ -22,16 +22,16 @@ lmer_routine <- function(celldf, nalleys){
   
   nsplineknots <- 6 # 6 if the alley includes intersections and is ~24bins. 12bins if its the expanded alley that only includes a portion of intersection
 
-  bonf <- 0.17/(3*nsplineknots*nalleys) #*8 for reassignment analysis
+  bonf <- 0.05/(3*nsplineknots*nalleys) #*8 for reassignment analysis
   cipct <- 1-bonf
   z <- qnorm(cipct)
   
   # run model
-  modi <- lmer_alley_int(celldf)
+  modi <- lmer_feTrial(celldf)
 
   # Reorder stimulus factors to make other comparisons
   celldf$texture <- factor(celldf$texture, levels = c("B", "A", "C"))
-  modreord <- lmer_alley_int(celldf)
+  modreord <- lmer_feTrial(celldf)
   celldf$texture <- factor(celldf$texture, levels = c("A","B","C"))
   
   
@@ -39,11 +39,11 @@ lmer_routine <- function(celldf, nalleys){
   celldf$fit <- predict(modi, newdata=celldf, re.form=NA)
   
   # for interaction model, Wald CI. txt A as default
-  ci <- confint(modi, method='Wald', level=cipct)
-  ci <- ci[-c(1,2),]
-  fe <- fixef(modi)
-  cidf <- data.frame("low"=ci[,1], "up"=ci[,2],"fe"=fe)
-  cidf <- cidf[-c(1),]
+  # ci <- confint(modi, method='Wald', level=cipct)
+  # ci <- ci[-c(1,2),]
+  # fe <- fixef(modi)
+  # cidf <- data.frame("low"=ci[,1], "up"=ci[,2],"fe"=fe)
+  # cidf <- cidf[-c(1),]
   
   # do CI on model with B as default and concat 
   # cireord <- confint(modreord, method='Wald', level=cipct)
@@ -54,7 +54,7 @@ lmer_routine <- function(celldf, nalleys){
   # ndf <- data.frame(ciall,cellname,alley)
   # wdf <- rbind(wdf, ndf)
   
-  Designmat <- model.matrix(rate ~ ns(spatialBin, 6)*texture + reward, celldf)
+  Designmat <- model.matrix(rate ~ ns(spatialBin, 6):texture + reward, celldf)
   predvar <- diag(Designmat %*% vcov(modi) %*% t(Designmat))
   celldf$fitCI <- sqrt(predvar)*z
   

@@ -57,6 +57,7 @@ lmer_alley_int <- function(mydf){
   mod <- lmer(rate ~ ns(spatialBin,6)*texture+reward
                + (1|trial),
                data = mydf
+               
   )
   
   return(mod)
@@ -86,4 +87,14 @@ predFun <- function(fittedmodel, df){
   fit <- exp(predict(fittedmodel, newdata=df, re.form = NA))
   return(fit)
   
+}
+
+lmer_feTrial <- function(mydf){
+  mod <- lmer(rate ~ ns(spatialBin,6):texture+reward
+              + (1|trial),
+              data = mydf
+              
+  )
+  
+  return(mod)
 }

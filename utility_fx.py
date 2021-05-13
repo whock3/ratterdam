@@ -711,15 +711,28 @@ def checkInclusion(unit,ncompsperalley,pass_thresh,passCheck=True,fieldCheck=Tru
     
     
     """
-    
-    
     validalleys = []
+    validChecks = [] 
     for alley in Def.beltwayAlleys:
         
-        
-        passesCheckResult = Filt.checkMinimumPassesActivity(unit, alley, pass_thresh=pass_thresh)
-        fieldCheckResult, _ = findField(unit, alley)
-        if passesCheckResult is True and fieldCheckResult is True:
+        if passCheck == False and fieldCheck == False:
+            validChecks.append(True) # no filters so include the alley
+            
+        if passCheck:
+            passesCheckResult = Filt.checkMinimumPassesActivity(unit, alley, pass_thresh=pass_thresh)
+            if passesCheckResult == True:
+                validChecks.append(True)
+            else:
+                validChecks.append(False)
+            
+        if fieldCheck:
+            fieldCheckResult, _ = findField(unit, alley)
+            if fieldCheckResult == True:
+                validChecks.append(True)
+            else:
+                validChecks.append(False)
+            
+        if False not in validChecks:
             validalleys.append(alley)
             
             
