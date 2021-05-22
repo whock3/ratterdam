@@ -19,11 +19,13 @@ source("E:\\UserData\\Documents\\GitHub\\ratterdam\\Beltway_Project\\ratterdam_R
 code <- "R859BRD5"
 save <- FALSE # toggle to save multipage pdfs and wald csvs
 database <- "E:\\Ratterdam\\R_data_beltway\\"
-datapath <- sprintf("%s%s",database,"20210513-111730_R859BRD5_0vfilt_0.5stepsmooth_24bins_2R_3qual.csv")
+datapath <- sprintf("%s%s",database,"20210520-181551_R859BRD5_1.5vfilt_0.5stepsmooth_24bins_2R_3qual.csv")
 df <- read.csv(datapath,header=TRUE)
 
 nshuffles <- 1000
 
+shuffResults_cells <- integer(nshuffles) # initialize 0s of size=nshuffles. These will be incremented according to
+                                          # how many cells per shuffle (i.e index in vector) pass the null lmer test
 
 for (cellname in unique(df$name)){
   
@@ -33,6 +35,7 @@ for (cellname in unique(df$name)){
   celldf <- df[df$name==cellname,]
   
   nalleys <- length(unique(celldf$alley))
+  
 
   #loop over alleys 
   for (a in unique(celldf$alley)){
@@ -73,11 +76,12 @@ for (cellname in unique(df$name)){
         
         outcome <- checkAlleyNonoverlap(celldf_a_copy_no_r,a)
         if(outcome==TRUE){
-          shuffresults <- shuffresults +1 
+          shuffResults_cells[i] <- shuffResults_cells[i] + 1
+          
         }
 
     }
-    print(shuffresults/nshuffles)
+    #print(shuffresults/nshuffles)
     # pct95 <- quantile(sort(shuffledData),0.95)
     # title <- sprintf("Cell %s Alley %s",cellname,a)
     # hist(shuffledData, main=title, xlab="Max SD Between Conditions", ylab="Frequency")

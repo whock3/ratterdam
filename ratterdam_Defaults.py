@@ -176,7 +176,6 @@ alleyBounds_retroflective_onRim_manuallyshifted2={0: [[145, 250], [332, 415]],
  15: [[145, 250], [87, 158]],
  16: [[97, 174], [135, 230]]}
 
-#alleyBounds = alleyBounds_retroflective_onRim_manuallyshifted2
 alleyBounds = nab.R859.IAI
 #format is [n1...n8] where each is loc of IR/alley point that defines intersection. ni = [xi, yi]
 intersectionBounds = {'A':[[105, 385], [165, 385], [165, 385], [140, 340], [105, 340]],
@@ -201,7 +200,7 @@ alleyBounds_PolygonTriEnds = {0:[(),(),(),(),(),()],}
 dataPathNub = "D:\\Ratterdam\\"
 figurePathNub = "C:\\Users\\whock\\Google Drive\\KnierimLab\\Ratterdam\\Figures\\"
 
-velocity_filter_thresh = 0#units are cm/s
+velocity_filter_thresh = 1.5#units are cm/s
 ptsCm_krieger= 4.85 # number of camera points equiv to a cm
 
 ptsCm_macaulay = 4.72
@@ -239,16 +238,3 @@ includeRewards = 2# flag to decide whether rewarded trials will be included in a
 beltwayAlleys = [16,17,3,1,5,7,8,10,11]
 beltwayAlleyLookup = {16:1, 17:2, 3:3, 1:4, 5:5, 7:6, 8:7, 10:8, 11:9}
 
-
-alleyReassignmentSchedule = {1:[2,3,4,5,6,7,8,9],
-                            2:[1,3,4,5,6,7,8,9],
-                            3:[1,2,4,5,6,7,8,9],
-                            4:[1,2,3,5,6,7,8,9],
-                            5:[1,2,3,4,6,7,8,9],
-                            6:[1,2,3,4,5,7,8,9],
-                            7:[1,2,3,4,5,6,8,9],
-                            8:[1,2,3,4,5,6,7,9],
-                            9:[1,2,3,4,5,6,7,8]}
-
-doingReassignment = True
-reassignmentOrder = 0
