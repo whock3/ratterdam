@@ -16,16 +16,18 @@ source("E:\\UserData\\Documents\\GitHub\\ratterdam\\Beltway_Project\\cicheck.R")
 source("E:\\UserData\\Documents\\GitHub\\ratterdam\\Beltway_Project\\glmer_fx.R")
 source("E:\\UserData\\Documents\\GitHub\\ratterdam\\Beltway_Project\\ratterdam_RunLMER.R")
 
-code <- "R859BRD5"
 save <- FALSE # toggle to save multipage pdfs and wald csvs
 database <- "E:\\Ratterdam\\R_data_beltway\\"
-datapath <- sprintf("%s%s",database,"20210520-181551_R859BRD5_1.5vfilt_0.5stepsmooth_24bins_2R_3qual.csv")
+datapath <- sprintf("%s%s",database,"20210602-131553_lmerPassingPop_1.5vfilt_0.5stepsmooth_24bins_2R_3qual.csv")
 df <- read.csv(datapath,header=TRUE)
+df$texture <- as.factor(df$texture)
+df$reward <- as.factor(df$reward)
 
 nshuffles <- 1000
 
 shuffResults_cells <- integer(nshuffles) # initialize 0s of size=nshuffles. These will be incremented according to
                                           # how many cells per shuffle (i.e index in vector) pass the null lmer test
+shuffResults_cellsName <- vector("list",100)
 
 for (cellname in unique(df$name)){
   
@@ -66,8 +68,7 @@ for (cellname in unique(df$name)){
       
       for (j in 1:ntrials){
         celldf_a_copy[celldf_a$trial==j-1,]$texture <- shuffledTrials[j,]
-        #celldf_a_copy[celldf_a$trial==j-1,]$reward <- celldf_a[celldf_a$trial==j-1,]$reward
-        
+
       }
   
         
@@ -77,6 +78,9 @@ for (cellname in unique(df$name)){
         outcome <- checkAlleyNonoverlap(celldf_a_copy_no_r,a)
         if(outcome==TRUE){
           shuffResults_cells[i] <- shuffResults_cells[i] + 1
+          if(i%%10==0){
+            shuffResults_cellsName[[i/10]] <- c(shuffResults_cellsName[[i/10]],sprintf("%s_%s", cellname,a))
+          }
           
         }
 

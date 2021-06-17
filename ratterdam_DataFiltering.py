@@ -60,7 +60,7 @@ def checkMiniumUnitActivity(unit, alleyVisits, threshold=50):
         return False
     
     
-def checkMinimumPassesActivity(unit,alley,fr_thresh=1.0,pass_thresh=9):
+def checkMinimumPassesActivity(unit,alley,fr_thresh=2.0,pass_thresh=9):
     """"
     Filtering function based on N passes that have >=Y FR
     Check each pass to see if its nanmax exceeds the fr_thresh

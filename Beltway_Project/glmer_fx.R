@@ -90,7 +90,7 @@ predFun <- function(fittedmodel, df){
 }
 
 lmer_feTrial <- function(mydf){
-  mod <- lmer(rate ~ ns(spatialBin,6):texture+reward
+  mod <- lmer(rate ~ ns(spatialBin,6)*texture+reward
               + (1|trial),
               data = mydf
               

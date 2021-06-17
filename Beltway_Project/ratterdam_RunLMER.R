@@ -54,7 +54,7 @@ lmer_routine <- function(celldf, nalleys){
   # ndf <- data.frame(ciall,cellname,alley)
   # wdf <- rbind(wdf, ndf)
   
-  Designmat <- model.matrix(rate ~ ns(spatialBin, 6):texture + reward, celldf)
+  Designmat <- model.matrix(rate ~ ns(spatialBin, 6)*texture+reward, celldf)
   predvar <- diag(Designmat %*% vcov(modi) %*% t(Designmat))
   celldf$fitCI <- sqrt(predvar)*z
   

@@ -11,7 +11,7 @@ library(stringr)
 
 # define data paths and load in data
 path <- "E:\\Ratterdam\\R_data_repetition\\20210301-205647_R859D2_1vfilt_.csv"
-savepath <- "E:\\Ratterdam\\R_data_repetition\\210325_timeDirLMER\\histDir_Epoch_rIntrSlpE-F_rIntrSlpD-F\\"
+savepath <- "E:\\Ratterdam\\R_data_repetition\\210325_timeDirLMER\21-06-11\\"
 df <- read.csv(path,header=TRUE)
 
 # get rid of epoch 0, it's a py artefact from bisecting approach to finding 

@@ -112,7 +112,7 @@ def alleyTransitions(pos, rat, graph=False, minTime=0.5e6):
     Finds turns based on crossing alley bounds 
     rat : named tuple R781, R808, or R859 from newAlleyBounds
 
-
+     
     Returns
     -------
     posNew : [ts, x, y, 1st or last pt of visit, alley/intersection]
@@ -164,19 +164,19 @@ def alleyTransitions(pos, rat, graph=False, minTime=0.5e6):
     posNew = posNew[posNew[:,0].argsort()]
     posNewF = posNew[:,:4].astype(float) #ts, x, y, 1st/last pt of visit
     
-    with open("C:/Users/Ruo-Yah Lai/Desktop/My folder/College/Junior/K lab research/Alley transitions egocentric.csv","r") as file:
+    with open("E:\\Ratterdam\\RYL\\Alley_transitions_egocentric.csv","r") as file:
         data_iter = csv.reader(file)
         trsnEgo = [data for data in data_iter]
         trsnEgo = np.array(trsnEgo)
         trsnEgo = trsnEgo.astype(int)
     
-    with open("C:/Users/Ruo-Yah Lai/Desktop/My folder/College/Junior/K lab research/Alley transitions allocentric.csv","r") as file:
+    with open("E:\\Ratterdam\\RYL\\Alley_transitions_allocentric.csv","r") as file:
         data_iter = csv.reader(file)
         trsnAllo = [data for data in data_iter]
         trsnAllo = np.array(trsnAllo)
         trsnAllo = trsnAllo.astype(int)
     
-    with open("C:/Users/Ruo-Yah Lai/Desktop/My folder/College/Junior/K lab research/Alley transitions intersections.csv","r") as file:
+    with open("E:\\Ratterdam\\RYL\\Alley_transitions_intersections.csv","r") as file:
         data_iter = csv.reader(file)
         inters = [data for data in data_iter]
         inters = np.array(inters)

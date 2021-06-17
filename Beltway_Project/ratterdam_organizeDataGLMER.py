@@ -26,6 +26,9 @@ import ratterdam_DataFiltering as Filt
 import pandas as pd
 from collections import OrderedDict
 
+
+
+#%% Load a single, entire day of recording
 rat = 'R859'
 expCode = 'BRD5'
 datafile = f'E:\\Ratterdam\\{rat}\\{rat}{expCode}\\'
@@ -41,7 +44,7 @@ for i,clust in enumerate(clustlist):
         unit = Core.UnitData(clust, datafile, expCode, Def.alleyBounds, alleyVisits, txtVisits, p_sess, ts_sess)
         unit.loadData_raw()
         validalleys = []
-        valid, acorr, alleys = util.checkInclusion(unit, 3, 15) # 2nd arg to util.checkInclusion is how many comps made per alley. This 
+        valid, acorr, alleys = util.checkInclusion(unit, 3, 20) # 2nd arg to util.checkInclusion is how many comps made per alley. This 
                                                             # value (usually 3) is not being saved here and is defined in the relevant R code so ignore it here
         if valid:
             print(clust)
@@ -50,12 +53,66 @@ for i,clust in enumerate(clustlist):
             population[clust] = unit
 
 
+#%% Load a subset of cells across multiple days and animals.
+# Eg all the cells that pass some test
 
-# Create "Long Form" of Data. Single Day
-#  Nested Structure: Cell > trial > texture > reward > spatial bin. 
+cellPop = {'R781':{'BRD3':['TT3\\cl-maze1.1',
+                           'TT3\\cl-maze1.2',
+                           'TT3\\cl-maze1.8',
+                           'TT5\\cl-maze1.1'],
+                   'BRD4':['TT3\\cl-maze1.1',
+                           'TT3\\cl-maze1.6',
+                           'TT6\\cl-maze1.7',
+                           'TT9\\cl-maze1.1']},
+           'R808':{'BRD6':['TT1\\cl-maze1.1',
+                           'TT5\\cl-maze1.5',
+                           'TT6\\cl-maze1.1',
+                           'TT6\\cl-maze1.2'],
+                   'BRD7':['TT1\\cl-maze1.1',
+                           'TT6\\cl-maze1.4',
+                           'TT9\\cl-maze1.1']},
+           'R859':{'BRD3':['TT13\\cl-maze1.2',
+                           'TT6\\cl-maze1.2',
+                           'TT7\\cl-maze1.3',
+                           'TT8\\cl-maze1.1'],
+                   'BRD5':['TT1\\cl-maze1.6',
+                           'TT10\\cl-maze1.6',
+                           'TT13\\cl-maze1.1',
+                           'TT13\\cl-maze1.4',
+                           'TT6\\cl-maze1.3',
+                           'TT6\\cl-maze1.9']} 
+           }
+
+population = OrderedDict()
+
+for rat in cellPop.keys():
+    for expCode in cellPop[rat].keys():
+
+        datafile = f'E:\\Ratterdam\\{rat}\\{rat}{expCode}\\'
+        Def.includeRewards = 2
+        qualThresh = 3
+        alleyTracking, alleyVisits,  txtVisits, p_sess, ts_sess = Parse.getDaysBehavioralData(datafile, expCode)    
+
+        # Load Data
+        for i,clust in enumerate(cellPop[rat][expCode]):
+            unit = Core.UnitData(clust, datafile, expCode, Def.alleyBounds, alleyVisits, txtVisits, p_sess, ts_sess)
+            unit.loadData_raw()
+            validalleys = []
+            valid, acorr, alleys = util.checkInclusion(unit, 3, 15) # 2nd arg to util.checkInclusion is how many comps made per alley. This 
+                                                                # value (usually 3) is not being saved here and is defined in the relevant R code so ignore it here
+            if valid:
+                print(clust)
+                unit.acorr = acorr
+                unit.validAlleys = alleys
+                population[f"{rat}_{expCode}_{clust}"] = unit
+
+
+
+
             
 #%% Create dataframe 
-            
+        # Create "Long Form" of Data. Single Day
+#  Nested Structure: Cell > trial > texture > reward > spatial bin.     
 # Reassignment fx, toggles and params
 alleyReassignmentSchedule = {1:[2,4,6,8,9],
                             2:[1,4,6,8,9],

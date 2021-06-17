@@ -1,4 +1,4 @@
-import os, json, pickle, numpy as np, re, math, socket, scipy as sp
+import os, json, pickle, numpy as np, re, math, socket, scipy as sp, sys
 from numpy.linalg import norm as npNorm
 import scipy.ndimage
 from scipy.interpolate import interp1d
@@ -663,7 +663,7 @@ def distance(p0, p1):
 def consecutive(data, stepsize=1):
     return np.split(data, np.where(np.diff(data) != stepsize)[0]+1)
 
-def findField(unit,alley,sthresh=3*Def.cmPerBin,rthresh=0.5,pctThresh=None):
+def findField(unit,alley,sthresh=3,rthresh=0.5,pctThresh=None):
     """
     Identify a field as a set of sthresh or more contiguous bins
     greater than some thresh
@@ -714,8 +714,9 @@ def checkInclusion(unit,ncompsperalley,pass_thresh,passCheck=True,fieldCheck=Tru
     validalleys = [] 
     for alley in Def.beltwayAlleys:
   
-        passesCheckResult = Filt.checkMinimumPassesActivity(unit, alley, pass_thresh=pass_thresh)
-        if passesCheckResult == True:
+        passCheckResult = Filt.checkMinimumPassesActivity(unit, alley, pass_thresh=pass_thresh, fr_thresh=2.0)
+        fieldCheckResult, _ = findField(unit, alley, sthresh=3, rthresh=1.5)
+        if passCheckResult == True and fieldCheckResult == True:
             validalleys.append(alley)
             
     if len(validalleys)>0:
