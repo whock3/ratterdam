@@ -1,4 +1,4 @@
-import os, json, pickle, numpy as np, re, math, socket, scipy as sp
+import os, json, pickle, numpy as np, re, math, socket, scipy as sp, sys
 from numpy.linalg import norm as npNorm
 import scipy.ndimage
 from scipy.interpolate import interp1d
@@ -663,7 +663,7 @@ def distance(p0, p1):
 def consecutive(data, stepsize=1):
     return np.split(data, np.where(np.diff(data) != stepsize)[0]+1)
 
-def findField(unit,alley,sthresh=3*Def.cmPerBin,rthresh=0.5,pctThresh=None):
+def findField(unit,alley,sthresh=3,rthresh=0.5,pctThresh=None):
     """
     Identify a field as a set of sthresh or more contiguous bins
     greater than some thresh
@@ -692,19 +692,33 @@ def findField(unit,alley,sthresh=3*Def.cmPerBin,rthresh=0.5,pctThresh=None):
         field_idx = None
     return field, field_idx
 
-def checkInclusion(unit,ncompsperalley):
+def checkInclusion(unit,ncompsperalley,pass_thresh,passCheck=True,fieldCheck=True):
     """
     Apply inclusion criteria to a unit, deciding which(if any)
     alleys will be included in analysis. If 0, cell is not used.
+    
+    ncompsperalley - number of comparisons you make per alley to help define bonferroni correction
+    pass_thresh - number of passes that have min firing of 1 hz
+    passCheck - is passcheck being done
+    fieldCheck - is fieldcheck being done
+    
+    passcheck checks for N passes (trials) with min firing 
+    fieldcheck checks for at least n contiguous bins of overall field w min firing
+    
+    
     return: inclusion bool, adj alpha, alley(s) to be included
-    adj alpha is 0.05 / (# alleys included * # comparisons per alley (arg: ncompsperalley))
+    adj alpha is 0.05 / (# alleys included * # comparisons per alley
+    
+    
     """
-    validalleys = []
+    validalleys = [] 
     for alley in Def.beltwayAlleys:
-        passesCheck = Filt.checkMinimumPassesActivity(unit, alley, pass_thresh=12)
-        fieldCheck, _ = findField(unit, alley)
-        if passesCheck is True and fieldCheck is True:
+  
+        passCheckResult = Filt.checkMinimumPassesActivity(unit, alley, pass_thresh=pass_thresh, fr_thresh=2.0)
+        fieldCheckResult, _ = findField(unit, alley, sthresh=3, rthresh=1.5)
+        if passCheckResult == True and fieldCheckResult == True:
             validalleys.append(alley)
+            
     if len(validalleys)>0:
         alphaCorr = 0.05/(len(validalleys)*ncompsperalley)
         include = True

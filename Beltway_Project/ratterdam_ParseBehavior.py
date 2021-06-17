@@ -101,8 +101,9 @@ def compute_alleyTracking(pos, alleyShape='rectangle'):
     if alleyShape == 'rectangle':   
         for entry in pos:
             for a in Def.alleyBounds.keys():
-                if entry[1] > Def.alleyBounds[a][0][0] and entry[1] < Def.alleyBounds[a][0][1] and entry[2] > Def.alleyBounds[a][1][0] and entry[2] < Def.alleyBounds[a][1][1]:
-                    alleyTracking[a] = np.vstack((alleyTracking[a], entry))
+                if type(a) == int:
+                    if entry[1] > Def.alleyBounds[a][0][0] and entry[1] < Def.alleyBounds[a][0][1] and entry[2] > Def.alleyBounds[a][1][0] and entry[2] < Def.alleyBounds[a][1][1]:
+                        alleyTracking[a] = np.vstack((alleyTracking[a], entry))
                     
     elif alleyShape == 'polygon':
         # mpl has a function to define a polygon as a series

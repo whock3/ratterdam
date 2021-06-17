@@ -143,7 +143,11 @@ class Unit():
                 field_FR.append(spk.shape[0]/vdur)
                 field_TS.append(visit[0])
                 
-            self.fields.append(np.column_stack((field_TS, field_FR)))
+            # stack and strip nans
+            finalfield = np.column_stack((field_TS, field_FR))
+            finalfield = finalfield[~np.isnan(finalfield[:,1])]
+            
+            self.fields.append(finalfield)
             
 def getVisits(data, maxgap=2*1e6):
     """

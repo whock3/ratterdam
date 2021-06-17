@@ -14,7 +14,7 @@ source("E:\\UserData\\Documents\\GitHub\\ratterdam\\Beltway_Project\\glmer_fx.R"
 code <- "R859BRD5"
 save <- FALSE # toggle to save multipage pdfs and wald csvs
 database <- "E:\\Ratterdam\\R_data_beltway\\"
-datapath <- sprintf("%s%s",database,"20210318-184038_R859BRD5_1vfilt_0.5stepsmooth_24bins_2R_3qual_Reassign4True.csv")
+datapath <- sprintf("%s%s",database,"20210520-181551_R859BRD5_1.5vfilt_0.5stepsmooth_24bins_2R_3qual.csv")
 df <- read.csv(datapath,header=TRUE)
 
 # Select output, create timestamp 
@@ -62,6 +62,7 @@ for(cellID in unique(df$cell)){
   for(alleyID in alleys){
     
     print(alleyID)
+    
     
     celldf <- subset(df, cell == cellID & alley == alleyID)
     
@@ -115,12 +116,16 @@ for(cellID in unique(df$cell)){
     print(waldplot)
     }
     
-    # calc CI of fits. CI = 95%
-    # set up design matrix then multiply mat*var-cov mat * mat-1 to get var
-    # then sqrt and mult by crit value to get CI of given pct 
-    Designmat <- model.matrix(rate ~ ns(spatialBin, 6)*texture + reward, celldf)
-    predvar <- diag(Designmat %*% vcov(modi) %*% t(Designmat))
-    celldf$fitCI <- sqrt(predvar)*z
+    u<- try({
+    celldf <- lmer_routine(celldf, nalleys)
+    celldf_no_r <- data.frame(celldf[celldf$reward=="0",])
+    
+    outcome <- checkAlleyNonoverlap(celldf_no_r,alleyID)
+    if(outcome==TRUE){
+      print("Pass")
+      
+    }
+    },silent=FALSE)
     
     
     # Check non-overlap between walds and 0, and fits and each other
@@ -148,14 +153,14 @@ for(cellID in unique(df$cell)){
   if(save==TRUE){
   dev.off()
   }
+  
+    
+}
 
-}
-wdf <- wdf[-c(1),] # first row is nans bc how i init it. 
-if(save==TRUE){
-#Write Wald CI data to csv
-dpath <- "E:\\Ratterdam\\R_data_beltway\\"
-write.csv(wdf,paste(dpath,ts,"_",code,"_wald.csv",sep=""),row.names=TRUE)
-}
+
+  
+ 
+  
 
 
   

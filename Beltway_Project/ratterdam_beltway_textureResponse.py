@@ -22,8 +22,8 @@ import ratterdam_visBasic as Vis
 from scipy.interpolate import interp1d
 
 
-rat = "R886"
-expCode = "BRD3"
+rat = "R859"
+expCode = "BRD5"
 
 
 datafile = f"E:\\Ratterdam\\{rat}\\{rat}{expCode}\\"
