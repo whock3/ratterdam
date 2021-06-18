@@ -512,9 +512,12 @@ def stepsmooth(vec, smoothval=0.5):
 
 
 def makeRM(spikes, position, bins=[30,50]):
-    """ this is 2d whole track. uses g"""
-    rbins, cbins = Def.wholeAlleyBins
-    rows, cols = np.linspace(0, 480, rbins), np.linspace(0,640, cbins)
+    """ this is 2d whole track. Uses Def.wholeAlleyBins (should read wholeTrack bins)
+    if bins == []"""
+    if bins == []:
+        bins = Def.wholeAlleyBins
+    rbins, cbins = bins
+    rows, cols = np.linspace(0, 480, bins[0]), np.linspace(0,640, bins[1])
     hs,xe,ye = np.histogram2d(spikes[:,2],spikes[:,1],bins=[rows, cols])
     ho = np.histogram2d(position[:,2],position[:,1],bins=[rows, cols])[0]
     n = (hs*np.reciprocal(ho))*30
