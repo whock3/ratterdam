@@ -30,8 +30,8 @@ import confounds as conf
 
 
 #%% Load Data and 
-rat = "R781"
-day = "D4"
+rat = "R859"
+day = "D1"
 savepath = f'E:\\Ratterdam\\{rat}\\ratterdam_plots\\{day}\\overviewPlots\\'
 df = f'E:\Ratterdam\\{rat}\\{rat}_RatterdamOpen_{day}\\'
 clustList, clustQuals = util.getClustList(df)
