@@ -28,14 +28,14 @@ def readNEV(datafile):
 
 def read_events(datafile):
     '''read in Events.nev, parse to TTL ts, and link those to behavioral events
-    
+
     THis is only for the T-maze data collected for R735
     '''
 
     #get NL ts for each event
     hdr, rec = readNEV(datafile)
     ttl_code = re.compile(b'0x0000') #pulses come in pairs where one is 0x0000 and other has a nonzero in last pos. I'm grabbing that by convention.
-    # for 171104 the nonzero pulse is 0x0010 which breaks my pattern so grabbing the zero one. should be a neglible timing diff. fix if needed. 
+    # for 171104 the nonzero pulse is 0x0010 which breaks my pattern so grabbing the zero one. should be a neglible timing diff. fix if needed.
     pulsetimes = []
     for event in rec:
         hit = re.search(ttl_code, event[-1])
@@ -75,7 +75,7 @@ def load_data(datafile):
     user = os.getlogin()
     date_interm = os.getcwd().split('\\')[-1].split('_')[0].split('-')  # just splits into [y,m,d]
     d = date_interm[0][2:] + date_interm[1] + date_interm[2]
-    return sessionData, feats, events 
+    return sessionData, feats, events
 
 def hitTrials(feature, label, features,  labels):
     if label == 'L' or label == 'R':
@@ -83,11 +83,11 @@ def hitTrials(feature, label, features,  labels):
         return np.intersect1d(features[feature], idx)
     else:
         return np.intersect1d(features[feature], np.where(labels == label))
-    
+
 def extract(tt, rmType, sessionData):
     rms = np.asarray([sessionData[tt][i][rmType] for i in range(len(sessionData[tt].keys()))])
     if 'ratemap' in rmType.lower():
-        rms = rms.reshape(rms.shape[0],rms.shape[2]) #rms are (len(events),len(track)). 2 dim 
+        rms = rms.reshape(rms.shape[0],rms.shape[2]) #rms are (len(events),len(track)). 2 dim
     else:
         if rms.size != 0:
             rms = rms.reshape(rms.shape[0])
@@ -119,13 +119,13 @@ def read_pos(datafile):
 
 def load_position(datafile):
     """ Returns np array ts,x,y. Not to be confused with
-    util.read_pos which just loads the raw dict. Adjusts the 
+    util.read_pos which just loads the raw dict. Adjusts the
     orientation of the track based on cameraOrientationInfo.txt in same dir"""
-    
+
     pos = read_pos(datafile)
     ts = np.asarray(sorted(list(pos.keys())))
     posx, posy = Parse.adjustPosCamera(datafile, pos, ts)
-    position = np.column_stack((ts,posx,posy))    
+    position = np.column_stack((ts,posx,posy))
     return position
 
 
@@ -133,7 +133,7 @@ def makeLinTrack():
     """
     Creates an interpolated skeletal representation of Tmaze for R735
     """
-    
+
     fstem = interp1d([630,189],[215,215])
     fleft = interp1d([220,208],[415,215])
     fright = interp1d([195,208],[15,215])
@@ -170,7 +170,7 @@ def project_points(track, points):
     return projected
 
 def smooth(array,smthType='gaussian',smthWin=10):
-    '''Smooth using a filter specified by arg. Note the 
+    '''Smooth using a filter specified by arg. Note the
     choice of window depends on what filter.'''
     if smthType == 'gaussian':
         return scipy.ndimage.gaussian_filter1d(array,smthWin)
@@ -205,13 +205,13 @@ def computeSummaryTrace(trials,traceType='avg'):
     traceTypes = ['avg']
     if traceType not in traceTypes:
         return 'Invalid Summary Trace Type'
-    
+
     if traceType == 'avg':
         trials = smooth(trials)
         avg = np.mean(trials,axis=0)
         sem = scipy.stats.sem(trials)
         return avg, sem
-        
+
 
 def testStat_OvAll(test, other1, other2):
     '''test statistic that takes each summary
@@ -225,7 +225,7 @@ def testStat_OvO(test, foil, blank):
     '''Compute one vs one test stat. Subtract foil from test.
     So a neg value means mod of foil, potentially. Naming
     test stat after test txt not really true therefore
-    Blank param is for third txt. Not used here but for other test stats 
+    Blank param is for third txt. Not used here but for other test stats
     so keep structure'''
     return test - foil
 
@@ -331,21 +331,21 @@ def weird_smooth(U,sigma):
     return Z
 
 def getClustList(datafile,quals=True):
-    
+
     """
     Given an absolute path to a data directory
     return a list of clusters in format
     TT{1-16}\\cl-maze1.n
-    
+
     For each unit, get the clust quality 1-5(best)
     from the ClNotes in the data dir and add
     to a list whose order matches the order
     of units in clustList
-    
+
     returns: clustList - list of units
              clustQuals - list of quals, same order as clustList
     """
-    
+
     clustList = []
     clustQuals = []
     for subdir, dirs, fs in os.walk(datafile):
@@ -358,7 +358,7 @@ def getClustList(datafile,quals=True):
                 # get quality 1-5(best) and add to list
                     qual = cellQuality(subdir+"\\")[clustname.split('.')[1]]
                     clustQuals.append(qual)
-                
+
     return clustList, clustQuals
 
 def readUnitsToLoad():
@@ -370,19 +370,19 @@ def readUnitsToLoad():
     E.g: R765,RFD7,TT14\cl-maze1.1 (note how clust is defined, \\ added when readin)
     These are loaded into a list of dicts where each dict
     has keys: 'rat', 'day', 'cluster'
-    
+
     If any entry has more than rat,day,clust that info will be read into
     additional fields of the dict. Note that any additional data in the text
     file should be of key:value format so the readin has that info.
-    
+
     To comment out a unit without deleting text, add leading # to line
     """
     if socket.gethostname() == 'Tolman':
         codeDirBase = 'C:\\Users\\whockei1\\Google Drive\\KnierimLab\\Ratterdam\\Code\\'
-    
+
     elif socket.gethostname() == 'DESKTOP-BECTOJ9':
         codeDirBase = 'C:\\Users\\whock\\Google Drive\\KnierimLab\\Ratterdam\\Code\\'
-    
+
     file = open(codeDirBase+"ratterdam_UnitsToLoad.txt","r")
     unitlist = file.readlines()
     clusts = []
@@ -394,20 +394,20 @@ def readUnitsToLoad():
                 day = unit[1]
                 clust = unit[2].rstrip() #removes all right trailing whitespace. neat.
                 d = {'rat':rat, 'day':day, 'cluster':clust}
-    
-                
+
+
                 #check for additional info, maybe analysis wants a specific alley or something
                 if len(unit) > 3: #already split, first 3 are stored above
                     for data in unit[3:]:
                         key, value = data.split(":")
                         d[key] = value.rstrip()
-                
+
                 clusts.append(d)
-            
-    
+
+
     return clusts
-        
-        
+
+
 def makeCustomColormap(nb=100,name='mymap',c=[]):
 
     if c ==[]:
@@ -420,7 +420,7 @@ def calcSmartMax(array2d, cutoff=0.98, scale=2.5,bins=100):
     Given array where each row is a sample, eg a lin rate map
     find a good max visualiz. value for eg. imshow across all samples
     by getting percentile cutoff and boosting it by scale factor
-    
+
     Bins is tricky, depends on how many rate maps
     go into the analysis. 100 bins is good. 0.98 cutoff.
     """
@@ -444,7 +444,7 @@ def checkCloserPoint(p1, p2, pt):
     where each is [x,y]
     see which pt is closer to
     (also of form [x,y])
-    
+
     Return string "first" or "second"
     meaning its closer to first point arg
     or second point arg. If equal return "error"
@@ -488,7 +488,7 @@ def extractCorners(givenAlleyBounds):
     ll - x1, y1
     ur = x2, y2
     lr = x2, y1
-    
+
     Returns ul, ll, ur, lr
     """
     b = givenAlleyBounds # for ease of typing
@@ -542,7 +542,7 @@ def loadDayUnitPopulation(dayPath, expCode, filtType, filtThresh):
     """
     Function that takes a path to a data folder, with an experiment code.
     Loads each cl-maze file into a Unit class instance, and populates with processed raw data
-    
+
     filtType - 'spikes' to set a threshold of on-track spikes (outside start box)
              - 'rate' to set a thresh of firing rate that is the nth percentile
                  where that percentile is stored in Def.wholetrack_imshow_pct_cutoff
@@ -556,29 +556,29 @@ def loadDayUnitPopulation(dayPath, expCode, filtType, filtThresh):
                 clustname = subdir[subdir.index("TT"):] + "\\" + f
                 unit = Core.UnitData(clustname, dayPath, expCode, Def.alleyBounds, alleyVisits, txtVisits, p_sess, ts_sess)
                 unit.loadData_raw()
-                
+
                 if filtType == 'spikes':
                     passBool = Filt.checkMiniumUnitActivity(unit, alleyVisits, threshold=filtThresh)
-                    
+
                 elif filtType == 'rate':
-                    rm = makeRM(unit.spikes, unit.position)            
+                    rm = makeRM(unit.spikes, unit.position)
                     passBool = np.nanpercentile(rm,Def.wholetrack_imshow_pct_cutoff) >= filtThresh
                 else:
                     print("Invalid Filter Argument - No Cell Filtering Performed")
-                
+
                 if passBool:
                     print(clustname)
                     population[unit.name] = unit
-                    
+
     return (alleyTracking, alleyVisits,  txtVisits, p_sess, ts_sess), population
-        
+
 
 def loadUnit(dayPath, expCode, unitname):
     alleyTracking, alleyVisits,  txtVisits, p_sess, ts_sess = Parse.getDaysBehavioralData(dayPath, expCode)
     unit = Core.UnitData(unitname, dayPath, expCode, Def.alleyBounds, alleyVisits, txtVisits, p_sess, ts_sess)
     unit.loadData_raw()
     return unit
-        
+
 
 def loadRatterdamEpochTimes(df):
     """
@@ -606,8 +606,8 @@ def genTimestamp(form='l'):
         return f"{d.year}{d.month:02d}{d.day:02d}-{d.hour:02d}{d.minute:02d}{d.second:02d}"
     else:
         return "Keyword Error"
-    
-    
+
+
 def experimentCellInventory(df,ret=False):
     clustlist = getClustList(df)
     print(f"{len(clustlist)} total cells recorded")
@@ -620,7 +620,7 @@ def experimentCellInventory(df,ret=False):
         print(f"{k}: {count[k]}")
     if ret:
         return count
-    
+
 def genParameterRecord(parmdict):
     string = ''
     for k,v in parmdict.items():
@@ -633,10 +633,10 @@ def calcActiveCells(datafile, expCode):
     are sufficiently active on track (Beltway).
     Use Filter.checkMinimumPassesActivity with defaults
     Active if passes >=1alley
-    
+
     Input - datafile - path to recording day
           - expCode - code eg "BRD3"
-    
+
     output - [numactive, total]
     """
     clusts = getClustList(datafile)
@@ -668,22 +668,22 @@ def findField(unit,alley,sthresh=3,rthresh=0.5,pctThresh=None):
     Identify a field as a set of sthresh or more contiguous bins
     greater than some thresh
     rthresh - an absolute thresh in Hz
-    pct thresh - a pct of max 
+    pct thresh - a pct of max
     One of these must be None, cant have both
     """
     rms = np.empty((0, Def.singleAlleyBins[0]-1))
     for visit in unit.alleys[alley]:
         rm = visit['ratemap1d']
         rms = np.vstack((rms, rm))
-        
+
     if rthresh is not None and pctThresh is not None:
         print("Error - conflicting thresh definitions")
     mean = np.nanmean(rms, axis=0)
     if rthresh is not None:
         fi = np.where(mean>=rthresh)[0]
     elif pctThresh is not None:
-        fi = np.where(mean>=(pctThresh*np.nanmax(mean)))[0]        
-    
+        fi = np.where(mean>=(pctThresh*np.nanmax(mean)))[0]
+
     field = True
     try:
         field_idx = np.concatenate(([i for i in consecutive(fi) if len(i)>=sthresh]))
@@ -696,29 +696,29 @@ def checkInclusion(unit,ncompsperalley,pass_thresh,passCheck=True,fieldCheck=Tru
     """
     Apply inclusion criteria to a unit, deciding which(if any)
     alleys will be included in analysis. If 0, cell is not used.
-    
+
     ncompsperalley - number of comparisons you make per alley to help define bonferroni correction
     pass_thresh - number of passes that have min firing of 1 hz
     passCheck - is passcheck being done
     fieldCheck - is fieldcheck being done
-    
-    passcheck checks for N passes (trials) with min firing 
+
+    passcheck checks for N passes (trials) with min firing
     fieldcheck checks for at least n contiguous bins of overall field w min firing
-    
-    
+
+
     return: inclusion bool, adj alpha, alley(s) to be included
     adj alpha is 0.05 / (# alleys included * # comparisons per alley
-    
-    
+
+
     """
-    validalleys = [] 
+    validalleys = []
     for alley in Def.beltwayAlleys:
-  
+
         passCheckResult = Filt.checkMinimumPassesActivity(unit, alley, pass_thresh=pass_thresh, fr_thresh=2.0)
         fieldCheckResult, _ = findField(unit, alley, sthresh=3, rthresh=1.5)
         if passCheckResult == True and fieldCheckResult == True:
             validalleys.append(alley)
-            
+
     if len(validalleys)>0:
         alphaCorr = 0.05/(len(validalleys)*ncompsperalley)
         include = True
@@ -751,12 +751,12 @@ def cellQuality(df):
 
 def readRepeatingCells(file, df):
     """
-    Returns tetrode\\cell for the cells with repeating fields according to 
+    Returns tetrode\\cell for the cells with repeating fields according to
     the tabulations file
     """
     with open(df+file,"r") as f:
         lines = f.readlines()
         tabulations = [line.split(",") for line in lines]
     tabulations = np.array(tabulations)
-    cells = tabulations[np.where(tabulations[:,1]=="True")[0], 0]
+    cells = tabulations[np.where(np.char.lower(tabulations[:,1])=="true")[0], 0]
     return cells

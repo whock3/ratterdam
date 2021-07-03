@@ -208,11 +208,11 @@ ptsCm = ptsCm_macaulay
 
 
 #old bins = 15,30
-cmPerBin = 1.5 # this is how many cm each bin should be long. This is chosen here by user. 
+cmPerBin = 1.5 # this is how many cm each bin should be long. This is chosen here by user.
 rewardZoneLength = 36 # size in cm of reward zone. This is hardcoded based on the alleybounds used
                       # and as of 2-12-21 using IAI (intersection-alley-intersection) def thats ~36cm long
 longbin = round(rewardZoneLength/cmPerBin)
-singleAlleyBins = [longbin+1,8]   # used [13,x] for single alley 
+singleAlleyBins = [longbin+1,8]   # used [13,x] for single alley
 wholeAlleyBins = [round(int(480/ptsCm)),int(round(640/ptsCm))]
 
 # Smoothing values to use
@@ -237,4 +237,3 @@ includeRewards = 0# flag to decide whether rewarded trials will be included in a
 
 beltwayAlleys = [16,17,3,1,5,7,8,10,11]
 beltwayAlleyLookup = {16:1, 17:2, 3:3, 1:4, 5:5, 7:6, 8:7, 10:8, 11:9}
-

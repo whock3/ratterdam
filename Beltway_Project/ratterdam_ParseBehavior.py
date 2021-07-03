@@ -403,26 +403,28 @@ def loadBeltwayData(basedir,stimFiles, expCode):
     return stimData
         
 
-def adjustPosCamera(datafile, pos, ts):
+def adjustPosCamera(datafile, pos):
      """
      Camera can be oriented differently w.r.t track across days/rats
      if things get rotated. This reads in a .txt file that should be 
      in each day's data dir saying whether x or y should be flipped
      format is e.g. x:640\ny:None
+     
+     pos: [ts, x, y]
      """
      with open(datafile+"cameraOrientationInfo.txt","r") as cam:
          info = cam.readlines()
      info = [i.rstrip() for i in info]
      info = {info[0][0]:info[0][2:], info[1][0]:info[1][2:]}
      if info['x'] != 'None':
-         posx = [int(info['x'])-pos[i][0] for i in ts]
+         posx = int(info['x'])-pos[:,1]
      else:
-         posx = [pos[i][0] for i in ts]
+         posx = pos[:,1]
     
      if info['y'] != 'None':
-         posy = [int(info['y'])-pos[i][1] for i in ts]
+         posy = int(info['y'])-pos[:,2]
      else:
-         posy = [pos[i][1] for i in ts]
+         posy = pos[:,2]
 
      return posx, posy
    

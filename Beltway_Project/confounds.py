@@ -15,9 +15,8 @@ from string import ascii_uppercase
 from collections import namedtuple
 from copy import deepcopy
 from bisect import bisect_left
-from alleyTransitions import alleyTransitions
+from alleyTransitions import alleyTransitions, crossBorder, crossBorder2
 from newAlleyBounds import R781, R808, R859
-from alleyTransitions import crossBorder, crossBorder2
 import ratterdam_Defaults as Def
 from ratterdam_ParseBehavior import adjustPosCamera
 import ratterdam_DataFiltering as Filt
@@ -28,6 +27,7 @@ from RDP4_class import RDP4
 def directionFilter(pos):
     """
     Returns position filtered by which direction the rat was facing
+    Doesn't include spikes
 
     """
     directions = np.diff(pos[:, 1:3], axis=0)
@@ -114,7 +114,7 @@ def dirFiltRDP(pos, spikes, epsilon=Def.ptsCm):
     return poss, spikess
 
 
-def graphDirRatemaps(unit, suptitle, stepsz, winsz=10, epsilon=Def.ptsCm):
+def graphDirRatemaps(unit, suptitle, stepsz=1, winsz=10, epsilon=Def.ptsCm):
     """
     Graphs ratemaps filtered by direction
     """
@@ -137,14 +137,20 @@ def graphDirRatemaps(unit, suptitle, stepsz, winsz=10, epsilon=Def.ptsCm):
         im = ax.imshow(ns[0], cmap="jet", origin="lower", vmin=0, vmax=vmax)
         cb = fig.colorbar(im, ax=ax)
         cb.set_label("Rate (Hz)")
-        
+        for i in range(len(unit.perimeters)):
+            ax.plot(unit.perimeters[i][:,0]/Def.ptsCm, unit.perimeters[i][:,1]/Def.ptsCm, 
+                    color=unit.colors[i], label=f"Subfield {i}")
+        ax.set_xlim(0, 190)
+        ax.legend(loc="lower right")
         for i in range(4):
             ax = fig.add_subplot(gs[i//2+1,i%2])
             ax.set_title(titles[i])
             ax.set_xlabel("x coordinates (cm)")
             ax.set_ylabel("y coordinates (cm)")
             im = ax.imshow(ns[i+1], cmap="jet", origin="lower", vmin=0, vmax=vmax)
-        
+            for i in range(len(unit.perimeters)):
+                ax.plot(unit.perimeters[i][:,0]/Def.ptsCm, unit.perimeters[i][:,1]/Def.ptsCm, 
+                        color=unit.colors[i], label=f"Subfield {i}")
         fig.suptitle(suptitle+f"\nCutoff = 98th percentile, {round(vmax,1)} Hz", y=1.08)
         fig.tight_layout()
     return fig, vmax
