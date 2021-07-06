@@ -33,7 +33,7 @@ pos, turns = alleyTrans.alleyTransitions(unit.position, rattrans, graph=False)
 turns = pd.DataFrame(turns)
 turns.columns = ['Allo-','Ego','Allo+','Ts exit','Ts entry', 'Alley-', 'Inter','Alley+']
 
-turns = pd.DataFrame(data=data)
+turns = pd.DataFrame(data=turns)
 turns.dropna(inplace=True) 
 
 

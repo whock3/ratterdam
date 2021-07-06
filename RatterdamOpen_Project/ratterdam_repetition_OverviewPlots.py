@@ -78,7 +78,7 @@ for unitname, unit in population.items():
         p1ax1.imshow(unit.repUnit.rateMap2D, origin='lower', aspect='auto', interpolation='None', 
                        cmap=cmap, vmax=np.nanpercentile(unit.repUnit.rateMap2D, 98),
                 extent=[wmDef.xedges[0], wmDef.xedges[-1], wmDef.yedges[0], wmDef.yedges[-1]])
-        p1ax1.set_title(f"{clust}, cutoff = {round(np.nanpercentile(unit.repUnit.rateMap2D, 98),2)}Hz", fontsize=14)
+        p1ax1.set_title(f"{unitname}, cutoff = {round(np.nanpercentile(unit.repUnit.rateMap2D, 98),2)}Hz", fontsize=14)
         p1ax1.axis('equal')
         p1ax1.set_ylim([0,480])
         p1ax1.set_xlim([0, 640])

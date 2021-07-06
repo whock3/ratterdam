@@ -36,8 +36,8 @@ import pandas as pd
 #%% Load Data
 
 
-rat = "R781"
-day = "D3"
+rat = "R859"
+day = "D2"
 ratBorders = alleyTrans.R859
 savepath = f'E:\\Ratterdam\\{rat}\\ratterdam_plots\\{day}\\decoding\\'
 df = f'E:\Ratterdam\\{rat}\\{rat}_RatterdamOpen_{day}\\'
