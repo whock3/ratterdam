@@ -17,6 +17,8 @@ df <- df[!(df$direction==0),]
 df$field <- as.factor(df$field)
 df$direction <- as.factor(df$direction)
 df$epoch <- as.factor(df$epoch)
+df$direction <- plyr::revalue(df$direction, c("1"="N","2"="E","3"="S","4"="W"))
+
 ts <- str_replace(Sys.time()," ","_")
 ts <- str_replace_all(ts, ":", "_")
 

@@ -73,6 +73,34 @@ turns.columns = ['Allo-','Ego','Allo+','Ts exit','Ts entry', 'Alley-', 'Inter','
 turns = pd.DataFrame(data=turns)
 turns.dropna(inplace=True) 
 
+#%% Functions to support above
+
+def addTrajVariables(turnIdx, turns, turnarm):
+    """
+    Input turnIdx - index of the turn in the turns df
+          turns - df of the turn data for each turn
+          turnarm - str ("pre", "post") indicating whether the field
+                      is on the pre-alley or the post-alley of the turn
+                      (for an intersection field the value should be "pre")
+          
+    Fx pulls out the turn-related regressors for the model.
+    Returns: list of variables
+    """
+    turn = turns.iloc[turnIdx]
+    m1turn = turns.iloc[turnIdx-1] # n-1 turn
+    p1turn = turns.iloc[turnIdx+1] # n+1 turn
+    
+    if turnarm == 'pre':
+        bearing = turn['Allo-']
+        m1bearing = m1turn['Allo-'] # n-1 bearing, n.b. this is different from m1turn. 
+        p1bearing = turn['Allo+']
+    elif turnarm == 'post':
+        bearing = turn['Allo+']
+        m1bearing = turn['Allo-']
+        p1bearing = p1turn['Allo+']
+        
+    return [bearing, m1bearing, p1bearing]
+
 #%%
 dirdata = []
 for unitname, unit in population.items():
@@ -80,8 +108,9 @@ for unitname, unit in population.items():
     repeat, locCount, repeatType, overlaps = repPC.repeatingPF(unit,alleyTrans.R781)
     
     for fi, field in enumerate(unit.fields):
+        print(fi)
         foverlap = overlaps[fi]
-        if len(foverlap) > 1:
+        if len(foverlap) > 0:
             
             alleyoverlap = [i for i in foverlap if type(i)==int] #alleys are numbered, intersections are lettered by convention
             interoverlap = [i for i in foverlap if type(i)==str] # '' 
@@ -98,57 +127,45 @@ for unitname, unit in population.items():
                     overlaptype = 'alley'
                     
                 for visit in field:
+
                     turnIdx = np.argmin(np.abs(turns['Ts exit'].astype(np.double)-visit[0]))
-                    bearing = np.nan
+                    turndata = [np.nan]
                     if turnIdx > 0 and turnIdx < turns.shape[0]-1:
                         turn = turns.iloc[turnIdx]
                         
                         if overlaptype == 'alley':
                             if str(alleyoverlap[0]) == turn['Alley-']:
-                                bearing = turn['Allo-']
+                                turndata = addTrajVariables(turnIdx, turns, "pre")
                             elif str(alleyoverlap[0]) == turn['Alley+']:
-                                bearing = turn['Allo+']
+                                turndata = addTrajVariables(turnIdx, turns, "post")
                             else:
                                 print("Turn ignored")
                         
                         elif overlaptype == 'intersection':
                             if turn['Ego'] == 1: # means forward through intersection which is all we're going to look at for now 7/5/21
-                                bearing = turn['Allo-'] # could use Allo+, they're by def the same on a forward choice
+                               turndata = addTrajVariables(turnIdx, turns, "pre") 
                         
                     
                         elif overlaptype == 'alleyint':
                             #print(turn['Alley-'], turn['Inter'], turn['Alley+'], turn['Ego'])
                             if str(alleyoverlap[0]) == turn['Alley-']:
-                                bearing = turn['Allo-']
+                                turndata = addTrajVariables(turnIdx, turns, "pre")
                             elif str(alleyoverlap[0]) == turn['Alley+']:
-                                bearing = turn['Allo+']
+                                turndata = addTrajVariables(turnIdx, turns, "post")
                             elif str(interoverlap[0]) == turn['Inter'] and turn['Ego'] == 1:
-                                bearing = turn['Allo-'] # could use Allo+, they're by def the same on a forward choice
+                                turndata = addTrajVariables(turnIdx, turns, "pre")
                             else:
-                                print("Turn ignored")
-                                
-                        epoch = bisect.bisect_left(intervals, visit[0]) # returns what period of the session the visit was in. bisect returns insertion index to maintain order.
-                        dirdata.append((unit.name, fi, visit[1], bearing, epoch))
+                                print("Turn ignored") 
+            
+                    epoch = bisect.bisect_left(intervals, visit[0]) # returns what period of the session the visit was in. bisect returns insertion index to maintain order.
+                    dirdata.append((unit.name, fi, visit[1], *turndata, epoch))
                     
 
-df = pd.DataFrame(data=dirdata, columns=['unit','field','rate','direction', 'epoch'])
+df = pd.DataFrame(data=dirdata, columns=['unit','field','rate','dirC','dirM1', 'dirP1', 'epoch'])
 df.dropna(inplace=True)
 stamp = util.genTimestamp()
 filename = f"{stamp}_{rat}{day}_dirLMER_{Def.velocity_filter_thresh}vfilt.csv"
 df.to_csv(f"E:\\Ratterdam\\R_data_repetition\\{filename}", header=True, index=False)
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

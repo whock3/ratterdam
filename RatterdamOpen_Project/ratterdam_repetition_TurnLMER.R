@@ -16,6 +16,8 @@ df <- read.csv(path,header=TRUE)
 ts <- str_replace(Sys.time()," ","_")
 ts <- str_replace_all(ts, ":", "_")
 
+df$field <- as.factor(df$field)
+
 df$alloPrevPre <- as.factor(df$alloPrevPre)
 df$egoPre <- as.factor(df$egoPre)
 df$alloPrevPost <- as.factor(df$alloPrevPost)
