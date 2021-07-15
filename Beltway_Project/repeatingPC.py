@@ -52,7 +52,7 @@ def repeatingPF(unit, rat):
     subfields = [[] for _ in range(len(unit.perimeters))]
     overlaps = [[] for _ in range(len(unit.perimeters))]
     subfieldsAbbr = []
-    threshold = 0.40
+    threshold = 0.1
     for i,perim in enumerate(unit.perimeters):
         fieldSize = PolyArea(perim[:,0], perim[:,1])
         for j in range(17):
@@ -62,7 +62,7 @@ def repeatingPF(unit, rat):
                                    [aRect.xmax, aRect.ymax], [aRect.xmin, aRect.ymax]])
             alleySize = (aRect.xmax-aRect.xmin) * (aRect.ymax-aRect.ymin)
             overlap1 = overlap(perim, alleyPerim)
-            if overlap1 > alleySize*threshold or overlap1 > fieldSize*threshold:
+            if overlap1 > alleySize*threshold: # or overlap1 > fieldSize*threshold: #WH commented out second conditional 7-14-21
                 subfields[i].append(alleyInterType[str(j)][1])
                 overlaps[i].append(j)
         for j in ascii_uppercase[:12]:

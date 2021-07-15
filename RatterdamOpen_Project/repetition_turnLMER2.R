@@ -10,9 +10,9 @@ library(tidyr)
 library(ggpubr)
 
 # define data paths and load in data
-path <- "E:\\Ratterdam\\R_data_repetition\\20210708-151540_R859D2_dirLMER_1.5vfilt.csv"
+path <- "E:\\Ratterdam\\R_data_repetition\\20210713-211324_R859D1_dirLMER_1.5vfilt.csv"
 savepath <- "E:\\Ratterdam\\R_data_repetition\\210624-onward_turnLM\\"
-code <- "R859D2"
+code <- "R859D1"
 df <- read.csv(path,header=TRUE)
 df <- df[!(df$dirC==0),]
 df <- df[!(df$dirP1==0),]
@@ -47,33 +47,33 @@ for(cellname in unique(df$unit)){
     u<-try({
     fdf = subset(celldf, field==f)
     
-    # ANOVA - three way interaction plus temporal epoch
-    amod <- aov(rate ~ dirM1*dirC*dirP1+epoch, data = fdf)
-    ramod <- drop_na(summary(amod)[[1]]) # need to access inside the s-class to get the table
+    # # ANOVA - three way interaction plus temporal epoch
+    # amod <- aov(rate ~ dirM1*dirC*dirP1+epoch, data = fdf)
+    # ramod <- drop_na(summary(amod)[[1]]) # need to access inside the s-class to get the table
+    # 
+    # # GLM - three way interaction plus temporal epoch
+    # gmod <- glm(rate+1 ~ dirM1*dirC*dirP1+epoch, family="Gamma", data = fdf)
+    # rgmod <- drop_na(anova(gmod, test="F")) # run anova to get main effects and interactions (i.e. not all level contrasts)
+    # 
+    # asig <- row.names(ramod[ramod$`Pr(>F)`<adjP,])
+    # gsig <- row.names(rgmod[rgmod$`Pr(>F)`<adjP,])
+    # asig <- str_c(asig,collapse=',')
+    # gsig <- str_c(gsig,collapse=',')
     
-    # GLM - three way interaction plus temporal epoch
-    gmod <- glm(rate+1 ~ dirM1*dirC*dirP1+epoch, family="Gamma", data = fdf)
-    rgmod <- drop_na(anova(gmod, test="F")) # run anova to get main effects and interactions (i.e. not all level contrasts)
-    
-    asig <- row.names(ramod[ramod$`Pr(>F)`<adjP,])
-    gsig <- row.names(rgmod[rgmod$`Pr(>F)`<adjP,])
-    asig <- str_c(asig,collapse=',')
-    gsig <- str_c(gsig,collapse=',')
-    
-    asig <- c(asig,".") # need something else geom_label complains if empty
-    gsig <- c(gsig,".") # ibid
+    # asig <- c(asig,".") # need something else geom_label complains if empty
+    # gsig <- c(gsig,".") # ibid
     
     p1 <- ggplot(fdf, aes(x=dirM1, y=rate))+
       geom_violin(color='black',fill="slategray1")+
       geom_boxplot(width=0.1,color='navy')+
       theme(text=element_text(size=10))+
-      ggtitle(sprintf("Field %s, Prev Dir, All ANOVA effects: %s", f, asig))
+      ggtitle(sprintf("Field %s, Prev Dir", f))
       
     p2 <- ggplot(fdf, aes(x=dirC, y=rate))+
       geom_violin(color='black',fill="slategray1")+
       geom_boxplot(width=0.1,color='navy')+
       theme(text=element_text(size=10))+
-      ggtitle(sprintf("Field %s, Curr Dir, All GLM effects: %s", f, gsig))
+      ggtitle(sprintf("Field %s, Curr Dir", f))
   
     p3 <- ggplot(fdf, aes(x=dirP1, y=rate))+
       geom_violin(color='black',fill="slategray1")+
@@ -87,4 +87,6 @@ for(cellname in unique(df$unit)){
   }
   dev.off()
 }
+
+
 

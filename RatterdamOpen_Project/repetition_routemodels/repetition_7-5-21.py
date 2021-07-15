@@ -23,6 +23,7 @@ import ratterdam_RepetitionCoreFx as RepCore
 import RateMapClass_William_20190308 as RateMapClass
 import williamDefaults as wmDef
 import alleyTransitions as alleyTrans
+import newAlleyBounds as nab
 import repeatingPC as repPC
 import math
 import bisect
@@ -31,7 +32,7 @@ import pandas as pd
 #%% Load data
 rat = "R859"
 day = "D2"
-ratBorders = alleyTrans.R859
+ratborders = {'R781':nab.R781, 'R808':nab.R808, 'R859':nab.R859}[rat]
 savepath = f'E:\\Ratterdam\\{rat}\\ratterdam_plots\\{day}\\decoding\\'
 datapath = f'E:\Ratterdam\\{rat}\\{rat}_RatterdamOpen_{day}\\'
 clustList, clustQuals = util.getClustList(datapath)
@@ -63,10 +64,8 @@ with open(datapath+"sessionEpochInfo.txt","r") as f:
 nepoch=3
 intervals = np.linspace(start,end,nepoch+1)
         
-#%% Create turn df
-
-rattrans = alleyTrans.R859
-pos, turns = alleyTrans.alleyTransitions(unit.position, rattrans, graph=False)
+#%% Create turn df 
+pos, turns = alleyTrans.alleyTransitions(unit.position, ratborders, graph=False)
 turns = pd.DataFrame(turns)
 turns.columns = ['Allo-','Ego','Allo+','Ts exit','Ts entry', 'Alley-', 'Inter','Alley+']
 
@@ -105,7 +104,7 @@ def addTrajVariables(turnIdx, turns, turnarm):
 dirdata = []
 for unitname, unit in population.items():
     print(unitname)
-    repeat, locCount, repeatType, overlaps = repPC.repeatingPF(unit,alleyTrans.R781)
+    repeat, locCount, repeatType, overlaps = repPC.repeatingPF(unit,ratborders)
     
     for fi, field in enumerate(unit.fields):
         print(fi)
@@ -121,7 +120,7 @@ for unitname, unit in population.items():
                 # fix this - this is nonexhaustive and redundant at the same time
                 if len(alleyoverlap) == 0 and len(interoverlap) ==1:
                     overlaptype = 'intersection'
-                elif len(alleyoverlap)==1 and len(interoverlap) ==1:
+                elif len(alleyoverlap)==1 and len(interoverlap) > 0 :
                     overlaptype = 'alleyint'
                 elif len(alleyoverlap) == 1 and len(interoverlap) == 0:
                     overlaptype = 'alley'
