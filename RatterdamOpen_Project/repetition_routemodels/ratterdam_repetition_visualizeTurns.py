@@ -23,6 +23,7 @@ import ratterdam_RepetitionCoreFx as RepCore
 import RateMapClass_William_20190308 as RateMapClass
 import williamDefaults as wmDef
 import alleyTransitions as alleyTrans
+import newAlleyBounds as nab
 import math
 import bisect
 import pandas as pd
@@ -32,12 +33,44 @@ import matplotlib.cm as cm
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib as mpl
 #%% Setup
+rat = 'R781'
+day = 'D3'
+ratborders = {'R781':nab.R781, 'R808':nab.R808, 'R859':nab.R859}[rat]
+savepath = "E:\\Ratterdam\\repetition_decoding\\"
+datapath = f'E:\Ratterdam\\{rat}\\{rat}_RatterdamOpen_{day}\\'
+clustList, clustQuals = util.getClustList(datapath)
+population = {}
+qualThresh = 3
+
+for i,clust in enumerate(clustList):
+    
+    if clustQuals[i] >= qualThresh:
+   
+        print(clust)
+        unit = RepCore.loadRepeatingUnit(datapath, clust, smoothing=1)                                   
+        rm = util.makeRM(unit.spikes, unit.position)
+        if np.nanpercentile(rm, 95) > 1.:
+            population[clust] = unit
+            print(f"{clust} included")
+        else:
+            print(f"{clust} is not included")
+        
+        
+# Session endpoints data
+with open(datapath+"sessionEpochInfo.txt","r") as f:
+    lines = f.readlines()
+    start, end = int(lines[0].split(',')[0]), int(lines[0].split(',')[1])
+    
+nepoch=3
+intervals = np.linspace(start,end,nepoch+1)
 pos, turns = alleyTrans.alleyTransitions(unit.position, ratborders, graph=False)
 turns = pd.DataFrame(turns)
 turns.columns = ['Allo-','Ego','Allo+','Ts exit','Ts entry', 'Alley-', 'Inter','Alley+']
 
 turns = pd.DataFrame(data=turns)
 turns.dropna(inplace=True) 
+
+cmap = util.makeCustomColormap()
 
 
 #%% Helper fx 
@@ -55,117 +88,110 @@ def drawRegion(ax, bounds,color):
     ax.autoscale_view() # for some reason the axes dont update automatically, so run this
 
 
-#%% Turn based rate maps - setup
-# Group data by allo dir pre (4 plots) and allo dir post (4 plots) +/- 1.5 turns
-#(the half turn is bc the turns end at the intersection so punch out a bit more
-# in time to get the full +/1 1 turn)
-#Reminder about code order: N,E,S,W,  F,R,B,L
 
-
-turnRMS = {'Pre':{'1':{'Spikes':np.empty((0,3)), 'Pos':np.empty((0,3))},
-                  '2':{'Spikes':np.empty((0,3)), 'Pos':np.empty((0,3))},
-                  '3':{'Spikes':np.empty((0,3)), 'Pos':np.empty((0,3))},
-                  '4':{'Spikes':np.empty((0,3)), 'Pos':np.empty((0,3))},  
-                  }, 
-           
-           'Post':{'1':{'Spikes':np.empty((0,3)), 'Pos':np.empty((0,3))},
-                  '2':{'Spikes':np.empty((0,3)), 'Pos':np.empty((0,3))},
-                  '3':{'Spikes':np.empty((0,3)), 'Pos':np.empty((0,3))},
-                  '4':{'Spikes':np.empty((0,3)), 'Pos':np.empty((0,3))},  
-                  }
-           }
-
-for field in unit.fields:
-    for visit in field:
-        turnIdx = np.argmin(np.abs(turns['Ts exit'].astype(np.double)-visit[0]))
-        try:
-            # first/last turn has no previous/next turn, so just ignore it
-            if turnIdx > 2 and turnIdx < turns.shape[0]-2:
-                spikesPre = unit.spikes[(unit.spikes[:,0]>float(turns.iloc[turnIdx-2]['Ts exit']))&(unit.spikes[:,0]<=float(turns.iloc[turnIdx]['Ts exit']))]
-                spikesPost = unit.spikes[(unit.spikes[:,0]>float(turns.iloc[turnIdx]['Ts exit']))&(unit.spikes[:,0]<=float(turns.iloc[turnIdx+2]['Ts exit']))]
-
-                turnRMS['Pre'][turns.iloc[turnIdx]['Allo-']]['Spikes'] = np.vstack((turnRMS['Pre'][turns.iloc[turnIdx]['Allo-']]['Spikes'],spikesPre))
-                turnRMS['Post'][turns.iloc[turnIdx]['Allo+']]['Spikes'] = np.vstack((turnRMS['Post'][turns.iloc[turnIdx]['Allo+']]['Spikes'],spikesPost))
-    
-                occPre = unit.position[(unit.position[:,0]>float(turns.iloc[turnIdx-2]['Ts exit']))&(unit.position[:,0]<=float(turns.iloc[turnIdx]['Ts exit']))]
-                occPost = unit.position[(unit.position[:,0]>float(turns.iloc[turnIdx]['Ts exit']))&(unit.position[:,0]<=float(turns.iloc[turnIdx+2]['Ts exit']))]
-
-                turnRMS['Pre'][turns.iloc[turnIdx]['Allo-']]['Pos'] = np.vstack((turnRMS['Pre'][turns.iloc[turnIdx]['Allo-']]['Pos'],occPre))
-                turnRMS['Post'][turns.iloc[turnIdx]['Allo+']]['Pos'] = np.vstack((turnRMS['Post'][turns.iloc[turnIdx]['Allo+']]['Pos'],occPost))
-        except:
-            print("Likely invalid code found")
-
-for d in ['Pre', 'Post']:
-    fig, ax = plt.subplots(2,2)
-    for i,code in enumerate([('1','N'),('2','E'),('3','S'),('4','W')]):
-        s,o = turnRMS[d][code[0]]['Spikes'], turnRMS[d][code[0]]['Pos']
-        rm = util.makeRM(s,o)
-        fig.axes[i].imshow(rm,aspect='auto',interpolation='None',cmap=cmap,vmax=7,origin='lower')
-        fig.axes[i].set_title(code[1])
-    plt.suptitle(f"{d}-turn Bearing")
-    
     
 
 
 #%% Extract and plot each trajectory (2d and schematic alleys visited) color-coded by rate 
-
-savepath = 'E:\\Ratterdam\\repetition_decoding\\R859D2_trajectories\\'
-ncols=10
+savepath = f'E:\\Ratterdam\\repetition_decoding\\{rat}{day}_trajectories\\'
 window=1
+
+
+timestamp = util.genTimestamp()
 
 codedict = {'1':'N','2':'E','3':'S','4':'W','0':'X'}
 for unitname, unit in population.items():
+        
     u = unitname.split('\\')[0]+unitname.split('\\')[1]
-    with PdfPages(savepath+f"{u}_fieldTrajectories.pdf") as pdf:
+    print(u)
+    
+    with PdfPages(f"{savepath}_{timestamp}_{u}_Trajectories.pdf") as pdf:
+
         
         for f,field in enumerate(unit.fields):
+            allregions, alltrajs, alllabels, allrates = [], [], [], []
             _vmax = max([i[1] for i in field])
-            fig, ax = plt.subplots(int(np.ceil(len(field)/ncols)),ncols,figsize=(15,12))
             norm = mpl.colors.Normalize(vmin=0,vmax=_vmax)
             for i,visit in enumerate(field):
-                
+                            
                 turnIdx = np.argmin(np.abs(turns['Ts exit'].astype(np.double)-visit[0]))
                 turndata = [np.nan]
                 if turnIdx > 1 and turnIdx < turns.shape[0]-2:
                     regions = []
                     dirs = []
-                    trajturns = turns.iloc[turnIdx-window:turnIdx+window]
-                    ts_start, ts_end = float(trajturns.iloc[0]['Ts exit']), float(trajturns.iloc[-1]['Ts exit'])
+                    trajturns = turns.iloc[turnIdx-window:turnIdx+window+1]
+                    ts_start, ts_end = float(turns.iloc[turnIdx-window-1]['Ts exit']), float(turns.iloc[turnIdx+window+1]['Ts exit'])
                     behavtraj = unit.position[(unit.position[:,0]>ts_start)&(unit.position[:,0]<=ts_end),1:]
                     behavtraj = behavtraj[(behavtraj[:,0]>0)&(behavtraj[:,1]>0)]
-            
-                    for t in trajturns.iterrows():
-                        regions.append(t[1]['Alley-']) # iterrows gives a tuple and the second entry is the pd series we want.
-                        regions.append(t[1]['Inter'])
-                        regions.append(t[1]['Alley+'])
-                        dirs.append(codedict[t[1]['Allo-']])
-                        dirs.append(codedict[t[1]['Allo+']])
-                        regions = list(set(regions)) # there is redundancy based on overlapping def of turns, so get unique regions
-                        
-                        
-                    for region in regions:
-                        drawRegion(fig.axes[i],ratborders.alleyInterBounds[region],cmap(norm(visit[1])))
                     
-                    fig.axes[i].plot(unit.perimeters[f][:,0], unit.perimeters[f][:,1],linestyle='--')
-                    fig.axes[i].plot(behavtraj[:,0],behavtraj[:,1],color='k')
-                    fig.axes[i].scatter(behavtraj[-1,0],behavtraj[-1,1],color='green',marker='^',s=40,zorder=99)
-                    fig.axes[i].axis("off")
-                    fig.axes[i].set_title(f"{','.join(dirs)}", fontsize=9)
-                    plt.suptitle(f"Unit {unitname} Field {f}, Max rate {_vmax}")
-                            
+                   
+                    it=0
+                    for _, t in trajturns.iterrows():
+                        regions.append(t['Alley-']) 
+                        regions.append(t['Inter'])
+                        regions.append(t['Alley+'])
+                        dirs.append(codedict[t['Allo-']])
+                        if it == trajturns.shape[0]-1:                   
+                            dirs.append(codedict[t['Allo+']])
+                        regions = list(set(regions)) # there is redundancy based on overlapping def of turns, so get unique regions
+                        it+=1 # pd.iterrows() gives the absolute row number in the overall df so do a manual increment for the size of the sub-df were using here
+                    
+                    
+                    
+                    allregions.append(regions)
+                    subplotlabel = f"{','.join(dirs)}"
+                    alllabels.append(subplotlabel)
+                    allrates.append(visit[1])
+                    alltrajs.append(behavtraj)
+            allregions = np.asarray(allregions)
+            alllabels = np.asarray(alllabels)
+            allrates = np.asarray(allrates)
+            alltrajs = np.asarray(alltrajs)
+            
+            plotOrder = np.flip(np.argsort(allrates))
+                    
+
+            ncols=10 
+            fig, ax = plt.subplots(int(np.ceil(len(field)/ncols)),ncols,figsize=(15,15))
+    
+            for i,pid in enumerate(plotOrder):           
+    
+                for region in allregions[pid]:
+                    drawRegion(fig.axes[i],ratborders.alleyInterBounds[region],cmap(norm(allrates[pid])))
+                    
+                fig.axes[i].plot(unit.perimeters[f][:,0], unit.perimeters[f][:,1],linestyle='--',linewidth=3)
+                fig.axes[i].plot(alltrajs[pid][:,0],alltrajs[pid][:,1],color='black',linewidth=2)
+                fig.axes[i].scatter(alltrajs[pid][-1,0],alltrajs[pid][-1,1],color='lime',marker='^',s=40,zorder=99)
+                fig.axes[i].scatter(alltrajs[pid][0,0],alltrajs[pid][0,1],color='red',marker='o',s=40,zorder=99)
+                
+                
+                fig.axes[i].set_title(str(pid)+" "+alllabels[pid], fontsize=12)
+                
+            plt.suptitle(f"Unit {unitname} Field {f}, Max rate {round(_vmax,3)} Hz")
+            plt.subplots_adjust(left=0.01, right=0.89,top=0.95,bottom=0.05,wspace=0.25,hspace=0.25)
+            for ii in range(len(fig.axes)):
+                fig.axes[ii].axis("off")
+                fig.axes[ii].set_aspect('equal', adjustable='box')
+            cax = fig.add_axes([0.9,0.2,0.01,0.5])
+            cbar = mpl.colorbar.ColorbarBase(cax,cmap=cmap,norm=norm,orientation='vertical')
+            cbar.set_label("Hz")
+    
+    
+                                    
             try:
                 pdf.savefig()
+                print("Saved")
             except:
                 print(f"Could not save {unitname} field {f}, moving on...")
             plt.close()
-                    
-            
+                        
+                
+        
+        
+        
+        
+        
     
-    
-    
-    
-    
-
 
 
 

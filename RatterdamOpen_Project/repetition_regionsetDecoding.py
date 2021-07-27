@@ -1,9 +1,15 @@
 # -*- coding: utf-8 -*-
 """
-Created on Wed Jul 14 11:49:30 2021
+Created on Mon Jul 19 13:03:34 2021
 
 @author: whockei1
+
+Ratterdam repetition - topological region decoding
+Break track into sets of regions. All regions within a set share the same
+connectivity. Goal is to decode trajectory from each region, based on what
+types of trajectories are available at each region 
 """
+
 import sklearn as skl
 import matplotlib.pyplot as plt
 from sklearn.ensemble import RandomForestClassifier
@@ -34,7 +40,34 @@ import pandas as pd
 from matplotlib.patches import Rectangle
 from matplotlib import path
 
-#%% Load data
+# region sets for 7-19-21 decoding
+# region_sets = {'RS1':[1,3,5,14,11,8],
+#                'RS2':[4,13],
+#                'RS3':[2,0,16,15,10,9,7,6],
+#                'RS4':['F','G'],
+#                'RS5':['A','D','I','L'],
+#                'RS6':['B','C','J','K']
+#                }
+
+#region sets for 7-20-21 decoding
+# region_sets = {'RS1':[3,5,14,11],
+#                 'RS2':[1,8],
+#                 'RS3':[2,0,16,15,10,9,7,6,4,13],
+#                 'RS4':[12]
+#                 }
+
+#region sets for 7-21-21 decoding
+region_sets = {'RS1':[12],  #decode traj and dir
+                'RS2':[3,5],  # decode traj and dir
+                'RS3':[14,11], # decode traj and dir
+                'RS4':[0,4,6,15,13,10], #decode dir (E-W)
+                'RS5':[2,16,7,9]  # decode dir (N-S)
+                }
+
+alldata = []
+
+timestamp = util.genTimestamp()
+
 for rat,day in zip(['R859','R859','R781','R781','R808','R808'],['D1','D2','D3','D4','D6','D7']):
     print(rat,day)
 
@@ -50,20 +83,7 @@ for rat,day in zip(['R859','R859','R781','R781','R808','R808'],['D1','D2','D3','
         if clustQuals[i] >= qualThresh:
        
             print(clust)
-            unit = RepCore.loadRepeatingUnit(datapath, clust, smoothing=1)
-            
-            # check to see if the overlapping regions for each field (i.e. each
-            # entry in overlaps) contains >1 alley and if so delete the spikes
-            #from that field.
-            # repeat, locCount, repeatType, overlaps = repPC.repeatingPF(unit,ratborders)
-            # for p,ov in enumerate(overlaps):
-            #     nalleys = sum([True if type(i)==int else False for i in ov]) # alleys are numeric, intersections alphabetical
-            #     if nalleys >1:
-            #         f = path.Path(unit.perimeters[p])
-            #         o = f.contains_points(unit.spikes[:,1:])
-            #         unit.spikes = unit.spikes[~o,:]
-                    
-                    
+            unit = RepCore.loadRepeatingUnit(datapath, clust, smoothing=1)                                   
             rm = util.makeRM(unit.spikes, unit.position)
             if np.nanpercentile(rm, 95) > 1.:
                 population[clust] = unit
@@ -91,8 +111,8 @@ for rat,day in zip(['R859','R859','R781','R781','R808','R808'],['D1','D2','D3','
     #Here's the logic. If you want the acivity from when the animal was on a given
     # alley on a certain pass, you take the ts entry of turn n to the ts exit of
     # turn n+1 and that corresponds to time spent on alley+. 
-    alleyType = []
     currentDir, previousDir, nextDir = [], [], []
+    currentAlley = []
     traj = []
     X = np.empty((0, len(population)))
     
@@ -101,17 +121,14 @@ for rat,day in zip(['R859','R859','R781','R781','R808','R808'],['D1','D2','D3','
         turn_nm1 = turns.iloc[t-1]
         turn = turns.iloc[t]
         turn_np1 = turns.iloc[t+1]
-        
+                
         # cD= turn['Ego'] # currentDir value this turn
         # pD = turn_nm1['Ego'] # previous ''
         # nD = turn_np1['Ego'] # next ''
         cD = turn['Allo+']
         pD = turn['Allo-']
         nD = turn_np1['Allo+']
-        if cD in ['0', '4', '6', '1', '12', '8', '15' '13', '10']:
-            alleyType.append('H')
-        else:
-            alleyType.append('V')
+        currentAlley.append(turn['Alley+']) # use this later to get visits to regions in a certain set 
         
         start, stop = float(turn['Ts entry']), float(turn_np1['Ts exit'])
         duration = (stop-start)/1e6
@@ -133,48 +150,51 @@ for rat,day in zip(['R859','R859','R781','R781','R808','R808'],['D1','D2','D3','
     currentDir = np.asarray(currentDir)
     nextDir = np.asarray(nextDir)
     previousDir = np.asarray(previousDir)
-    alleyType = np.asarray(alleyType)
+    traj = np.asarray(traj)
+    currentAlley = np.asarray(currentAlley)
+    
         
     
     #%% Run random forest
-    X = X[alleyType=='V',:]
-    currentDir = currentDir[alleyType=='V']
     
-    for target, label in zip([currentDir],["CurrentDirection"]):
-        print(target)
-        realoobs, shuffoobs = [], []
-        nreps = 10
-        nshuffs = 500
-        ntrees = 1000
-        
-        # real
-        for i in range(nreps):
-            clf = RandomForestClassifier(n_estimators=ntrees, oob_score=True)
-            clf.fit(X,target)
-            realoobs.append(clf.oob_score_)
-        
-        # shuffle
-        for i in range(nshuffs):
-            Yshuff = np.random.permutation(target)
-            clf = RandomForestClassifier(n_estimators=ntrees, oob_score=True)
-            clf.fit(X,Yshuff)
-            shuffoobs.append(clf.oob_score_)
+    for regionsetlabel, regionset in region_sets.items():
+        if regionsetlabel in ['RS1','RS2','RS3']:
+            targets, targetlabels = [traj, currentDir], ['Trajectories', 'CurrentDir']
+        else:
+            targets, targetlabels = [currentDir], ['CurrentDir']
             
-        plt.figure(figsize=(8,6))
-        shuff95 = round(np.percentile(shuffoobs,95),2)
-        realmean = round(np.mean(realoobs),2)
-        plt.title(f"{rat}{day} {label} - {nshuffs}s,{nreps}r,{ntrees}t, 95th:{shuff95},realmean:{realmean}")
-        plt.xlabel("OOB Score", fontsize=16)
-        plt.ylabel("Frequency", fontsize=16)
-        plt.hist(shuffoobs, bins=25, color='k')
-        plt.vlines(realmean,0, 100, color='r')
-        plt.savefig(savepath+f"21-07-16_{rat}{day}_{label}_RFDecoding.png")
-        plt.close()
+        for target, targetlabel in zip(targets, targetlabels):
+            print(targetlabel, regionsetlabel)
+            subset =[int(i) in regionset for i in currentAlley]
+            Xsubset, targetsubset = X[subset,:], target[subset]
+            realoobs, shuffoobs = [], []
+            nreps = 1
+            nshuffs = 1000
+            ntrees = 1000
+            
+            # real
+            for i in range(nreps):
+                clf = RandomForestClassifier(n_estimators=ntrees, oob_score=True)
+                clf.fit(Xsubset,targetsubset)
+                realoobs.append(clf.oob_score_)
+            
+            # shuffle
+            for i in range(nshuffs):
+                Yshuff = np.random.permutation(targetsubset)
+                clf = RandomForestClassifier(n_estimators=ntrees, oob_score=True)
+                clf.fit(Xsubset,Yshuff)
+                shuffoobs.append(clf.oob_score_)
+                
+            alldata.append((rat, day, regionsetlabel, realoobs, shuffoobs))
+            plt.figure(figsize=(8,6))
+            shuff95 = round(np.percentile(shuffoobs,95),2)
+            realmean = round(np.mean(realoobs),2)
+            plt.title(f"{rat}{day} {targetlabel} {regionsetlabel} - {nshuffs}s,{nreps}r,{ntrees}t, 95th:{shuff95},realmean:{realmean}")
+            plt.xlabel("OOB Score", fontsize=16)
+            plt.ylabel("Frequency", fontsize=16)
+            plt.hist(shuffoobs, bins=25, color='k')
+            plt.vlines(realmean,0, 100, color='r')
+            plt.savefig(savepath+f"{timestamp}_{rat}{day}_{targetlabel}_{regionsetlabel}_RFDecoding.png")
+            plt.close()
+            
         
-
-    
-    
-    
-    
-    
-    

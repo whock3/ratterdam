@@ -9,6 +9,7 @@ Created on Fri Aug 14 18:27:43 2020
 import ratterdam_CoreDataStructures as Core
 import ratterdam_ParseBehavior as Parse
 import numpy as np
+import pandas as pd
 from scipy.stats import sem
 import utility_fx as util
 import os
@@ -26,6 +27,8 @@ from scipy.interpolate import splrep, splev, PchipInterpolator as pchip
 from scipy.spatial import ConvexHull
 import scipy
 import ratterdam_DataFiltering as Filt
+import alleyTransitions as alleyTrans
+import newAlleyBounds as nab
 
 
 def loadRepeatingUnit(df, clustName, smoothing=2, vthresh=Def.velocity_filter_thresh):
@@ -102,6 +105,34 @@ class Unit():
         """
         return 0.5*np.abs(np.dot(x,np.roll(y,1))-np.dot(y,np.roll(x,1)))
     
+    
+    def filterVisits(self, visits, perim,thresh=0.2):
+        """
+        Take a list of visits. Each element is a list of ts corresponding to the
+        pos samples from that visit.
+        
+        From there, apply a threshold to remove visits that are too short.
+        7-26-2021 thresh will be based on max dist traveled thru field and size
+        of field
+        
+        Thresh is 0-1 pct max dist a visit must travel
+        """
+        #calc bounding box and max distances
+        maxx,minx, maxy, miny = max(perim[:,0]), min(perim[:,0]), max(perim[:,1]), min(perim[:,1])
+        dista = np.sqrt(((minx-minx)**2)+((maxy-miny)**2))
+        distb = np.sqrt(((minx-maxx)**2)+((miny-miny)**2))
+    
+        newvisits = []
+        for v in visits:
+            if len(v) >= 2:
+                traj = self.position[(self.position[:,0]>v[0])&(self.position[:,0]<=v[-1])]
+                #below,compute distance between 1st point and all others to get max dist inside field
+                maxdist = max(np.linalg.norm(traj[0,1:]-traj[:,1:],axis=1))
+                if maxdist >= thresh*dista or maxdist >= thresh*distb:
+                    newvisits.append(v)
+       
+        return newvisits
+    
     def shuffleFieldsFx(self):
         for i,field in enumerate(self.fields):
             self.fields[i] = np.column_stack((self.fields[i][:,0], np.random.permutation(self.fields[i][:,1])))
@@ -122,17 +153,9 @@ class Unit():
             contour = path.Path(border)
 
             PinC = self.position[contour.contains_points(self.position[:,1:])]
-            
-            try:
-                posVisits = getVisits(PinC[:,0])
-            except:
-                points = np.asarray(list(zip(pf.perimeter[1]*binWidth+binWidth/2, pf.perimeter[0]*binWidth+binWidth/2)))
-                hull = ConvexHull(points)
-                vertices = np.append(hull.vertices, hull.vertices[0]) # add the first point to close the contour
-                self.perimeters[-1] = points[vertices]
-                contour = path.Path(points[vertices])
-                PinC = self.position[contour.contains_points(self.position[:,1:])]
-                posVisits = getVisits(PinC[:,0])
+            posVisits = getVisits(PinC[:,0])
+            posVisits = self.filterVisits(posVisits, border, thresh=0.2)
+
             
             self.visits.append(posVisits)
             field_FR = []
@@ -160,6 +183,9 @@ def getVisits(data, maxgap=2*1e6):
         else:
             groups.append([x])
     return groups
+
+        
+
 
 cnames = ['black', 'blue', 'green', 'red', 'brown', 'purple', 'cornflowerblue', 'orchid', 'darkcyan', 'midnightblue', 'saddlebrown', 'darkviolet', 'seagreen', 'indianred', 'goldenrod', 'orange', 'olive']
 binWidth = wmDef.binWidth
@@ -223,7 +249,7 @@ def plotRoutine_RepPF_TempDyn(unit, nf=99, time='time', save=False, savepath=[])
             fig.axes[1].set_ylabel(f"Firing Rate Hz (sigma = {unit.smoothing})", fontsize=18)
             fig.axes[1].spines['right'].set_visible(False)
             fig.axes[1].spines['top'].set_visible(False)
-            fig.axes[1].set_title(f"Place Field Dynamics", fontsize=20)
+            fig.axes[1].set_title("Place Field Dynamics", fontsize=20)
     
     if save:
         clustname = clust.replace("\\","_")
@@ -373,4 +399,38 @@ def makeSemaphores(fieldArray,  wnSize=5*1e6*60, wnStep=2*1e6*60):
         diffmats.append(diffmat)
     diffmats = np.asarray(diffmats)
     return diffmats, wins
+
+def loadRecordingSessionData(rat,day):
+    """
+    Load one day of recording from a rat
+    Return  - the population as a dict of Unit() objects (see Unitclass in this file RepCoreFx)
+            - turn dataframe from alleyTransitions.py 
+    Units loaded with qual thresh >= 3 and peak FR above 1Hz
+    """
+    ratborders = {'R781':nab.R781, 'R808':nab.R808, 'R859':nab.R859}[rat]
+    datapath = f'E:\Ratterdam\\{rat}\\{rat}_RatterdamOpen_{day}\\'
+    clustList, clustQuals = util.getClustList(datapath)
+    population = {}
+    qualThresh = 3
+    
+    for i,clust in enumerate(clustList):
+        if clustQuals[i] >= qualThresh:
+       
+            print(clust)
+            unit = loadRepeatingUnit(datapath, clust, smoothing=1)                                   
+            rm = util.makeRM(unit.spikes, unit.position)
+            if np.nanpercentile(rm, 95) > 1.:
+                population[clust] = unit
+                print(f"{clust} included")
+            else:
+                print(f"{clust} is not included")
+            
+    pos, turns = alleyTrans.alleyTransitions(unit.position, ratborders, graph=False)
+    turns = pd.DataFrame(turns)
+    turns.columns = ['Allo-','Ego','Allo+','Ts exit','Ts entry', 'Alley-', 'Inter','Alley+']
+    
+    turns = pd.DataFrame(data=turns)
+    turns.dropna(inplace=True) 
+    
+    return population, turns
         
