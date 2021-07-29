@@ -36,7 +36,7 @@ import matplotlib as mpl
 rat = 'R781'
 day = 'D3'
 ratborders = {'R781':nab.R781, 'R808':nab.R808, 'R859':nab.R859}[rat]
-savepath = "E:\\Ratterdam\\repetition_decoding\\"
+savepath = f"E:\\Ratterdam\\{rat}\\trajectory_plots\\{day}\\"
 datapath = f'E:\Ratterdam\\{rat}\\{rat}_RatterdamOpen_{day}\\'
 clustList, clustQuals = util.getClustList(datapath)
 population = {}
@@ -93,7 +93,6 @@ def drawRegion(ax, bounds,color):
 
 
 #%% Extract and plot each trajectory (2d and schematic alleys visited) color-coded by rate 
-savepath = f'E:\\Ratterdam\\repetition_decoding\\{rat}{day}_trajectories\\'
 window=1
 
 
@@ -105,7 +104,7 @@ for unitname, unit in population.items():
     u = unitname.split('\\')[0]+unitname.split('\\')[1]
     print(u)
     
-    with PdfPages(f"{savepath}_{timestamp}_{u}_Trajectories.pdf") as pdf:
+    with PdfPages(f"{savepath}{timestamp}_{u}_Trajectories.pdf") as pdf:
 
         
         for f,field in enumerate(unit.fields):
