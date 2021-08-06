@@ -7,9 +7,8 @@ Created on Wed Jun 16 13:59:01 2021
 Ratterdam Repetition Project
 
 Overview graphs - 1 PDF per cell
-page 1-
-page 2-
-page 3-
+page 1- ratemaps, fields over time, and IFD plots
+page 2- directional ratemaps 
 
 """
 #%% Imports

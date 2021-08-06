@@ -4,7 +4,7 @@ Created on Fri Mar 19 21:29:04 2021
 
 @author: whockei1
 
-Set up data for cyclic dynamics analysis (done by Vivek K.)
+Set up data for cyclic dynamics analysis Ivan A and earlier work done by Vivek K.
 
 """
 import numpy as np
@@ -34,8 +34,8 @@ def removeFieldNans(unit):
 #%% read in data
     
 rat = "R859"
-day = "D2"
-savepath = f'E:\\Ratterdam\\{rat}\\ratterdam_plots\\{day}\\decoding\\'
+day = "D1"
+savepath = f'E:\\Ratterdam\\leader_follower_data\\{rat}\\'
 df = f'E:\Ratterdam\\{rat}\\{rat}_RatterdamOpen_{day}\\'
 clustList, clustQuals = util.getClustList(df)
 population = {}
@@ -61,40 +61,29 @@ for i,clust in enumerate(clustList):
 
 
 #%% Create dataframe
-
-start, stop = 2912779894,6780860303
-npoints = 60*10
-interpTime = np.linspace(start, stop, npoints)
-st = pd.Series(interpTime)
-
 df_data = pd.DataFrame()
 df_info = pd.DataFrame()
 
 
-for clustname, unit in population.items():
+# 8-6-21: before today, code would loop over fields and use pchip interpolation
+# to interpolate fields and equate all the sample numbers across fields.
+# Baryshinkov group actually needs fields to be raw and they deal with uneven data
+# sizes. This issue was noted a long time ago but they have been using one day R859D2 
+# which i either created the csv for manualy or did in a jupyter notebook and dont feel
+#like finding since its pretty trivial. 
+
+for clustname, unit in population.items():  
     
-    unit = removeFieldNans(unit)
-    
-    pchip_fields = [pchip(field[:,0], field[:,1]) for field in unit.fields]
-       
-    interpFields = []
-    for pc in pchip_fields:
-        interpFields.append(pc(interpTime)[30:-30])
-            
-    
-    field_series_mult = [pd.Series(f) for f in interpFields]
-    
-    for i,ser in enumerate(field_series_mult):
-        df_data = df_data.append(ser,ignore_index=True)
-        df_info = df_info.append(pd.Series([clustname,i]),ignore_index=True)
+    for i,field in enumerate(unit.fields):
+        df_data = df_data.append(pd.Series(field[:,0]),ignore_index=True)
+        df_info = df_info.append(pd.Series([clustname,f"field {i}",'timestamps']),ignore_index=True)
         
-
+        df_data = df_data.append(pd.Series(field[:,1]),ignore_index=True)
+        df_info = df_info.append(pd.Series([clustname,f"field {i}",'firingrates']),ignore_index=True)
+        
             
-df_data.columns = st[30:-30]
-df_info.columns = ["Neuron", "Field"]
-
 df = pd.concat([df_info, df_data], axis=1)
-df.to_csv("R859D2_spline.csv",header=True,index=False)
+df.to_csv(savepath+f"{rat}{day}_spline.csv",header=True,index=False)
 
         
         

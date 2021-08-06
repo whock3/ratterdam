@@ -33,10 +33,10 @@ import matplotlib.cm as cm
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib as mpl
 #%% Setup
-rat = 'R781'
-day = 'D3'
+rat = ''
+day = 'D2'
 ratborders = {'R781':nab.R781, 'R808':nab.R808, 'R859':nab.R859}[rat]
-savepath = f"E:\\Ratterdam\\{rat}\\trajectory_plots\\{day}\\"
+savepath = f"E:\\Ratterdam\\raw_data_for_JK\\{rat}{day}_trajectories\\"
 datapath = f'E:\Ratterdam\\{rat}\\{rat}_RatterdamOpen_{day}\\'
 clustList, clustQuals = util.getClustList(datapath)
 population = {}
@@ -105,7 +105,33 @@ for unitname, unit in population.items():
     print(u)
     
     with PdfPages(f"{savepath}{timestamp}_{u}_Trajectories.pdf") as pdf:
-
+        
+        fig, ax = plt.subplots(figsize=(8,6))
+        ax.imshow(unit.repUnit.rateMap2D, origin='lower', aspect='auto', interpolation='None', 
+                      cmap=cmap, vmax=np.nanpercentile(unit.repUnit.rateMap2D, 98),
+               extent=[wmDef.xedges[0], wmDef.xedges[-1], wmDef.yedges[0], wmDef.yedges[-1]])
+        ax.set_title(f"{unitname}, cutoff = {round(np.nanpercentile(unit.repUnit.rateMap2D, 98),2)}Hz", fontsize=14)
+        ax.axis('equal')
+        ax.set_ylim([0,480])
+        ax.set_xlim([0, 640])
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['bottom'].set_visible(False)
+        ax.spines['left'].set_visible(False)
+        
+        # fields over time (+ a line to add field borders to overall ratemap above)
+        # 6/17/21 this code is adapted from the ratterdam_RepetitionCore.plotRoutine... fx but
+        # have removed 1) lines dealing w if field dynamic traces are smoothed or not 2) time vs visits on xaxis
+        # and 3) whether youre manually removing bad fields at end bc that issue was partially solved
+        for i, field in enumerate(unit.smoothedFields):       
+               ax.plot(unit.perimeters[i][:,0], unit.perimeters[i][:,1],color=unit.colors[i], label=f"Field {i}")
+        ax.legend()
+        
+        
+        pdf.savefig()
+        plt.close()
         
         for f,field in enumerate(unit.fields):
             allregions, alltrajs, alllabels, allrates = [], [], [], []
@@ -179,7 +205,7 @@ for unitname, unit in population.items():
                                     
             try:
                 pdf.savefig()
-                print("Saved")
+                print(f"Field {f} Saved")
             except:
                 print(f"Could not save {unitname} field {f}, moving on...")
             plt.close()
