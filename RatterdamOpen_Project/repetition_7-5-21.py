@@ -30,32 +30,11 @@ import bisect
 import pandas as pd
 
 #%% Load data
-rat = "R859"
-day = "D2"
-ratborders = {'R781':nab.R781, 'R808':nab.R808, 'R859':nab.R859}[rat]
-savepath = f'E:\\Ratterdam\\{rat}\\ratterdam_plots\\{day}\\decoding\\'
-datapath = f'E:\Ratterdam\\{rat}\\{rat}_RatterdamOpen_{day}\\'
-clustList, clustQuals = util.getClustList(datapath)
-population = {}
-qualThresh = 3
-
-for i,clust in enumerate(clustList):
-    
-    if clustQuals[i] >= qualThresh:
-   
-        try:
-            print(clust)
-            unit = RepCore.loadRepeatingUnit(datapath, clust, smoothing=1)
-            rm = util.makeRM(unit.spikes, unit.position)
-            if np.nanpercentile(rm, 95) > 1.:
-                population[clust] = unit
-                print(f"{clust} included")
-            else:
-                print(f"{clust} is not included")
-        except:
-            pass
-        
-        
+rat, day = 'R886', 'D1'
+population, turns = RepCore.loadRecordingSessionData(rat, day)
+#%%
+datapath = f'E:\\Ratterdam\\{rat}\\{rat}_RatterdamOpen_{day}\\'
+      
 # Session endpoints data
 with open(datapath+"sessionEpochInfo.txt","r") as f:
     lines = f.readlines()
@@ -63,15 +42,8 @@ with open(datapath+"sessionEpochInfo.txt","r") as f:
     
 nepoch=3
 intervals = np.linspace(start,end,nepoch+1)
-        
-#%% Create turn df 
-pos, turns = alleyTrans.alleyTransitions(unit.position, ratborders, graph=False)
-turns = pd.DataFrame(turns)
-turns.columns = ['Allo-','Ego','Allo+','Ts exit','Ts entry', 'Alley-', 'Inter','Alley+']
-
-turns = pd.DataFrame(data=turns)
-turns.dropna(inplace=True) 
-
+ratborders = {'R781':nab.R781, 'R808':nab.R808, 'R859':nab.R859, 'R765':nab.R765, 'R886':nab.R886}[rat]
+       
 #%% Functions to support above
 
 def addTrajVariables(turnIdx, turns, turnarm):
@@ -125,7 +97,7 @@ for unitname, unit in population.items():
                 elif len(alleyoverlap) == 1 and len(interoverlap) == 0:
                     overlaptype = 'alley'
                     
-                for visit in field:
+                for vi, visit in enumerate(field):
 
                     turnIdx = np.argmin(np.abs(turns['Ts exit'].astype(np.double)-visit[0]))
                     turndata = [np.nan]
@@ -157,13 +129,13 @@ for unitname, unit in population.items():
                                 print("Turn ignored") 
             
                     epoch = bisect.bisect_left(intervals, visit[0]) # returns what period of the session the visit was in. bisect returns insertion index to maintain order.
-                    dirdata.append((unit.name, fi, visit[1], *turndata, epoch))
+                    dirdata.append((unit.name, fi, visit[1], *turndata, epoch, visit[0]/1e6))
                     
 
-df = pd.DataFrame(data=dirdata, columns=['unit','field','rate','dirC','dirM1', 'dirP1', 'epoch'])
+df = pd.DataFrame(data=dirdata, columns=['unit','field','rate','dirC','dirM1', 'dirP1', 'epoch', 'timestamp'])
 df.dropna(inplace=True)
 stamp = util.genTimestamp()
-filename = f"{stamp}_{rat}{day}_dirLMER_{Def.velocity_filter_thresh}vfilt.csv"
+filename = f"{stamp}_{rat}{day}_timedirLMER_{Def.velocity_filter_thresh}vfilt.csv"
 df.to_csv(f"E:\\Ratterdam\\R_data_repetition\\{filename}", header=True, index=False)
 
 

@@ -52,7 +52,7 @@ def repeatingPF(unit, rat):
     subfields = [[] for _ in range(len(unit.perimeters))]
     overlaps = [[] for _ in range(len(unit.perimeters))]
     subfieldsAbbr = []
-    threshold = 0.1
+    threshold = 0.35
     for i,perim in enumerate(unit.perimeters):
         fieldSize = PolyArea(perim[:,0], perim[:,1])
         for j in range(17):

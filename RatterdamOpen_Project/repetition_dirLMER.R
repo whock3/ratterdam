@@ -9,10 +9,9 @@ library(stringr)
 library(emmeans)
 library(tidyr)
 library(ggpubr)
-
+library(splines)
 # define data paths and load in data
-path <- "E:\\Ratterdam\\R_data_repetition\\20210713-182039_R808D6_dirLMER_1.5vfilt.csv"
-savepath <- "E:\\Ratterdam\\R_data_repetition\\210624-onward_turnLM\\"
+path <- "E:\\Ratterdam\\R_data_repetition\\20210809-131917_R886D1_timedirLMER_1.5vfilt.csv"
 code <- "R859D2"
 df <- read.csv(path,header=TRUE)
 df <- df[!(df$dirC==0),]
@@ -33,19 +32,30 @@ df$dirC <- plyr::revalue(df$dirC, c("1"="N","2"="E","3"="S","4"="W"))
 df$dirM1 <- plyr::revalue(df$dirM1, c("1"="N","2"="E","3"="S","4"="W"))
 df$dirP1 <- plyr::revalue(df$dirP1, c("1"="N","2"="E","3"="S","4"="W"))
 
-results <- data.frame()
-for(unitname in unique(df$unit)){
-  print(unitname)
-  celldf <- subset(df, unit==unitname)
-  
-  u <- try({
-    res <- aov(rate ~ dirC*field, data=celldf)
-    resdf <- summary(res)[[1]]
-    p <- resdf["dirC:field","Pr(>F)"]
-    results  <- rbind(results, c(unitname, p))
-    print("completed")
-  },silent=FALSE)
-  
-}
+
+bonf <- 0.05
+cipct <- 1-bonf
+z <- qnorm(cipct)
+
+unitname <- 'TT12\\cl-maze1.2'
+f = '1'
+celldf <- subset(df, unit == unitname)
+fdf <- subset(celldf, field == f)
+mod <- lm(rate ~ ns(timestamp,4)*dirC, data=fdf)
+
+fdf$fit <- predict(mod, newdata=fdf, re.form=NA)
+
+# Designmat <- model.matrix(rate ~ ns(visitIdx, 3)*dirC, fdf)
+# predvar <- diag(Designmat %*% vcov(mod) %*% t(Designmat))
+# fdf$fitCI <- sqrt(predvar)*z
+
+p <- ggplot(data=fdf, aes(x=timestamp, y=rate, color=dirC))+
+  geom_smooth(method='loess')+
+  geom_point()+
+  ggtitle(sprintf("Cell %s Field %s", unitname, f))
+print(p)
+ 
+
+
 
 

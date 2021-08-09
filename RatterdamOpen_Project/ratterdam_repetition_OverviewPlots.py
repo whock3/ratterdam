@@ -30,18 +30,18 @@ import confounds as conf
 
 #%% Load Data and 
 rat = "R886"
-day = "D2"
+day = "D3"
 savepath = f'E:\\Ratterdam\\{rat}\\ratterdam_plots\\{day}\\overviewPlots\\'
 df = f'E:\Ratterdam\\{rat}\\{rat}_RatterdamOpen_{day}\\'
-clustList, clustQuals = util.getClustList(df)
+clustList, clustQuals = util.getClustList(df,True)
 population = {}
 qualThresh = 3
 date = util.genTimestamp()
 cmap = util.makeCustomColormap()
 
-for i,clust in enumerate(clustList):
+for qual,clust in zip(clustQuals, clustList):
     
-    if clustQuals[i] >= qualThresh:
+    if qual >= qualThresh:
    
         try:
             print(clust)

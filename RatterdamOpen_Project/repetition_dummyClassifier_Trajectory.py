@@ -53,7 +53,7 @@ from collections import Counter
 #Load one unit, bc we are just looking at class label biases and any interaction
 # between that and location
 
-savepath = "E:\\Ratterdam\\repetition_decoding\\7-27-21\\"
+savepath = "E:\\Ratterdam\\repetition_decoding\\8-9-21_NaiveClassifierTrajectory_newrats\\"
 alldata = []
 timestamp = util.genTimestamp()
 codedict = {'1':'N','2':'E','3':'S','4':'W','0':'X'}
@@ -62,7 +62,7 @@ region_sets = {'RS1':[12],  #decode traj and dir
                 'RS3':[14,11] # decode traj and dir         
                 }
     
-for rat, day in zip(['R859','R859','R808','R808','R781','R781'],['D1','D2','D6','D7','D3','D4']):
+for rat, day in zip(['R886', 'R886'],['D1', 'D2']):
     print(rat, day, "Beginning Naive Classifier")
     population, turns = RepCore.loadRecordingSessionData(rat, day)
 
@@ -136,6 +136,7 @@ for rat, day in zip(['R859','R859','R808','R808','R781','R781'],['D1','D2','D6',
         alldata.append((rat, day, rs, naivePerfs))
         plt.figure(figsize=(15,12))
         plt.hist(naivePerfs,bins=25)
+        plt.vlines(pct95, 0, 200)
         plt.title(f"{rat}{day} {label} Naive Stratified Traj. Decoder {nruns}x 95%ile {round(pct95,2)}", fontsize=16)
         plt.xlabel("Decoder performance, single run", fontsize=16)
         plt.ylabel("Frequency", fontsize=16)

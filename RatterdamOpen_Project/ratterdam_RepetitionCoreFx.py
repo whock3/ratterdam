@@ -50,6 +50,14 @@ def loadRepeatingUnit(df, clustName, smoothing=2, vthresh=Def.velocity_filter_th
     position = position[(position[:,0]>=start) & (position[:,0]<=end)]
     position = position[np.logical_or(position[:,1]>0, position[:,2]>0)]
     position = Filt.velocity_filtering(position, vthresh)
+    
+    # On R886 D1 the track or camera got moved wrt where it was on D2 
+    # which was the day used to make the standard track bound coords. -20 x fixes it
+    day = df.split('\\')[-2] # last element is ''
+    if day.split("_")[0] == 'R886' and day.split("_")[2] == 'D1':
+        print("Readjusting position for R886 D1")
+        position[:,1] = position[:,1] - 20
+    
     clust = np.asarray(util.read_clust(df+clustName))
     clust = Filt.unitVelocityFilter(ts, position, clust)
     clust = clust[(clust >= start) & (clust <= end)]
@@ -400,6 +408,7 @@ def makeSemaphores(fieldArray,  wnSize=5*1e6*60, wnStep=2*1e6*60):
     diffmats = np.asarray(diffmats)
     return diffmats, wins
 
+
 def loadRecordingSessionData(rat,day):
     """
     Load one day of recording from a rat
@@ -407,7 +416,7 @@ def loadRecordingSessionData(rat,day):
             - turn dataframe from alleyTransitions.py 
     Units loaded with qual thresh >= 3 and peak FR above 1Hz
     """
-    ratborders = {'R781':nab.R781, 'R808':nab.R808, 'R859':nab.R859}[rat]
+    ratborders = {'R781':nab.R781, 'R808':nab.R808, 'R859':nab.R859, 'R765':nab.R765,'R886':nab.R886}[rat]
     datapath = f'E:\Ratterdam\\{rat}\\{rat}_RatterdamOpen_{day}\\'
     clustList, clustQuals = util.getClustList(datapath)
     population = {}
