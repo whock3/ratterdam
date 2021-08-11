@@ -52,7 +52,7 @@ def repeatingPF(unit, rat):
     subfields = [[] for _ in range(len(unit.perimeters))]
     overlaps = [[] for _ in range(len(unit.perimeters))]
     subfieldsAbbr = []
-    threshold = 0.35
+    threshold = 0.2
     for i,perim in enumerate(unit.perimeters):
         fieldSize = PolyArea(perim[:,0], perim[:,1])
         for j in range(17):
@@ -65,6 +65,7 @@ def repeatingPF(unit, rat):
             if overlap1 > alleySize*threshold: # or overlap1 > fieldSize*threshold: #WH commented out second conditional 7-14-21
                 subfields[i].append(alleyInterType[str(j)][1])
                 overlaps[i].append(j)
+
         for j in ascii_uppercase[:12]:
             intersection = rat.alleyInterBounds[j]
             iRect = Rectangle(intersection[0][0], intersection[1][0], 
@@ -73,9 +74,10 @@ def repeatingPF(unit, rat):
                                [iRect.xmax, iRect.ymax], [iRect.xmin, iRect.ymax]])
             Size = (iRect.xmax-iRect.xmin) * (iRect.ymax-iRect.ymin)
             overlap1 = overlap(perim, iPerim)
-            if overlap1 > Size*threshold or overlap1 > fieldSize*threshold:
+            if overlap1 > Size*threshold: # or overlap1 > fieldSize*threshold: WH commented out 8-10-21. Should have comment out when line 65 (ie same conditional but for alleys) but didnt notice this
                 subfields[i].append(alleyInterType[j][0])
                 overlaps[i].append(j)
+    
         
         #print(subfields[i])
         abbr = {"horizontal": "H", "vertical": "V", "intersection": "I"}

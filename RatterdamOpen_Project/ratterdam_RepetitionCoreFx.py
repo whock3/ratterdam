@@ -248,7 +248,7 @@ def plotRoutine_RepPF_TempDyn(unit, nf=99, time='time', save=False, savepath=[])
             elif time  == 'visit' or time == 'visits':
                 xval = range(field.shape[0])
             
-            fig.axes[1].plot(xval, field[:,1], color=unit.colors[i], marker='.',alpha=0.8)
+            fig.axes[1].plot(xval, field[:,1], color=unit.colors[i], marker='.',alpha=0.8,label=f"Field {i}")
             fig.axes[0].plot(unit.perimeters[i][:,0], unit.perimeters[i][:,1],color=unit.colors[i])
             fig.axes[1].text(xval[0]-0.1,field[0,1]-0.1,i)
             fig.axes[1].tick_params(axis='y', labelsize=14)
@@ -258,6 +258,7 @@ def plotRoutine_RepPF_TempDyn(unit, nf=99, time='time', save=False, savepath=[])
             fig.axes[1].spines['right'].set_visible(False)
             fig.axes[1].spines['top'].set_visible(False)
             fig.axes[1].set_title("Place Field Dynamics", fontsize=20)
+            fig.axes[1].legend()
     
     if save:
         clustname = clust.replace("\\","_")

@@ -72,11 +72,11 @@ timestamp = util.genTimestamp()
 codedict = {'1':'N','2':'E','3':'S','4':'W','0':'X'}
 
 
-for rat,day in zip(['R886', 'R886', 'R765', 'R765'],['D1', 'D2', 'RFD5', 'DFD8']):
+for rat,day in zip(['R781', 'R781', 'R808', 'R808', 'R859', 'R859'],['D3', 'D4', 'D6', 'D7', 'D1', 'D2']):
     print(rat,day)
 
     ratborders = {'R781':nab.R781, 'R808':nab.R808, 'R859':nab.R859, 'R765':nab.R765, 'R886':nab.R886}[rat]
-    savepath = "E:\\Ratterdam\\repetition_decoding\8-7-21_decoding\\"
+    savepath = "E:\\Ratterdam\\repetition_decoding\\8-9-21_8-10-21_DirectionalityDecoding\\"
     datapath = f'E:\\Ratterdam\\{rat}\\{rat}_RatterdamOpen_{day}\\'
     
     population, turns = RepCore.loadRecordingSessionData(rat, day)

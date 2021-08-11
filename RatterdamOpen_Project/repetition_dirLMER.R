@@ -11,7 +11,7 @@ library(tidyr)
 library(ggpubr)
 library(splines)
 # define data paths and load in data
-path <- "E:\\Ratterdam\\R_data_repetition\\20210809-131917_R886D1_timedirLMER_1.5vfilt.csv"
+path <- "E:\\Ratterdam\\R_data_repetition\\20210810-164908_R765DFD8_timedirLMER_1.5vfilt.csv"
 code <- "R859D2"
 df <- read.csv(path,header=TRUE)
 df <- df[!(df$dirC==0),]
@@ -37,9 +37,10 @@ bonf <- 0.05
 cipct <- 1-bonf
 z <- qnorm(cipct)
 
-unitname <- 'TT12\\cl-maze1.2'
-f = '1'
+unitname <- 'TT15\\cl-maze1.4'
 celldf <- subset(df, unit == unitname)
+
+f = '0'
 fdf <- subset(celldf, field == f)
 mod <- lm(rate ~ ns(timestamp,4)*dirC, data=fdf)
 
@@ -55,6 +56,8 @@ p <- ggplot(data=fdf, aes(x=timestamp, y=rate, color=dirC))+
   ggtitle(sprintf("Cell %s Field %s", unitname, f))
 print(p)
  
+
+
 
 
 
