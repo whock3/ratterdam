@@ -92,21 +92,21 @@ def checkOverallAlleyActivity(unit, alley, thresh=1.):
         return False
 
 def unitVelocityFilter(ts, position, clust):
-        '''
-        Remove spikes emitted when the animal's
-        velocity was below threshold. 
-        
-        This class does not explicitly store
-        the thresh, or even whether a velocity
-        filter was applied. That occurs in the BehavioralData
-        class and is reflected implicitly in the position array
-        having been filtered. the ts dict is unfiltered and is used
-        as a reference.
-        '''
-        
-        allSpikeTs = np.asarray([util.takeClosest(ts, i) for i in clust])
-        filtTs = clust[np.isin(allSpikeTs, position[:,0])]
-        return filtTs
+    '''
+    Remove spikes emitted when the animal's
+    velocity was below threshold. 
+    
+    This class does not explicitly store
+    the thresh, or even whether a velocity
+    filter was applied. That occurs in the BehavioralData
+    class and is reflected implicitly in the position array
+    having been filtered. the ts dict is unfiltered and is used
+    as a reference.
+    '''
+    
+    allSpikeTs = np.asarray([util.takeClosest(ts, i) for i in clust])
+    filtTs = clust[np.isin(allSpikeTs, position[:,0])]
+    return filtTs
 
 def filterField(unit, index, rateThresh=0.2, pctThresh=10):
     """

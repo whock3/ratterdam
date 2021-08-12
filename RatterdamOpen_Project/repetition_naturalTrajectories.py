@@ -28,6 +28,8 @@ import confounds as conf
 from collections import Counter
 from matplotlib.patches import Rectangle
 import newAlleyBounds as nab
+import itertools
+
 #%% Load data
 rat, day = 'R859', 'D1'
 population, turns = RepCore.loadRecordingSessionData(rat, day)  
@@ -157,35 +159,87 @@ for a in range(17):
                 te_comp = trajElements[b]
                 if te_comp is not None:
                     for el_comp in te_comp:
-                        if el[1] == el_comp[0] and el[2] == el_comp[1]:
-                            fullTrajectories.append(f"{el[0]}-{el[1]}-{el[2]}-{el_comp[2]}")
-    
-    
+                        fullTrajectories.append(assemble(el,el_comp))
     
 #%% Assemble trajectories iteratively. 
 
-def assemble(trA, trB):
-    """ Trajectories are built up by first taking two traj elements and iteratively
-    checking to see if the interiors have overlapping alleys. check that here
-    Assumes inputs will be string of alleys separated by '-'s """
-    trlistA, trlistB = trA.split('-'), trB.split('-')
-    lenoverlap = len(set(trlistA).intersection(set(trlistB)))    
-    if lenoverlap == len(trlistA)-1:
-        
-        #logic is seeing which should go first. the earlier seq has its first 
-        # element not in the common domain while the second seq has its last
-        # element not in the common domain
-        if trlistA[0] not in trlistB:
-            newtraj = trlistA + [trlistB[-1]] #this works bc the new traj just adds the ends of the old ones to their overlap
-        else:
-            newtraj = trlistB + [trlistA[-1]]
-        return '-'.join(newtraj)
+def checkOverlap(x,y):
+    """
+    Input two lists, length 3 or greater
+    Assume x comes before y in a trajectory
+    check if they overlap.
+    
+    E.g. x = ['16', '2', '0'], y = ['2', '0', '4']
+    These do overlap by our definition - the interiors (removing first
+     element of x and last element of y) are identical. In general the 
+    length n vectors will overlap if their len n-1 interiors are identical.
+    But you need to check the order. e.g. inputting the arguments in this 
+    example in reverse would not lead to overlap.
+    """
+    interiorX, interiorY = x[1:], y[:-1]
+    if interiorX == interiorY:
+        return True
     else:
-        return None
+        return False
+
+def assemble(trA, trB):
+    """ 
+    Inputs trA, trB are lists of alleys as strings e.g ['0', '2', '4']
+    They represent trajctories or building blocks thereof
+    Fx checks to see if they can be combined. Where that is defined as
+    the interiors overlap and so they are two pieces of a bigger trajectory
+    
+    E.g. trA = ['16', '2', '0'], trB = ['2', '0', '4']
+    These are defined to be pieces of a larger traj because they overlap
+    in the interior (in order trA > trB)
+    """
+    
+    test_a_b = checkOverlap(trA, trB) # check if the building blocks form a traj trA>trB
+    test_b_a = checkOverlap(trB, trA) # '' but for trB > trA
+    
+    if test_a_b == True:
+        assembledtraj = trA + [trB[-1]]
+    elif test_b_a == True:
+        assembledtraj = trB + [trA[-1]]
+    else:
+        assembledtraj = None
+        
+    return assembledtraj
+
+def assembleNextLevel(struct):
+    """
+    Input - struct is a list of lists. Each sublist is a trajectory represented
+    as a list of strings of the alleys in the trajectory.
+    Ex. struct = [['0','2','4'],['5','6','7']]
+    Lists may not be of the same length 
+    
+    Each list element is compared to all others to see if they form a bigger
+    trajectory. Uses assemble() (which uses checkOverlap()) to do so. 
+    
+    Returns a new lists of lists where the list elements are the new, assembled
+    trajectories from the inputs. Duplicates are removed. 
+    """
+    newTrajectories = []
+    for trajA in struct:
+        for trajB in struct:
+            output = assemble(trajA, trajB)
+            if output is not None:
+                newTrajectories.append(output)
+                
+    if newTrajectories != []:
+        newTrajectories.sort()
+        # this is a clever way (meaning I got it from SO) of removing duplicates in a list of lists
+        newTrajectories = list(k for k,_ in itertools.groupby(newTrajectories))
+    
+    return newTrajectories
+
+  
    
 ###############################
 #%% Putting Things Together ###
 ###############################
+trajElements = {str(i):None for i in range(17)}
+
 
 def drawRegion(ax, bounds, color, edge):
     """
@@ -233,23 +287,28 @@ def findTrajElements(trajElements, alley, cpt, transThresh=0.5):
     
     transThresh = 0.5 # 0.5 is a simple choice for now 8-11-21. much work will be needed to pick right thresh
     ti = np.where(cpt>transThresh)
-    trajElements[alley] = list(zip(directConnections[alley][ti[0]], [alley]*len(ti[0]), directConnections[alley][ti[1]]))
-
+    trajElements[alley] = [list(a) for a in zip(directConnections[alley][ti[0]], [alley]*len(ti[0]), directConnections[alley][ti[1]])]
+    
     return trajElements
 
 
 
-def drawTrajElements(trajElements,alley):
-    """Takes dict of trajectory elements and key, each value is len 3 list
-    with prev,current,next alley of the t element. draws them on subplots
-    annotated with green (start) and red (end)
+def drawTrajElements(trajectories, title=''):
     """
-    ncol=2
-    fig, axes = plt.subplots(int(np.ceil(len(trajElements[alley])/ncol)),ncol,figsize=(4,3.5))
-    plt.suptitle(f"Trajectory Elements For Alley {alley}")
-    for i,trajectory in enumerate(trajElements[alley]):
+    Input trajectories - list of lists. Each sublist is a trajectory. Min
+         length is 3. Elements are strings of alley labels in order of their
+         sequence on the trajectory.
+         title - title for plot. 
+    """
+    if len(trajectories) > 1:
+        ncol=5
+    else:
+        ncol =1
+    fig, axes = plt.subplots(int(np.ceil(len(trajectories)/ncol)),ncol,figsize=(10,15))
+    plt.suptitle(f"Trajectory Elements {title}")
+    for i,trajectory in enumerate(trajectories):
         ax = fig.axes[i]
-        ax.set_title(f"{trajectory[0]} -> {trajectory[1]} -> {trajectory[2]}")
+        ax.set_title('->'.join(trajectory))
         for a in range(17):
             
            if str(a) in trajectory: 
@@ -263,15 +322,16 @@ def drawTrajElements(trajElements,alley):
         
            else:
                drawRegion(ax, ratborders.alleyInterBounds[str(a)],'lightgrey','lightgrey')
+           ax.axis('off')
                
                
                
 
-for a in range(17):
-    try:
-        a = str(a)
-        cpt = createCTPT(a)
-        trajElements = findTrajElements(trajElements, a, cpt)
-        drawTrajElements(trajElements,a)
-    except:
-        print(a)
+# for a in range(17):
+#     try:
+#         a = str(a)
+#         cpt = createCTPT(a)
+#         trajElements = findTrajElements(trajElements, a, cpt)
+#         drawTrajElements(trajElements[a], a)
+#     except:
+#         print(a)
