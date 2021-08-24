@@ -48,7 +48,13 @@ def loadRepeatingUnit(df, clustName, smoothing=2, vthresh=Def.velocity_filter_th
     posx, posy = Parse.adjustPosCamera(df, pos, ts)
     position = np.column_stack((ts, posx, posy))
     position = position[(position[:,0]>=start) & (position[:,0]<=end)]
+    
+    #next two lines gets rid of zeros that occur when you lose tracking
+    # depending on how the camera image is flipped the zeros will either be
+    # at 0,0 or 640,480
     position = position[np.logical_or(position[:,1]>0, position[:,2]>0)]
+    position = position[np.logical_or(position[:,1]<640, position[:,2]<480)]
+    
     position = Filt.velocity_filtering(position, vthresh)
     
     # On R886 D1 the track or camera got moved wrt where it was on D2 

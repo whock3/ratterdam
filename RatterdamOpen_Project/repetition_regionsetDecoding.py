@@ -72,14 +72,25 @@ timestamp = util.genTimestamp()
 codedict = {'1':'N','2':'E','3':'S','4':'W','0':'X'}
 
 
-for rat,day in zip(['R781', 'R781', 'R808', 'R808', 'R859', 'R859'],['D3', 'D4', 'D6', 'D7', 'D1', 'D2']):
+for rat,day in zip(['R781', 'R781', 'R808', 'R808', 'R859', 'R859', 'R886', 'R886'],['D3', 'D4', 'D6', 'D7', 'D1', 'D2', 'D1', 'D2']):
     print(rat,day)
 
     ratborders = {'R781':nab.R781, 'R808':nab.R808, 'R859':nab.R859, 'R765':nab.R765, 'R886':nab.R886}[rat]
-    savepath = "E:\\Ratterdam\\repetition_decoding\\8-9-21_8-10-21_DirectionalityDecoding\\"
+    savepath = "E:\\Ratterdam\\repetition_decoding\\8-23-21_directionDecoding\\"
     datapath = f'E:\\Ratterdam\\{rat}\\{rat}_RatterdamOpen_{day}\\'
     
     population, turns = RepCore.loadRecordingSessionData(rat, day)
+    
+    # Filter to remove turn-around trajectories. These cause same label
+    # to map onto different behaviors
+    ballisticTurnIdx = []
+    for i in range(1,turns.shape[0]-1):
+        row = turns.iloc[i]
+        inter = row['Inter']
+        if row['Ego'] != '3' and turns.iloc[i+1].Inter != inter and turns.iloc[i-1].Inter != inter:
+            ballisticTurnIdx.append(i)
+            
+    turns = turns.iloc[ballisticTurnIdx]
     
     #%% Create data arrays
     #Here's the logic. If you want the acivity from when the animal was on a given
@@ -95,6 +106,13 @@ for rat,day in zip(['R781', 'R781', 'R808', 'R808', 'R859', 'R859'],['D3', 'D4',
         turn_nm1 = turns.iloc[t-1]
         turn = turns.iloc[t]
         turn_np1 = turns.iloc[t+1]
+        
+        # ballisticTurns removes turn-around turns. But since trajectory
+        # labels depend on the n-1, n+1 turns, the turns adjacent to the removed
+        # turns must also be ignored, at an unfortunate loss of data
+        
+        # if turn['Alley+'] == turn_np1['Alley-']:
+        #     pass
                 
         # cD= turn['Ego'] # currentDir value this turn
         # pD = turn_nm1['Ego'] # previous ''
