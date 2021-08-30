@@ -87,6 +87,13 @@ for rat,day in zip(['R781', 'R781', 'R808', 'R808', 'R859', 'R859', 'R886', 'R88
     for i in range(1,turns.shape[0]-1):
         row = turns.iloc[i]
         inter = row['Inter']
+        
+        #logic checking turn arounds: code 3 for ego means within the turn he turned around. e.g. 13-j-13. ignore it.
+        # for turn arounds that span two turns (most of them), think of it like the turn around consists of a turn in
+        # and then a turn back out. each 'leg' of the turnaround has an entry associated w it in the turns db
+        # so as we iter over the db we check 1 ahead and 1 behind to make sure were not part of a turn around currently.
+        # caveat is you lose a 'straight-through' leg if its part of a turn around (.e.g the leg out he traverses through
+        # an alley) and this could theoretically be used in directionality decoding
         if row['Ego'] != '3' and turns.iloc[i+1].Inter != inter and turns.iloc[i-1].Inter != inter:
             ballisticTurnIdx.append(i)
             

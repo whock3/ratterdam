@@ -29,6 +29,8 @@ import scipy
 import ratterdam_DataFiltering as Filt
 import alleyTransitions as alleyTrans
 import newAlleyBounds as nab
+import json
+from itertools import groupby
 
 
 def loadRepeatingUnit(df, clustName, smoothing=2, vthresh=Def.velocity_filter_thresh):
@@ -70,13 +72,50 @@ def loadRepeatingUnit(df, clustName, smoothing=2, vthresh=Def.velocity_filter_th
     spikexy = util.getPosFromTs(clust,position)
     spikes = np.column_stack((clust,spikexy))
     
+    includedFields = loadFieldInclusionList(df, clustName)
 
-    unit = Unit(spikes,position, clustName, smoothing)
-    unit = Filt.filterFields(unit)
+    unit = Unit(spikes,position, clustName, smoothing, df)
+    unit.includedFields = includedFields
+    unit.findFields()
+    #unit = Filt.filterFields(unit)
     if smoothing:
         unit.smoothFieldsFx()
     
     return unit
+
+
+def loadFieldInclusionList(df, clustName):
+    """
+    Load fieldInclusionList.txt and return the valid fields for the clust
+    named clustName. The txt file has a row for each cell and a list of
+    valid fields and fields to redraw. Separate fx deals with redrawn fields
+    """
+    rat = df.split('\\')[-2].split("_")[0]
+    day = df.split('\\')[-2].split("_")[2]
+    
+    foundCell = False
+    validFields = []
+    with open(df + f"{rat}{day}_fieldInclusionList.txt","r") as f:
+        fincl = f.readlines() 
+    
+    for line in fincl:
+        if line[0] != '#':
+            
+            #clustname has \\ between tt and cell #, name in txt has \\\\ bc of escape conversion
+            
+            if clustName.split("\\")[0] == line.split(';')[0].split("\\\\")[0] and clustName.split("\\")[1] == line.split(';')[0].split("\\\\")[1]:
+                if foundCell == True:
+                    print("error - matching multiple cells in inclusion list")
+                elif foundCell == False:
+                    foundCell = True
+                entry = line.split(';')[1].split(',')
+                if eval(entry[0]) == None:
+                    validFields = []
+                else:
+                    validFields = [int(i) for i in line.split(';')[1].split(',')]
+                
+    return validFields
+    
 
 def unitVelocityFilter(ts, position, clust):
         '''
@@ -94,6 +133,61 @@ def unitVelocityFilter(ts, position, clust):
         allSpikeTs = np.asarray([util.takeClosest(ts, i) for i in clust])
         filtTs = clust[np.isin(allSpikeTs, position[:,0])]
         return filtTs
+    
+    
+def filterVisit(dista,distb,traj,perim,length_thresh=0.5,dist_thresh=0.15,point_thresh=3):
+    
+     passLengthThresh = False
+     passDistThresh = False 
+     #test 1 - how far into the field does the trajectory excurse 
+     #below,compute distance between 1st point and all others to get max dist inside field
+     # Check against a threshold to see if visit passes this test 
+     maxdist = max(np.linalg.norm(traj[0,1:]-traj[:,1:],axis=1))
+     if maxdist >= length_thresh*dista or maxdist >= length_thresh*distb:
+         passLengthThresh = True 
+     
+     # test 2 - does the trajectory in the field get far enough
+     # from the borders to avoid just "skirting" the edge of the field
+     mind = [min(np.linalg.norm(i[1:]-perim,axis=1)) for i in traj]
+     minDist = max(dist_thresh*dista, dist_thresh*distb)
+     for k, g in groupby((mind>minDist)):
+         if k == True:
+             g = list(g)
+             if len(g) >= point_thresh:
+                 passDistThresh = True
+       
+     # if traj passes both tests, add to newvisits           
+     if passLengthThresh == True and passDistThresh == True:
+         return True
+     else:
+         return False
+     
+def filterVisits(self, visits, perim,length_thresh=0.5,dist_thresh=0.10,point_thresh=3):
+    """
+    Take a list of visits. Each element is a list of ts corresponding to the
+    pos samples from that visit.
+    
+    From there, apply a threshold to remove visits that are too short.
+    7-26-2021 thresh will be based on max dist traveled thru field and size
+    of field
+    
+    Thresh is 0-1 pct max dist a visit must travel
+    """
+    #calc bounding box and max distances
+    maxx,minx, maxy, miny = max(perim[:,0]), min(perim[:,0]), max(perim[:,1]), min(perim[:,1])
+    dista = np.sqrt(((minx-minx)**2)+((maxy-miny)**2))
+    distb = np.sqrt(((minx-maxx)**2)+((miny-miny)**2))
+
+    newvisits = []
+    for v in visits:
+        if len(v) >= 2:
+            traj = self.position[(self.position[:,0]>v[0])&(self.position[:,0]<=v[-1])]
+            
+            filterpass = filterVisit(dista,distb,traj,perim,length_thresh=0.5,dist_thresh=0.15,point_thresh=3)
+            if filterpass == True:
+                newvisits.append(v)
+            
+    return newvisits
 
 class Unit():
     """
@@ -101,51 +195,27 @@ class Unit():
     for instance.spikes and instance.position
     """
     
-    def __init__(self, s, p, clustname, smoothing):
+    def __init__(self, s, p, clustname, smoothing, df):
         self.name = clustname
         self.spikes = s
         self.position = p
         self.colors = cnames
         self.smoothing = smoothing
+        self.df = df
         self.repUnit = RateMapClass.RateMap(self) # a different unit class from the pf alg someone else wrote
         # self.repUnit.PF is a list of pf objects. each object has pf.perimeter as an attribute which is the well-fitting but out of order [x,y] border lists
         self.alphaHullFactor = 1
         self.alpha = 0
-        self.findFields()
+        self.loadRedrawnBorders() # loads json with redrawn borders if any. will be dict w empty lists otherwise 
+        
         
     def PolyArea(self,x,y):
         """
         Found at https://stackoverflow.com/questions/24467972/calculate-area-of-polygon-given-x-y-coordinates
         """
         return 0.5*np.abs(np.dot(x,np.roll(y,1))-np.dot(y,np.roll(x,1)))
+     
     
-    
-    def filterVisits(self, visits, perim,thresh=0.2):
-        """
-        Take a list of visits. Each element is a list of ts corresponding to the
-        pos samples from that visit.
-        
-        From there, apply a threshold to remove visits that are too short.
-        7-26-2021 thresh will be based on max dist traveled thru field and size
-        of field
-        
-        Thresh is 0-1 pct max dist a visit must travel
-        """
-        #calc bounding box and max distances
-        maxx,minx, maxy, miny = max(perim[:,0]), min(perim[:,0]), max(perim[:,1]), min(perim[:,1])
-        dista = np.sqrt(((minx-minx)**2)+((maxy-miny)**2))
-        distb = np.sqrt(((minx-maxx)**2)+((miny-miny)**2))
-    
-        newvisits = []
-        for v in visits:
-            if len(v) >= 2:
-                traj = self.position[(self.position[:,0]>v[0])&(self.position[:,0]<=v[-1])]
-                #below,compute distance between 1st point and all others to get max dist inside field
-                maxdist = max(np.linalg.norm(traj[0,1:]-traj[:,1:],axis=1))
-                if maxdist >= thresh*dista or maxdist >= thresh*distb:
-                    newvisits.append(v)
-       
-        return newvisits
     
     def shuffleFieldsFx(self):
         for i,field in enumerate(self.fields):
@@ -161,30 +231,67 @@ class Unit():
         self.visits = []
         self.perimeters = []
         for i,pf in enumerate(self.repUnit.PF[:]):
-            border = placeFieldBorders.reorderBorder(pf.perimeter, i)
-            self.perimeters.append(border)
-            #border = np.append(border, border[0]) # add the first point to close the contour
-            contour = path.Path(border)
-
-            PinC = self.position[contour.contains_points(self.position[:,1:])]
-            posVisits = getVisits(PinC[:,0])
-            posVisits = self.filterVisits(posVisits, border, thresh=0.2)
-
-            
-            self.visits.append(posVisits)
-            field_FR = []
-            field_TS = [] # take middle ts 
-            for visit in posVisits:
-                spk = self.spikes[np.logical_and(self.spikes[:,0] > visit[0], self.spikes[:,0] < visit[-1])]
-                vdur = (visit[-1]-visit[0])/1e6 # do this instead of just multiplying number samples by fr because any lost frames from, e.g. occlusions will introduce a discrepancy
-                field_FR.append(spk.shape[0]/vdur)
-                field_TS.append(visit[0])
+            if i in self.includedFields or str(i) in self.redrawnFields.keys():
+                if str(i) in self.redrawnFields.keys():
+                    border = self.redrawnFields[str(i)]
+                else:           
+                    border = placeFieldBorders.reorderBorder(pf.perimeter, i)
+                self.perimeters.append(border)
+                #border = np.append(border, border[0]) # add the first point to close the contour
+                contour = path.Path(border)
+    
+                PinC = self.position[contour.contains_points(self.position[:,1:])]
+                posVisits = getVisits(PinC[:,0])
+                #posVisits = filterVisits(posVisits, border, thresh=0.2)
+    
                 
-            # stack and strip nans
-            finalfield = np.column_stack((field_TS, field_FR))
-            finalfield = finalfield[~np.isnan(finalfield[:,1])]
+                self.visits.append(posVisits)
+                field_FR = []
+                field_TS = [] # take middle ts 
+                for visit in posVisits:
+                    spk = self.spikes[np.logical_and(self.spikes[:,0] > visit[0], self.spikes[:,0] < visit[-1])]
+                    vdur = (visit[-1]-visit[0])/1e6 # do this instead of just multiplying number samples by fr because any lost frames from, e.g. occlusions will introduce a discrepancy
+                    field_FR.append(spk.shape[0]/vdur)
+                    field_TS.append(visit[0])
+                    
+                # stack and strip nans
+                finalfield = np.column_stack((field_TS, field_FR))
+                finalfield = finalfield[~np.isnan(finalfield[:,1])]
+                
+                self.fields.append(finalfield)
+                
+        
             
-            self.fields.append(finalfield)
+    def loadRedrawnBorders(self):
+        """
+        Read in manually drawn place field borders for certain fields 
+        and overwrite the pre-computed perimeter found by the detection alg
+        
+        Detection algorithm isn't perfect and some fields needed to be manually
+        redrawn. The coordinates are in a json file within each recording day dir
+        Each cell has its own file (single json) with field # as keys and coords
+        as values.
+        
+        NB in a separate file fields that are so bad that they should be removed
+        are given. 
+        
+        To not get confused, the field numbering will be based on what the 
+        algorithm gives, ignoring removed fields. So if there are 5 fields and field 4 gets removed
+        and field 5 is redrawn then the number of the redrawn field is still 5,
+        it doesnt get moved "up" in the list bc one is removed. 
+    
+        """
+        u = self.name.split('\\')[0]+self.name.split('\\')[1]
+        self.redrawnFields ={}
+        fname = f"{u}_manuallyRedrawnFields.json"
+        if fname in os.listdir(self.df+"manuallyRedrawnFields\\"):
+            with open(self.df+"manuallyRedrawnFields\\"+fname,"r") as f:
+                fields = json.load(f)
+            
+            for f in fields.keys():
+                self.redrawnFields[f] = np.asarray(fields[f])
+                
+                
             
 def getVisits(data, maxgap=2*1e6):
     """
@@ -441,6 +548,7 @@ def loadRecordingSessionData(rat,day):
             else:
                 print(f"{clust} is not included")
             
+    print("Loading turns...")
     pos, turns = alleyTrans.alleyTransitions(unit.position, ratborders, graph=False)
     turns = pd.DataFrame(turns)
     turns.columns = ['Allo-','Ego','Allo+','Ts exit','Ts entry', 'Alley-', 'Inter','Alley+']
@@ -449,4 +557,24 @@ def loadRecordingSessionData(rat,day):
     turns.dropna(inplace=True) 
     
     return population, turns
-        
+
+
+def loadTurns(rat, day):
+    """
+    Loads the turns dataframe (without any filtering) for one recording day
+    Silently loads a single neuron to get its associated pos array
+    """
+    ratborders = {'R781':nab.R781, 'R808':nab.R808, 'R859':nab.R859, 'R765':nab.R765,'R886':nab.R886}[rat]
+    datapath = f'E:\Ratterdam\\{rat}\\{rat}_RatterdamOpen_{day}\\'
+    clustList, _ = util.getClustList(datapath)
+    unit = loadRepeatingUnit(datapath, clustList[0], smoothing=1)   
+
+                                
+    pos, turns = alleyTrans.alleyTransitions(unit.position, ratborders, graph=False)
+    turns = pd.DataFrame(turns)
+    turns.columns = ['Allo-','Ego','Allo+','Ts exit','Ts entry', 'Alley-', 'Inter','Alley+']
+    
+    turns = pd.DataFrame(data=turns)
+    turns.dropna(inplace=True) 
+    
+    return turns, unit

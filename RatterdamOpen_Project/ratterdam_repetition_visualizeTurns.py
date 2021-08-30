@@ -32,6 +32,8 @@ import matplotlib as mpl
 import matplotlib.cm as cm
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib as mpl
+import repeatingPC as repPC
+import copy
 #%% Setup
 
 for rat,day in zip(['R781', 'R781', 'R808', 'R808', 'R859', 'R859', 'R886', 'R886', 'R765','R765'],['D3', 'D4', 'D6', 'D7', 'D1', 'D2', 'D1', 'D2','RFD5','DFD8']):
@@ -49,7 +51,8 @@ for rat,day in zip(['R781', 'R781', 'R808', 'R808', 'R859', 'R859', 'R886', 'R88
            inter = row['Inter']
            if row['Ego'] != '3' and turns.iloc[i+1].Inter != inter and turns.iloc[i-1].Inter != inter:
                ballisticTurnIdx.append(i)
-                    
+        
+        refturns = copy.deepcopy(turns) # keep a copy without filtering.
         turns = turns.iloc[np.asarray(ballisticTurnIdx)]
         
         cmap = util.makeCustomColormap()
@@ -70,8 +73,13 @@ for rat,day in zip(['R781', 'R781', 'R808', 'R808', 'R859', 'R859', 'R886', 'R88
             ax.autoscale_view() # for some reason the axes dont update automatically, so run this
         
         
-        
-            
+        def drawTrack(ax=None):
+            if ax == None:
+                ax = plt.gca()
+            for i in range(17):
+                drawRegion(ax, ratborders.alleyInterBounds[str(i)],'lightgrey')
+                  
+                    
         
         
         #%% Extract and plot each trajectory (2d and schematic alleys visited) color-coded by rate 
@@ -85,6 +93,8 @@ for rat,day in zip(['R781', 'R781', 'R808', 'R808', 'R859', 'R859', 'R886', 'R88
                 
             u = unitname.split('\\')[0]+unitname.split('\\')[1]
             print(u)
+            repeat, locCount, repeatType, overlaps = repPC.repeatingPF(unit,ratborders)
+
             
             with PdfPages(f"{savepath}{timestamp}_{u}_Trajectories.pdf") as pdf:
                 
@@ -116,6 +126,9 @@ for rat,day in zip(['R781', 'R781', 'R808', 'R808', 'R859', 'R859', 'R886', 'R88
                 plt.close()
                 
                 for f,field in enumerate(unit.fields):
+                    
+                    foverlap = overlaps[f]
+                    
                     allregions, alltrajs, alllabels, allrates = [], [], [], []
                     _vmax = max([i[1] for i in field])
                     norm = mpl.colors.Normalize(vmin=0,vmax=_vmax)
@@ -123,34 +136,72 @@ for rat,day in zip(['R781', 'R781', 'R808', 'R808', 'R859', 'R859', 'R886', 'R88
                                     
                         turnIdx = np.argmin(np.abs(turns['Ts exit'].astype(np.double)-visit[0]))
                         turndata = [np.nan]
-                        if turnIdx > 1 and turnIdx < turns.shape[0]-2:
+                        if turnIdx >= 1 and turnIdx < turns.shape[0]-1:
                                                 
                             regions = []
                             dirs = []
-                            trajturns = turns.iloc[turnIdx-window:turnIdx+window+1]
-                            ts_start, ts_end = float(turns.iloc[turnIdx-window-1]['Ts exit']), float(turns.iloc[turnIdx+window+1]['Ts exit'])
-                            behavtraj = unit.position[(unit.position[:,0]>ts_start)&(unit.position[:,0]<=ts_end),1:]
-                            behavtraj = behavtraj[(behavtraj[:,0]>0)&(behavtraj[:,1]>0)]
+                            trajturns = turns.iloc[turnIdx-1:turnIdx+1+1] # want to be explicit: +1 to get next turn and another +1 bc python isnt right inclusive
                             
-                           
-                            it=0
-                            for _, t in trajturns.iterrows():
-                                regions.append(t['Alley-']) 
-                                regions.append(t['Inter'])
-                                regions.append(t['Alley+'])
-                                dirs.append(codedict[t['Allo-']])
-                                if it == trajturns.shape[0]-1:                   
-                                    dirs.append(codedict[t['Allo+']])
-                                regions = list(set(regions)) # there is redundancy based on overlapping def of turns, so get unique regions
-                                it+=1 # pd.iterrows() gives the absolute row number in the overall df so do a manual increment for the size of the sub-df were using here
+                            if trajturns.iloc[0]['Alley+'] == trajturns.iloc[1]['Alley-'] and trajturns.iloc[1]['Alley+'] == trajturns.iloc[2]['Alley-']:
                             
+                                if int(trajturns.iloc[1]['Alley+']) in foverlap and int(trajturns.iloc[1]['Alley-']) in foverlap:
+                                    predir, postdir = trajturns.iloc[0]['Alley-'], trajturns.iloc[2]['Alley+']
+                                    ts_start, ts_end = float(refturns.iloc[turnIdx-1-1]['Ts entry']), float(refturns.iloc[turnIdx+1+1+1]['Ts exit'])
+                                    regions = [trajturns.iloc[0]['Alley-'], 
+                                               trajturns.iloc[1]['Alley-'], 
+                                               trajturns.iloc[1]['Alley+'], 
+                                               trajturns.iloc[2]['Alley+'],
+                                               trajturns.iloc[0]['Inter'],
+                                               trajturns.iloc[1]['Inter'],
+                                               trajturns.iloc[2]['Inter']
+                                               ]
+                                    dirs = [trajturns.iloc[0]['Allo-'], trajturns.iloc[0]['Allo+'], trajturns.iloc[1]['Allo+'], trajturns.iloc[2]['Allo+']]
+    
+                                elif int(trajturns.iloc[1]['Alley+']) in foverlap:
+                                    predir, postdir = trajturns.iloc[1]['Alley-'], trajturns.iloc[2]['Alley+']
+                                    ts_start, ts_end = float(trajturns.iloc[0]['Ts entry']), float(refturns.iloc[turnIdx+1+1+1]['Ts exit'])
+                                    regions = [trajturns.iloc[1]['Alley-'], 
+                                               trajturns.iloc[1]['Alley+'], 
+                                               trajturns.iloc[2]['Alley+'],
+                                               trajturns.iloc[1]['Inter'],
+                                               trajturns.iloc[2]['Inter']
+                                               ]
+                                    dirs = [trajturns.iloc[1]['Allo-'], trajturns.iloc[1]['Allo+'], trajturns.iloc[2]['Allo+']]
+    
+                                elif int(trajturns.iloc[1]['Alley-']) in foverlap:
+                                    predir, postdir = trajturns.iloc[0]['Alley-'], trajturns.iloc[1]['Alley+']
+                                    ts_start, ts_end = float(refturns.iloc[turnIdx-1-1]['Ts entry']), float(trajturns.iloc[1]['Ts exit'])
+                                    regions = [trajturns.iloc[0]['Alley-'], 
+                                               trajturns.iloc[1]['Alley-'], 
+                                               trajturns.iloc[1]['Alley+'],
+                                               trajturns.iloc[0]['Inter'],
+                                               trajturns.iloc[1]['Inter']
+                                               ]
+                                    dirs = [trajturns.iloc[0]['Allo-'], trajturns.iloc[1]['Allo-'], trajturns.iloc[1]['Allo+']] 
+                  
+                                elif trajturns.iloc[1]['Inter'] in foverlap:
+                                    predir, postdir = trajturns.iloc[1]['Alley-'], trajturns.iloc[1]['Alley+']
+                                    ts_start, ts_end = float(trajturns.iloc[0]['Ts entry']), float(trajturns.iloc[2]['Ts exit'])
+                                    regions = [trajturns.iloc[1]['Alley-'], 
+                                               trajturns.iloc[1]['Alley+'], 
+                                               trajturns.iloc[1]['Inter']]
+                                    dirs = [trajturns.iloc[1]['Allo-'], trajturns.iloc[1]['Allo+']]
                             
-                            
-                            allregions.append(regions)
-                            subplotlabel = f"{','.join(dirs)}"
-                            alllabels.append(subplotlabel)
-                            allrates.append(visit[1])
-                            alltrajs.append(behavtraj)
+                                else:
+                                    print("Error - no field overlap detected")
+                                
+                                behavtraj = unit.position[(unit.position[:,0]>ts_start)&(unit.position[:,0]<=ts_end),1:]
+                                dirs = [codedict[i] for i in dirs]
+                                
+                                # gets rid of -99s (lost data)
+                                behavtraj = behavtraj[(behavtraj[:,0]>0)&(behavtraj[:,1]>0)]
+               
+                     
+                                allregions.append(regions)
+                                subplotlabel = f"{','.join(dirs)}"
+                                alllabels.append(subplotlabel)
+                                allrates.append(visit[1])
+                                alltrajs.append(behavtraj)
                     allregions = np.asarray(allregions)
                     alllabels = np.asarray(alllabels)
                     allrates = np.asarray(allrates)

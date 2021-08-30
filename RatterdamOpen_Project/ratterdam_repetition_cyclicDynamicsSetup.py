@@ -61,31 +61,37 @@ for i,clust in enumerate(clustList):
 
 
 #%% Create dataframe
-df_data = pd.DataFrame()
-df_info = pd.DataFrame()
 
+for rat, day in zip(['R781','R808','R808'],['D4','D6','D7']):
 
-# 8-6-21: before today, code would loop over fields and use pchip interpolation
-# to interpolate fields and equate all the sample numbers across fields.
-# Baryshinkov group actually needs fields to be raw and they deal with uneven data
-# sizes. This issue was noted a long time ago but they have been using one day R859D2 
-# which i either created the csv for manualy or did in a jupyter notebook and dont feel
-#like finding since its pretty trivial. 
-
-for clustname, unit in population.items():  
+    population, turns = RepCore.loadRecordingSessionData(rat, day)
     
-    for i,field in enumerate(unit.fields):
-        df_data = df_data.append(pd.Series(field[:,0]),ignore_index=True)
-        df_info = df_info.append(pd.Series([clustname,f"field {i}",'timestamps']),ignore_index=True)
+    df_data = pd.DataFrame()
+    df_info = pd.DataFrame()
+    
+    ts = util.genTimestamp()
+    savepath = f'E:\\Ratterdam\\leader_follower_data\\{rat}\\'
+    # 8-6-21: before today, code would loop over fields and use pchip interpolation
+    # to interpolate fields and equate all the sample numbers across fields.
+    # Baryshinkov group actually needs fields to be raw and they deal with uneven data
+    # sizes. This issue was noted a long time ago but they have been using one day R859D2 
+    # which i either created the csv for manualy or did in a jupyter notebook and dont feel
+    #like finding since its pretty trivial. 
+    
+    for clustname, unit in population.items():  
         
-        df_data = df_data.append(pd.Series(field[:,1]),ignore_index=True)
-        df_info = df_info.append(pd.Series([clustname,f"field {i}",'firingrates']),ignore_index=True)
-        
+        for i,field in enumerate(unit.fields):
+            df_data = df_data.append(pd.Series(field[:,0]),ignore_index=True)
+            df_info = df_info.append(pd.Series([clustname,f"field {i}",'timestamps']),ignore_index=True)
             
-df = pd.concat([df_info, df_data], axis=1)
-df.to_csv(savepath+f"{rat}{day}_spline.csv",header=True,index=False)
-
-        
-        
-        
-        
+            df_data = df_data.append(pd.Series(field[:,1]),ignore_index=True)
+            df_info = df_info.append(pd.Series([clustname,f"field {i}",'firingrates']),ignore_index=True)
+            
+            
+    df = pd.concat([df_info, df_data], axis=1)
+    df.to_csv(savepath+f"{ts}_{rat}{day}_cells.csv",header=True,index=False)
+    
+            
+            
+            
+            

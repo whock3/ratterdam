@@ -82,3 +82,185 @@ def checkCheating(unit, turn, turn_np1):
 #         fig.axes[i].set_title(code[1])
 #     plt.suptitle(f"{d}-turn Bearing")
     
+
+
+#%% Working on turn visualization, getting rid of turn arounds, how to bridge gaps, etc
+# 8-25-21
+
+nturns = 50
+nrows = 5
+codedict = {'1':'N','2':'E','3':'S','4':'W','0':'X'}
+
+fig, ax = plt.subplots(nrows,int(nturns/nrows),figsize=(12,8))
+
+start = 100
+for t in range(start, start+nturns):
+    turn = turns.iloc[t]
+    i = t-start+1
+    ts_start, ts_end = refturns.iloc[turn.name-1]['Ts entry'], refturns.iloc[turn.name+1]['Ts exit']
+    behav = unit.position[(unit.position[:,0]>float(ts_start))&(unit.position[:,0]<=float(ts_end))]
+    behav = behav[(behav[:,1]>0)&(behav[:,2]>0)]
+    
+    for r in range(17):
+        drawRegion(fig.axes[i-1],ratborders.alleyInterBounds[str(r)],'lightgrey')
+    for rr in ascii_uppercase[:12]:
+        drawRegion(fig.axes[i-1],ratborders.alleyInterBounds[rr],'lightgrey')
+        
+    for region in ['Alley-','Inter','Alley+']:
+        drawRegion(fig.axes[i-1],ratborders.alleyInterBounds[str(turn[region])],'lightblue')
+        
+    fig.axes[i-1].plot(behav[:,1], behav[:,2], color='k', zorder=99)
+    fig.axes[i-1].scatter(behav[0,1],behav[0,2],color='green',marker='o',s=50,zorder=99)
+    fig.axes[i-1].scatter(behav[-1,1],behav[-1,2],color='red',marker='o',s=50,zorder=99)
+    
+    label = '->'.join([codedict[i] for i in [turn['Allo-'],turn['Allo+']]])
+    fig.axes[i-1].set_title(f"Turn {turn.name}, {label}")
+    
+for ii in range(len(fig.axes)):
+    fig.axes[ii].axis("off")
+    #fig.axes[ii].set_aspect('equal', adjustable='box')
+plt.suptitle(f"{rat} {day} Turns {turns.iloc[start].name} - {turns.iloc[t].name} (Turn arounds removed)")
+
+#%% Helper fx 
+
+def drawRegion(ax, bounds,color):
+    """
+    Bounds are the corners of a region on the track
+    Format is [[xmin, xmax], [ymin, ymax]]
+    Ax is an axis to which to add the region
+    Color can be anything in practice it will be the rate 
+    """
+    x0,y0 = bounds[0][0], bounds[1][0]
+    w,h = bounds[0][1] - bounds[0][0], bounds[1][1] - bounds[1][0]
+    ax.add_patch(Rectangle((x0,y0),w,h,color=color))
+    ax.autoscale_view() # for some reason the axes dont update automatically, so run this
+
+
+def drawTrack(ax=None):
+    if ax == None:
+        ax = plt.gca()
+    for i in range(17):
+        drawRegion(ax, ratborders.alleyInterBounds[str(i)],'lightgrey')
+          
+
+codedict = {'1':'N','2':'E','3':'S','4':'W','0':'X'}
+                    
+        
+    
+#%% Plot all turns, mark ballistic versus turnaround ("pivoting") turns
+import numpy as np
+import utility_fx as util
+import os
+from matplotlib import pyplot as plt
+import ratterdam_RepetitionCoreFx as RepCore
+import RateMapClass_William_20190308 as RateMapClass
+import williamDefaults as wmDef
+import alleyTransitions as alleyTrans
+import newAlleyBounds as nab
+import pandas as pd
+from matplotlib.patches import Rectangle
+import repeatingPC as repPC
+import copy
+from string import ascii_uppercase
+
+rat, day = 'R781', 'D3'
+ratborders = {'R781':nab.R781, 'R808':nab.R808, 'R859':nab.R859, 'R765':nab.R765, 'R886':nab.R886}[rat]
+
+turns, unit = RepCore.loadTurns(rat, day)
+
+
+# Filter to remove turn-around trajectories. These cause same label
+# to map onto different behaviors
+ballisticTurnIdx = []
+for i in range(1,turns.shape[0]-1):
+    row = turns.iloc[i]
+    inter = row['Inter']
+    
+    #logic checking turn arounds: code 3 for ego means within the turn he turned around. e.g. 13-j-13. ignore it.
+    # for turn arounds that span two turns (most of them), think of it like the turn around consists of a turn in
+    # and then a turn back out. each 'leg' of the turnaround has an entry associated w it in the turns db
+    # so as we iter over the db we check 1 ahead and 1 behind to make sure were not part of a turn around currently.
+    # caveat is you lose a 'straight-through' leg if its part of a turn around (.e.g the leg out he traverses through
+    # an alley) and this could theoretically be used in directionality decoding
+    if row['Ego'] != '3' and turns.iloc[i+1].Inter != inter and turns.iloc[i-1].Inter != inter:
+        ballisticTurnIdx.append(i)
+        
+refturns = copy.deepcopy(turns)     
+turns = turns.iloc[ballisticTurnIdx]
+
+
+ballisticTurnRows = [turns.iloc[i].name for i in range(turns.shape[0])]
+
+#%%
+
+nturns = 50
+ncols = 10
+fig, ax = plt.subplots(int(np.ceil(nturns/ncols)),ncols, figsize=(12,8))
+start = 1
+for t in range(start, start+nturns):
+    turn = refturns.iloc[t]
+    i = t-start+1
+    ts_start, ts_end = refturns.iloc[t-1]['Ts entry'], refturns.iloc[t+1]['Ts exit']
+    behav = unit.position[(unit.position[:,0]>float(ts_start))&(unit.position[:,0]<=float(ts_end))]
+    behav = behav[(behav[:,1]>0)&(behav[:,2]>0)]
+    
+    if turn.name in ballisticTurnRows:
+        bgcolor = 'lightcoral'
+        turncolor = 'red'
+    else:
+        bgcolor = 'cornflowerblue'
+        turncolor = 'blue'
+    
+    for r in range(17):
+        drawRegion(fig.axes[i-1],ratborders.alleyInterBounds[str(r)], bgcolor)
+    for rr in ascii_uppercase[:12]:
+        drawRegion(fig.axes[i-1],ratborders.alleyInterBounds[rr], bgcolor)
+        
+    for region in ['Alley-','Inter','Alley+']:
+        drawRegion(fig.axes[i-1],ratborders.alleyInterBounds[str(turn[region])], turncolor)
+        
+    fig.axes[i-1].plot(behav[:,1], behav[:,2], color='k', zorder=99)
+    fig.axes[i-1].scatter(behav[0,1],behav[0,2],color='green',edgecolor='k',marker='o',s=50,zorder=99)
+    fig.axes[i-1].scatter(behav[-1,1],behav[-1,2],color='red',edgecolor='k',marker='o',s=50,zorder=99)
+    
+    label = '->'.join([codedict[i] for i in [turn['Allo-'],turn['Allo+']]])
+    fig.axes[i-1].set_title(f"Turn {turn.name}, {label}")
+    
+for ii in range(len(fig.axes)):
+    fig.axes[ii].axis("off")
+    #fig.axes[ii].set_aspect('equal', adjustable='box')
+plt.suptitle(f"{rat} {day} Turns {refturns.iloc[start].name} - {refturns.iloc[t].name} (Reds=Ballistic, Blues=Pivots)")
+
+
+
+#%% Visualize turns nearest to field visit and spikes overlaid (assumes data is loaded)
+#unit = population['TT12\\cl-maze1.1']
+codedict = {'1':'N','2':'E','3':'S','4':'W','0':'X'}
+field = unit.fields[0]
+perim = unit.perimeters[0]
+turnIdx = []
+allTurnIdx =[]
+for visit in field:
+    turnIdx = np.argmin(np.abs(turns['Ts exit'].astype(np.double)-visit[0]))
+    allTurnIdx.append(turnIdx)
+
+allTurnIdx = np.asarray(allTurnIdx)
+ncols=10
+fig, ax = plt.subplots(int(np.ceil(allTurnIdx.shape[0]/ncols)),ncols,figsize=(12,8))
+for i,tidx in enumerate(allTurnIdx):
+    turn = turns.iloc[tidx]
+    ts_start, ts_end = float(turns.iloc[tidx-1]['Ts entry']), float(turns.iloc[tidx+1]['Ts exit'])
+    behav = unit.position[(unit.position[:,0]>ts_start)&(unit.position[:,0]<=ts_end)]
+    behav = behav[(behav[:,1]>0)&(behav[:,2]>0)]
+    spikes = unit.spikes[(unit.spikes[:,0]>ts_start)&(unit.spikes[:,0]<=ts_end)]
+    rate = spikes.shape[0]/((ts_end-ts_start)/1e6)
+    drawTrack(ax=fig.axes[i])
+    fig.axes[i].plot(behav[:,1], behav[:,2],color='k',zorder=99)
+    fig.axes[i].plot(perim[:,0], perim[:,1],color='red',zorder=99)
+    fig.axes[i].scatter(behav[0,1],behav[0,2],c='g',marker='o',s=20,zorder=99)
+    fig.axes[i].scatter(behav[-1,1],behav[-1,2],c='r',marker='o',s=20,zorder=99)
+    fig.axes[i].scatter(spikes[:,1],spikes[:,2],c='blue',marker='o',s=20,zorder=99)
+    label = '->'.join([codedict[j] for j in [turn['Allo-'],turn['Allo+']]])
+    fig.axes[i].set_title(f"{i},{turn.name}, {label}")
+for ii in range(len(fig.axes)):
+    fig.axes[ii].axis("off")
