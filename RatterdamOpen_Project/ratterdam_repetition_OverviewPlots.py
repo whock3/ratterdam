@@ -29,8 +29,8 @@ import confounds as conf
 
 
 #%% Load Data and 
-rat = "R859"
-day = "D2"
+rat = "R808"
+day = "D6"
 savepath = f'E:\\Ratterdam\\{rat}\\ratterdam_plots\\{day}\\overviewPlots\\'
 df = f'E:\Ratterdam\\{rat}\\{rat}_RatterdamOpen_{day}\\'
 clustList, clustQuals = util.getClustList(df,True)
@@ -41,13 +41,16 @@ cmap = util.makeCustomColormap()
 
 for qual,clust in zip(clustQuals, clustList):
     
-    if qual >= qualThresh:
+    
+    #if qual >= qualThresh:
+    if True:
    
         try:
             print(clust)
             unit = RepCore.loadRepeatingUnit(df, clust, smoothing=2)
             rm = util.makeRM(unit.spikes, unit.position)
-            if np.nanpercentile(rm, 95) > 1.:
+            #if np.nanpercentile(rm, 95) > 1.:
+            if True:
                 population[clust] = unit
                 print(f"{clust} included")
             else:
@@ -115,36 +118,41 @@ for unitname, unit in population.items():
         
         if len(unit.fields)>1:
             
-            diffmats, wins = RepCore.makeSemaphores(unit.fields)
-            dm_vmax = np.percentile([np.nanmax(dm.flatten()) for dm in diffmats],95)
+            try:
             
-            
-            #nested gridspec is a bit tedious, see: https://stackoverflow.com/questions/28933233/embedding-multiple-gridspec-layouts-on-a-single-matplotlib-figure
-            nrow = int(np.ceil(len(diffmats)/7))
-            ncol = 7
-            inner_grid = gridspec.GridSpecFromSubplotSpec(nrow,ncol, subplot_spec=p1gs[2,1])
-            
-            c = 0# super hacky but get counters of how many r/c pairs were thru to index scalar diffmat in list
-            for row in range(nrow):
-                for col in range(ncol):   
-                    try:
-                        if row == 0 and col == 0:
-                            ax = plt.subplot(inner_grid[row,col])
-                            ax.set_title(f"IFD Matrices, 95%ile = {round(dm_vmax,2)} Hz")
-                            im = ax.imshow(diffmats[c],interpolation='None',vmax=dm_vmax,aspect='auto',cmap=cmap)
-                            c += 1
-                        else:
-                            ax = plt.subplot(inner_grid[row,col])
-                            ax.imshow(diffmats[c],interpolation='None',vmax=dm_vmax,aspect='auto',cmap=cmap)                        
-                            c += 1  
-                            
-                        #idk why i needed to pull this out of the if/else, otherwise all subplots are the first diffmat.
-                        ax.set_xticks([])
-                        ax.set_yticks([])
-                        ax.set_xticklabels([])
-                        ax.setyticklabels([])
-                    except:
-                        pass
+                diffmats, wins = RepCore.makeSemaphores(unit.fields)
+                dm_vmax = np.percentile([np.nanmax(dm.flatten()) for dm in diffmats],95)
+                
+                
+                #nested gridspec is a bit tedious, see: https://stackoverflow.com/questions/28933233/embedding-multiple-gridspec-layouts-on-a-single-matplotlib-figure
+                nrow = int(np.ceil(len(diffmats)/7))
+                ncol = 7
+                inner_grid = gridspec.GridSpecFromSubplotSpec(nrow,ncol, subplot_spec=p1gs[2,1])
+                
+                c = 0# super hacky but get counters of how many r/c pairs were thru to index scalar diffmat in list
+                for row in range(nrow):
+                    for col in range(ncol):   
+                        try:
+                            if row == 0 and col == 0:
+                                ax = plt.subplot(inner_grid[row,col])
+                                ax.set_title(f"IFD Matrices, 95%ile = {round(dm_vmax,2)} Hz")
+                                im = ax.imshow(diffmats[c],interpolation='None',vmax=dm_vmax,aspect='auto',cmap=cmap)
+                                c += 1
+                            else:
+                                ax = plt.subplot(inner_grid[row,col])
+                                ax.imshow(diffmats[c],interpolation='None',vmax=dm_vmax,aspect='auto',cmap=cmap)                        
+                                c += 1  
+                                
+                            #idk why i needed to pull this out of the if/else, otherwise all subplots are the first diffmat.
+                            ax.set_xticks([])
+                            ax.set_yticks([])
+                            ax.set_xticklabels([])
+                            ax.setyticklabels([])
+                        except:
+                            pass
+                    
+            except:
+                pass
         
                         
             # Autocorr of IFD   

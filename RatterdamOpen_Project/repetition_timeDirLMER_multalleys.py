@@ -168,14 +168,6 @@ for unitname, unit in population.items():
                     elif overlaptype == 'I':
                          if str(interoverlap[0]) == turn['Inter'] and turn['Ego'] == 1:
                             turndata = addTrajVariables(turnIdx, turns, "pre")
-                        
-                        
-                        #TODO debugging this monstrosity. run a turn at a time
-                        # and see if it works
-                        
-                           
-                
-                    
         
                 epoch = bisect.bisect_left(intervals, visit[0]) # returns what period of the session the visit was in. bisect returns insertion index to maintain order.
                 dirdata.append((unit.name, fi, visit[1], *turndata, epoch, visit[0]/1e6))

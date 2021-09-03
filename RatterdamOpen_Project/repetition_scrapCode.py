@@ -234,7 +234,7 @@ plt.suptitle(f"{rat} {day} Turns {refturns.iloc[start].name} - {refturns.iloc[t]
 
 
 #%% Visualize turns nearest to field visit and spikes overlaid (assumes data is loaded)
-#unit = population['TT12\\cl-maze1.1']
+unit = population['TT9\\cl-maze1.3']
 codedict = {'1':'N','2':'E','3':'S','4':'W','0':'X'}
 field = unit.fields[0]
 perim = unit.perimeters[0]
@@ -264,3 +264,26 @@ for i,tidx in enumerate(allTurnIdx):
     fig.axes[i].set_title(f"{i},{turn.name}, {label}")
 for ii in range(len(fig.axes)):
     fig.axes[ii].axis("off")
+    
+    
+#%% load cell
+
+unit = population['TT9\\cl-maze1.3']
+codedict = {'1':'N','2':'E','3':'S','4':'W','0':'X'}
+fnum=0
+field = unit.fields[fnum]
+perim = unit.perimeters[fnum]
+
+#%% visualize individual turns w behavior 
+plt.figure()
+drawTrack()
+tnum = 879
+turn = turns.iloc[tnum]
+ts_start, ts_end = float(turns.iloc[tnum-1]['Ts entry']), float(turns.iloc[tnum+1]['Ts exit'])
+behav = unit.position[(unit.position[:,0]>ts_start)&(unit.position[:,0]<=ts_end)]
+behav = behav[(behav[:,1]>0)&(behav[:,2]>0)]
+plt.plot(perim[:,0], perim[:,1],c='r',zorder=99)
+plt.plot(behav[:,1], behav[:,2], c='k')
+plt.scatter(behav[0,1],behav[0,2],c='g',marker='o',s=20,zorder=99)
+plt.scatter(behav[-1,1],behav[-1,2],c='r',marker='o',s=20,zorder=99)
+plt.title(f"{unit.name} Field {fnum} Turn {turn.name}")
