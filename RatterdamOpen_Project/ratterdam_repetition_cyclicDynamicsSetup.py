@@ -61,8 +61,9 @@ for i,clust in enumerate(clustList):
 
 
 #%% Create dataframe
+import pandas as pd
 
-for rat, day in zip(['R781','R808','R808'],['D4','D6','D7']):
+for rat, day in zip(['R886','R886'],['D1','D2']):
 
     population, turns = RepCore.loadRecordingSessionData(rat, day)
     
@@ -92,6 +93,4 @@ for rat, day in zip(['R781','R808','R808'],['D4','D6','D7']):
     df.to_csv(savepath+f"{ts}_{rat}{day}_cells.csv",header=True,index=False)
     
             
-            
-            
-            
+                

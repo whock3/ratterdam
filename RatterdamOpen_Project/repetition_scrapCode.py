@@ -132,7 +132,7 @@ def drawRegion(ax, bounds,color):
     """
     x0,y0 = bounds[0][0], bounds[1][0]
     w,h = bounds[0][1] - bounds[0][0], bounds[1][1] - bounds[1][0]
-    ax.add_patch(Rectangle((x0,y0),w,h,color=color))
+    ax.add_patch(Rectangle((x0,y0),w,h,color=color),alpha=0.5,zorder=99)
     ax.autoscale_view() # for some reason the axes dont update automatically, so run this
 
 
@@ -147,7 +147,7 @@ codedict = {'1':'N','2':'E','3':'S','4':'W','0':'X'}
                     
         
     
-#%% Plot all turns, mark ballistic versus turnaround ("pivoting") turns
+#%% Imports and load data for
 import numpy as np
 import utility_fx as util
 import os
@@ -162,13 +162,14 @@ from matplotlib.patches import Rectangle
 import repeatingPC as repPC
 import copy
 from string import ascii_uppercase
+import datetime
 
 rat, day = 'R781', 'D3'
 ratborders = {'R781':nab.R781, 'R808':nab.R808, 'R859':nab.R859, 'R765':nab.R765, 'R886':nab.R886}[rat]
 
 turns, unit = RepCore.loadTurns(rat, day)
 
-
+#%% Filter turns 
 # Filter to remove turn-around trajectories. These cause same label
 # to map onto different behaviors
 ballisticTurnIdx = []
@@ -192,7 +193,7 @@ turns = turns.iloc[ballisticTurnIdx]
 ballisticTurnRows = [turns.iloc[i].name for i in range(turns.shape[0])]
 
 #%%
-
+sessionStart = float(refturns.iloc[0]['Ts exit']) # technically missing time of first leg of first turn, but we dont analyze this turn anyway
 nturns = 50
 ncols = 10
 fig, ax = plt.subplots(int(np.ceil(nturns/ncols)),ncols, figsize=(12,8))
@@ -200,9 +201,13 @@ start = 1
 for t in range(start, start+nturns):
     turn = refturns.iloc[t]
     i = t-start+1
+    
+    turnTime = ((float(turn['Ts exit']) - sessionStart) / 1e6)
     ts_start, ts_end = refturns.iloc[t-1]['Ts entry'], refturns.iloc[t+1]['Ts exit']
     behav = unit.position[(unit.position[:,0]>float(ts_start))&(unit.position[:,0]<=float(ts_end))]
     behav = behav[(behav[:,1]>0)&(behav[:,2]>0)]
+    spikes = unit.spikes[(unit.spikes[:,0]>float(ts_start))&(unit.spikes[:,0]<=float(ts_end))]
+
     
     if turn.name in ballisticTurnRows:
         bgcolor = 'lightcoral'
@@ -220,16 +225,18 @@ for t in range(start, start+nturns):
         drawRegion(fig.axes[i-1],ratborders.alleyInterBounds[str(turn[region])], turncolor)
         
     fig.axes[i-1].plot(behav[:,1], behav[:,2], color='k', zorder=99)
-    fig.axes[i-1].scatter(behav[0,1],behav[0,2],color='green',edgecolor='k',marker='o',s=50,zorder=99)
-    fig.axes[i-1].scatter(behav[-1,1],behav[-1,2],color='red',edgecolor='k',marker='o',s=50,zorder=99)
+    fig.axes[i-1].scatter(behav[0,1],behav[0,2],color='green',edgecolor='k',marker='o',s=75,zorder=99)
+    fig.axes[i-1].scatter(behav[-1,1],behav[-1,2],color='red',edgecolor='k',marker='o',s=75,zorder=99)
+    fig.axes[i-1].scatter(spikes[:,1], spikes[:,2], color='y', marker='o', s=75, zorder=99)
+    
     
     label = '->'.join([codedict[i] for i in [turn['Allo-'],turn['Allo+']]])
-    fig.axes[i-1].set_title(f"Turn {turn.name}, {label}")
+    fig.axes[i-1].set_title(f"{turn.name}, {str(datetime.timedelta(seconds=round(turnTime)))}, {label}")
     
 for ii in range(len(fig.axes)):
     fig.axes[ii].axis("off")
     #fig.axes[ii].set_aspect('equal', adjustable='box')
-plt.suptitle(f"{rat} {day} Turns {refturns.iloc[start].name} - {refturns.iloc[t].name} (Reds=Ballistic, Blues=Pivots)")
+plt.suptitle(f"{rat} {day} {unit.name} Turns {refturns.iloc[start].name} - {refturns.iloc[t].name} (Reds=Ballistic, Blues=Pivots)")
 
 
 

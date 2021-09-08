@@ -16,8 +16,6 @@ add to dataframe
 """
 
 #%% Imports
-import ratterdam_CoreDataStructures as Core
-import ratterdam_ParseBehavior as Parse
 import numpy as np
 import utility_fx as util
 import os

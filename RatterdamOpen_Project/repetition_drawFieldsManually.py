@@ -22,10 +22,10 @@ import williamDefaults as wmDef
 import os, json
 
 
-rat = 'R781'
-day = 'D4'
+rat = 'R765'
+day = 'RFD5'
 df = f'E:\\Ratterdam\\{rat}\\{rat}_RatterdamOpen_{day}\\'
-clustname = "TT2\\cl-maze1.3"
+clustname = "TT13\\cl-maze1.1"
 
 cmap = util.makeCustomColormap()
 
@@ -33,8 +33,9 @@ unit = RepCore.loadRepeatingUnit(df, clustname)
 
 class FieldDrawer():
     
-    def __init__(self, df):
+    def __init__(self, df,unit):
         self.df = df
+        self.unit = unit
         self.coords = []
         self.fields = {}
 
@@ -57,27 +58,27 @@ class FieldDrawer():
         
     def viewPosInField(self,border):
         contour = path.Path(border)
-        pinc = unit.position[contour.contains_points(unit.position[:,1:])]
+        pinc = self.unit.position[contour.contains_points(self.unit.position[:,1:])]
         plt.scatter(pinc[:,1],pinc[:,2])
         
     def saveFields(self):
         
         if 'manuallyRedrawnFields' not in os.listdir(df):
-            os.mkdir(df+"manuallyRedrawnFields\\")
+            os.mkdir(self.df+"manuallyRedrawnFields\\")
         
-        u = unit.name.split('\\')[0]+unit.name.split('\\')[1]
+        u = self.unit.name.split('\\')[0]+self.unit.name.split('\\')[1]
     
-        with open(df+f"manuallyRedrawnFields\\{u}_manuallyRedrawnFields.json", "w") as f:
+        with open(self.df+f"manuallyRedrawnFields\\{u}_manuallyRedrawnFields.json", "w") as f:
             json.dump(self.fields, f)
     
     
     def drawFields(self):
     
         self.fig, self.ax = plt.subplots(figsize=(8,6))
-        self.ax.imshow(unit.repUnit.rateMap2D, origin='lower', aspect='auto', interpolation='None', 
-                      cmap=cmap, vmax=np.nanpercentile(unit.repUnit.rateMap2D, 98),
+        self.ax.imshow(self.unit.repUnit.rateMap2D, origin='lower', aspect='auto', interpolation='None', 
+                      cmap=cmap, vmax=np.nanpercentile(self.unit.repUnit.rateMap2D, 98),
                extent=[wmDef.xedges[0], wmDef.xedges[-1], wmDef.yedges[0], wmDef.yedges[-1]])
-        self.ax.set_title(f"{unit.name}, cutoff = {round(np.nanpercentile(unit.repUnit.rateMap2D, 98),2)}Hz", fontsize=14)
+        self.ax.set_title(f"{self.unit.name}, cutoff = {round(np.nanpercentile(self.unit.repUnit.rateMap2D, 98),2)}Hz", fontsize=14)
         self.ax.axis('equal')
         self.ax.set_ylim([0,480])
         self.ax.set_xlim([0, 640])
@@ -88,8 +89,8 @@ class FieldDrawer():
         self.ax.spines['bottom'].set_visible(False)
         self.ax.spines['left'].set_visible(False)
     
-        for i, field in enumerate(unit.smoothedFields):       
-                self.ax.plot(unit.perimeters[i][:,0], unit.perimeters[i][:,1],color=unit.colors[i], label=f"Field {i}")
+        for i, field in enumerate(self.unit.smoothedFields):       
+                self.ax.plot(self.unit.perimeters[i][:,0], self.unit.perimeters[i][:,1],color=self.unit.colors[i], label=f"Field {i}")
         self.ax.legend()
 
         self.fig.canvas.mpl_connect("button_press_event",self.onclick)

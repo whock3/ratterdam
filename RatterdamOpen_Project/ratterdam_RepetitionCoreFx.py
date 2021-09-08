@@ -95,25 +95,28 @@ def loadFieldInclusionList(df, clustName):
     
     foundCell = False
     validFields = []
-    with open(df + f"{rat}{day}_fieldInclusionList.txt","r") as f:
-        fincl = f.readlines() 
-    
-    for line in fincl:
-        if line[0] != '#':
-            
-            #clustname has \\ between tt and cell #, name in txt has \\\\ bc of escape conversion
-            
-            if clustName.split("\\")[0] == line.split(';')[0].split("\\\\")[0] and clustName.split("\\")[1] == line.split(';')[0].split("\\\\")[1]:
-                if foundCell == True:
-                    print("error - matching multiple cells in inclusion list")
-                elif foundCell == False:
-                    foundCell = True
-                entry = line.split(';')[1].split(',')
-                if eval(entry[0]) == None:
-                    validFields = []
-                else:
-                    validFields = [int(i) for i in line.split(';')[1].split(',')]
+    try:
+        with open(df + f"{rat}{day}_fieldInclusionList.txt","r") as f:
+            fincl = f.readlines() 
+        
+        for line in fincl:
+            if line[0] != '#':
                 
+                #clustname has \\ between tt and cell #, name in txt has \\\\ bc of escape conversion
+                
+                if clustName.split("\\")[0] == line.split(';')[0].split("\\\\")[0] and clustName.split("\\")[1] == line.split(';')[0].split("\\\\")[1]:
+                    if foundCell == True:
+                        print("error - matching multiple cells in inclusion list")
+                    elif foundCell == False:
+                        foundCell = True
+                    entry = line.split(';')[1].split(',')
+                    if eval(entry[0]) == None:
+                        validFields = []
+                    else:
+                        validFields = [int(i) for i in line.split(';')[1].split(',')]
+    except:
+        pass
+                    
     return validFields
     
 
@@ -561,9 +564,16 @@ def makeSemaphores(fieldArray,  wnSize=5*1e6*60, wnStep=2*1e6*60):
     return diffmats, wins
 
 
-def loadRecordingSessionData(rat,day):
+def loadRecordingSessionData(rat,day,activityThreshType='Hertz',activityThresh=1.):
     """
     Load one day of recording from a rat
+    
+    activityThreshType - either "Hertz" or "spikes"
+    activityThresh - either an integer # spikes if above is "spikes"
+                     or a firing rate float if above is "Herts"
+                     (N.B. the firing rate thresh is compared to the 95th percentile
+                      of the firing distribution based on 2d pixel ratemap)
+    
     Return  - the population as a dict of Unit() objects (see Unitclass in this file RepCoreFx)
             - turn dataframe from alleyTransitions.py 
     Units loaded with qual thresh >= 3 and peak FR above 1Hz
@@ -580,11 +590,20 @@ def loadRecordingSessionData(rat,day):
             print(clust)
             unit = loadRepeatingUnit(datapath, clust, smoothing=1)                                   
             rm = util.makeRM(unit.spikes, unit.position)
-            if np.nanpercentile(rm, 95) > 1.:
-                population[clust] = unit
-                print(f"{clust} included")
-            else:
-                print(f"{clust} is not included")
+            
+            if activityThreshType == 'spikes':
+                if unit.spikes.shape[0] > activityThresh:
+                    population[clust] = unit
+                    print(f"{unit.name} INCLUDED using {activityThreshType} threshold of {activityThresh}")
+                else:
+                    print(f"{unit.name} NOT INCLUDED sing {activityThreshType} threshold of {activityThresh}")
+                    
+            if activityThreshType == 'Hertz':
+                if np.nanpercentile(rm, 95) > activityThresh:
+                    population[clust] = unit
+                    print(f"{unit.name} INCLUDED using {activityThreshType} threshold of {activityThresh}")
+                else:
+                    print(f"{unit.name} NOT INCLUDED sing {activityThreshType} threshold of {activityThresh}")
             
     print("Loading turns...")
     pos, turns = alleyTrans.alleyTransitions(unit.position, ratborders, graph=False)

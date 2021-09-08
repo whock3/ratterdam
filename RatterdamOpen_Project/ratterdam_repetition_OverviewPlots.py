@@ -29,8 +29,8 @@ import confounds as conf
 
 
 #%% Load Data and 
-rat = "R808"
-day = "D6"
+rat = "R765"
+day = "RFD5"
 savepath = f'E:\\Ratterdam\\{rat}\\ratterdam_plots\\{day}\\overviewPlots\\'
 df = f'E:\Ratterdam\\{rat}\\{rat}_RatterdamOpen_{day}\\'
 clustList, clustQuals = util.getClustList(df,True)
@@ -42,22 +42,16 @@ cmap = util.makeCustomColormap()
 for qual,clust in zip(clustQuals, clustList):
     
     
-    #if qual >= qualThresh:
-    if True:
+    if qual >= qualThresh:
    
-        try:
-            print(clust)
-            unit = RepCore.loadRepeatingUnit(df, clust, smoothing=2)
-            rm = util.makeRM(unit.spikes, unit.position)
-            #if np.nanpercentile(rm, 95) > 1.:
-            if True:
-                population[clust] = unit
-                print(f"{clust} included")
-            else:
-                print(f"{clust} is not included")
-        except:
-            pass
-        
+        print(clust)
+        unit = RepCore.loadRepeatingUnit(df, clust, smoothing=2)
+        rm = util.makeRM(unit.spikes, unit.position)
+        if unit.spikes.shape[0] > 50:
+            population[clust] = unit
+            print(f"{clust} included")
+        else:
+            print(f"{clust} is not included")
 #%% Make pdf for each unit
 
 pagewidth = 12
@@ -96,21 +90,24 @@ for unitname, unit in population.items():
         # have removed 1) lines dealing w if field dynamic traces are smoothed or not 2) time vs visits on xaxis
         # and 3) whether youre manually removing bad fields at end bc that issue was partially solved
         for i, field in enumerate(unit.smoothedFields):
-            
-            #xvals in time since session beginning, converted to mins
-            xval = field[:,0]
-            xval = [((i-field[0,0])/1e6)/60 for i in xval]
-            
-            p1ax2.plot(xval, field[:,1], color=unit.colors[i], marker='.',alpha=0.8, label=i)
-            p1ax1.plot(unit.perimeters[i][:,0], unit.perimeters[i][:,1],color=unit.colors[i])
-            p1ax2.text(xval[0]-0.1,field[0,1]-0.1,i)
-            p1ax2.tick_params(axis='y', labelsize=14)
-            p1ax2.tick_params(axis='x', labelsize=14)
-            p1ax2.set_xlabel("Time in session (mins)", fontsize=12)
-            p1ax2.set_ylabel(f"Firing Rate Hz (sigma = {unit.smoothing})", fontsize=14)
-            p1ax2.spines['right'].set_visible(False)
-            p1ax2.spines['top'].set_visible(False)
-            p1ax2.set_title("Place Field Dynamics", fontsize=20)
+            #added try block 9/7/21 because some fields are empty for some reason? 
+            try:
+                #xvals in time since session beginning, converted to mins
+                xval = field[:,0]
+                xval = [((i-field[0,0])/1e6)/60 for i in xval]
+                
+                p1ax2.plot(xval, field[:,1], color=unit.colors[i], marker='.',alpha=0.8, label=i)
+                p1ax1.plot(unit.perimeters[i][:,0], unit.perimeters[i][:,1],color=unit.colors[i])
+                p1ax2.text(xval[0]-0.1,field[0,1]-0.1,i)
+                p1ax2.tick_params(axis='y', labelsize=14)
+                p1ax2.tick_params(axis='x', labelsize=14)
+                p1ax2.set_xlabel("Time in session (mins)", fontsize=12)
+                p1ax2.set_ylabel(f"Firing Rate Hz (sigma = {unit.smoothing})", fontsize=14)
+                p1ax2.spines['right'].set_visible(False)
+                p1ax2.spines['top'].set_visible(False)
+                p1ax2.set_title("Place Field Dynamics", fontsize=20)
+            except:
+                pass
         p1ax2.legend()
                   
             
@@ -154,12 +151,14 @@ for unitname, unit in population.items():
             except:
                 pass
         
-                        
-            # Autocorr of IFD   
-            corrdm = RepCore.corrOfMats(diffmats,plot=False,ret=True)
-            p1ax4.imshow(corrdm, aspect='auto',interpolation='None',origin='lower')
-            p1ax4.set_title("Autocorrelation of IFD Matrices")
-        
+            try:
+                # Autocorr of IFD   
+                corrdm = RepCore.corrOfMats(diffmats,plot=False,ret=True)
+                p1ax4.imshow(corrdm, aspect='auto',interpolation='None',origin='lower')
+                p1ax4.set_title("Autocorrelation of IFD Matrices")
+            except:
+                pass
+            
         
         try:
             pdf.savefig()
