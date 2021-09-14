@@ -40,8 +40,7 @@ for rat,day in zip(['R859','R859','R781','R781','R808','R808'],['D1','D2','D3','
     print(rat,day)
     population, turns = RepCore.loadRecordingSessionData(rat, day)
     codedict = {'1':'N','2':'E','3':'S','4':'W','0':'X'}
-    ratborders = {'R781':nab.R781, 'R808':nab.R808, 'R859':nab.R859}[rat]
-    
+    ratborders = nab.loadAlleyBounds(rat, day)    
     
     #%% Create data arrays by region
     # Each region has an (v,n) shaped array where v are the visits to the alley

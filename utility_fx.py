@@ -7,11 +7,14 @@ from collections import Counter, OrderedDict
 from bisect import bisect_left
 import scipy.ndimage
 from matplotlib.colors import LinearSegmentedColormap
+import matplotlib.pyplot as plt
+from matplotlib.patches import Rectangle
 
 import ratterdam_CoreDataStructures as Core
 import ratterdam_ParseBehavior as Parse
 import ratterdam_Defaults as Def
 import ratterdam_DataFiltering as Filt
+import newAlleyBounds as nab
 
 
 
@@ -763,3 +766,28 @@ def readRepeatingCells(file, df):
     tabulations = np.array(tabulations)
     cells = tabulations[np.where(tabulations[:,1]=="True")[0], 0]
     return cells
+
+def drawRegion(ax, bounds,color,txt=None):
+    """
+    Bounds are the corners of a region on the track
+    Format is [[xmin, xmax], [ymin, ymax]]
+    Ax is an axis to which to add the region
+    Color can be anything in practice it will be the rate 
+    """
+    x0,y0 = bounds[0][0], bounds[1][0]
+    w,h = bounds[0][1] - bounds[0][0], bounds[1][1] - bounds[1][0]
+    ax.add_patch(Rectangle((x0,y0),w,h,color=color))
+    if txt is not None:
+        ax.text(x0+(w/2), y0+(h/2), txt, fontsize=20)
+    ax.autoscale_view() # for some reason the axes dont update automatically, so run this
+
+
+def drawTrack(rat,day, ax=None, txt=[]):
+    ratborders = nab.loadAlleyBounds(rat, day)
+    if ax == None:
+        ax = plt.gca()
+    for i in range(17):
+        if txt != []:
+            drawRegion(ax, ratborders.alleyInterBounds[str(i)],'lightgrey',txt[i])
+        else:
+            drawRegion(ax, ratborders.alleyInterBounds[str(i)],'lightgrey')

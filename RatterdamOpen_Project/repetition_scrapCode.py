@@ -132,7 +132,7 @@ def drawRegion(ax, bounds,color):
     """
     x0,y0 = bounds[0][0], bounds[1][0]
     w,h = bounds[0][1] - bounds[0][0], bounds[1][1] - bounds[1][0]
-    ax.add_patch(Rectangle((x0,y0),w,h,color=color),alpha=0.5,zorder=99)
+    ax.add_patch(Rectangle((x0,y0),w,h,color=color))
     ax.autoscale_view() # for some reason the axes dont update automatically, so run this
 
 
@@ -165,8 +165,7 @@ from string import ascii_uppercase
 import datetime
 
 rat, day = 'R781', 'D3'
-ratborders = {'R781':nab.R781, 'R808':nab.R808, 'R859':nab.R859, 'R765':nab.R765, 'R886':nab.R886}[rat]
-
+ratborders = nab.loadAlleyBounds(rat, day)
 turns, unit = RepCore.loadTurns(rat, day)
 
 #%% Filter turns 

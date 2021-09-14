@@ -39,6 +39,8 @@ import bisect
 import pandas as pd
 from matplotlib.patches import Rectangle
 from matplotlib import path
+import copy
+import traceback
 
 # region sets for 7-19-21 decoding
 # region_sets = {'RS1':[1,3,5,14,11,8],
@@ -57,13 +59,10 @@ from matplotlib import path
 #                 }
 
 #region sets for 7-21-21 decoding
-region_sets = {'RS1':[12],  #decode traj and dir
-                'RS2':[3,5],  # decode traj and dir
-                'RS3':[14,11], # decode traj and dir
-                'RS4':[0,4,6,15,13,10], #decode dir (E-W)
-                'RS5':[2,16,7,9],  # decode dir (N-S)
+region_sets = {
                 'RS6':[0,4,6,15,13,10,1,12,8],
-                'RS7':[2,16,3,14,5,11,7,9]
+                'RS7':[2,16,3,14,5,11,7,9],
+                'RS8':[1,3,14,12,5,11,8]
                 }
 
 alldata = []
@@ -76,7 +75,7 @@ for rat,day in zip(['R781', 'R781', 'R808', 'R808', 'R859', 'R859', 'R886', 'R88
    
     print(f"Beginning decoding {rat} {day}...")
     try:
-        ratborders = {'R781':nab.R781, 'R808':nab.R808, 'R859':nab.R859, 'R765':nab.R765, 'R886':nab.R886}[rat]
+        ratborders = nab.loadAlleyBounds(rat, day)
         savepath = "E:\\Ratterdam\\repetition_decoding\\21-09-07_decoding\\"
         datapath = f'E:\\Ratterdam\\{rat}\\{rat}_RatterdamOpen_{day}\\'
         
@@ -98,6 +97,7 @@ for rat,day in zip(['R781', 'R781', 'R808', 'R808', 'R859', 'R859', 'R886', 'R88
             if row['Ego'] != '3' and turns.iloc[i+1].Inter != inter and turns.iloc[i-1].Inter != inter:
                 ballisticTurnIdx.append(i)
                 
+        refturns = copy.deepcopy(turns)
         turns = turns.iloc[ballisticTurnIdx]
         
         #%% Create data arrays
@@ -106,14 +106,14 @@ for rat,day in zip(['R781', 'R781', 'R808', 'R808', 'R859', 'R859', 'R886', 'R88
         # turn n+1 and that corresponds to time spent on alley+. 
         currentDir, previousDir, nextDir, turnsIn, turnsOut = [], [], [], [], []
         currentAlley = []
+        egoTurn = []
         traj = []
         X = np.empty((0, len(population)))
         
-        for t in range(1,turns.shape[0]-1):
+        for t, turn in turns.iterrows():
             
-            turn_nm1 = turns.iloc[t-1]
-            turn = turns.iloc[t]
-            turn_np1 = turns.iloc[t+1]
+            turn_nm1 = refturns.iloc[t-1]         
+            turn_np1 = refturns.iloc[t+1]
             
             # ballisticTurns removes turn-around turns. But since trajectory
             # labels depend on the n-1, n+1 turns, the turns adjacent to the removed
@@ -147,7 +147,16 @@ for rat,day in zip(['R781', 'R781', 'R808', 'R808', 'R859', 'R859', 'R886', 'R88
             nextDir.append(nD)
             traj.append(f"{pD}{cD}{nD}")
             turnsIn.append(f"{pD}{cD}")
-            turnsOut.append(f"{cD}{nD}")
+            
+            # this if statement is here because if the next turn, whose allo+
+            # would be the next turn direction, is not in ballistic turn idx
+            # then the turn featured a turn around and we don't want to conflate
+            # the next heading from a ballistic turn with the next heading where the animal
+            # turned around
+            if t+1 in ballisticTurnIdx:            
+                turnsOut.append(f"{cD}{nD}")
+            egoTurn.append(turn['Ego'])
+            
             
         currentDir = np.asarray(currentDir)
         nextDir = np.asarray(nextDir)
@@ -156,57 +165,60 @@ for rat,day in zip(['R781', 'R781', 'R808', 'R808', 'R859', 'R859', 'R886', 'R88
         currentAlley = np.asarray(currentAlley)
         turnsIn = np.asarray(turnsIn)
         turnsOut = np.asarray(turnsOut)
-        
+        egoTurn = np.asarray(egoTurn)
             
         
         #%% Run random forest
         
         for regionsetlabel, regionset in region_sets.items():
+            
             if regionsetlabel in ['RS6', 'RS7']:
                 targets, targetlabels = [currentDir], ['CurrentDirection']
+            elif regionsetlabel in ['RS8']:
+                targets, targetlabels = [egoTurn, turnsIn, turnsOut],['EgocentricTurn', 'TurnsIn', 'TurnsOut']
            
                 
-                for target, targetlabel in zip(targets, targetlabels):
-                    
-                    print(targetlabel, regionsetlabel)
-                    subset =[int(i) in regionset for i in currentAlley]
-                    Xsubset, targetsubset = X[subset,:], target[subset]
-                            
-                    if Xsubset.shape[0] > 5:
-                    
-                        realoobs, shuffoobs = [], []
-                        nreps = 1
-                        nshuffs = 1000
-                        ntrees = 1000
-                        
-                        # real
-                        for i in range(nreps):
-                            clf = RandomForestClassifier(n_estimators=ntrees, oob_score=True)
-                            clf.fit(Xsubset,targetsubset)
-                            realoobs.append(clf.oob_score_)
-                        
-                        # shuffle
-                        for i in range(nshuffs):
-                            Yshuff = np.random.permutation(targetsubset)
-                            clf = RandomForestClassifier(n_estimators=ntrees, oob_score=True)
-                            clf.fit(Xsubset,Yshuff)
-                            shuffoobs.append(clf.oob_score_)
-                            
-                        alldata.append((rat, day, targetlabel, regionsetlabel, realoobs, shuffoobs))
-                        plt.figure(figsize=(8,6))
-                        shuff95 = round(np.percentile(shuffoobs,95),2)
-                        realmean = round(np.mean(realoobs),2)
-                        plt.title(f"{rat}{day} {targetlabel} {regionsetlabel} - {nshuffs}s,{nreps}r,{ntrees}t, 95th:{shuff95},realmean:{realmean}")
-                        plt.xlabel("OOB Score", fontsize=16)
-                        plt.ylabel("Frequency", fontsize=16)
-                        plt.hist(shuffoobs, bins=25, color='k')
-                        plt.vlines(realmean,0, 100, color='r')
-                        plt.savefig(savepath+f"{timestamp}_{rat}{day}_{targetlabel}_{regionsetlabel}_RFDecoding.png")
-                        plt.close()
-                        
-                    else:
-                        print(f"{rat}{day} {targetlabel} had insufficient sampling for decoder")
+            for target, targetlabel in zip(targets, targetlabels):
                 
+                print(targetlabel, regionsetlabel)
+                subset =[int(i) in regionset for i in currentAlley]
+                Xsubset, targetsubset = X[subset,:], target[subset]
+                        
+                if Xsubset.shape[0] > 5:
+                
+                    realoobs, shuffoobs = [], []
+                    nreps = 1
+                    nshuffs = 1000
+                    ntrees = 1000
+                    
+                    # real
+                    for i in range(nreps):
+                        clf = RandomForestClassifier(n_estimators=ntrees, oob_score=True)
+                        clf.fit(Xsubset,targetsubset)
+                        realoobs.append(clf.oob_score_)
+                    
+                    # shuffle
+                    for i in range(nshuffs):
+                        Yshuff = np.random.permutation(targetsubset)
+                        clf = RandomForestClassifier(n_estimators=ntrees, oob_score=True)
+                        clf.fit(Xsubset,Yshuff)
+                        shuffoobs.append(clf.oob_score_)
+                        
+                    alldata.append((rat, day, targetlabel, regionsetlabel, realoobs, shuffoobs))
+                    plt.figure(figsize=(8,6))
+                    shuff95 = round(np.percentile(shuffoobs,95),2)
+                    realmean = round(np.mean(realoobs),2)
+                    plt.title(f"{rat}{day} {targetlabel} {regionsetlabel} - {nshuffs}s,{nreps}r,{ntrees}t, 95th:{shuff95},realmean:{realmean}")
+                    plt.xlabel("OOB Score", fontsize=16)
+                    plt.ylabel("Frequency", fontsize=16)
+                    plt.hist(shuffoobs, bins=25, color='k')
+                    plt.vlines(realmean,0, 100, color='r')
+                    plt.savefig(savepath+f"{timestamp}_{rat}{day}_{targetlabel}_{regionsetlabel}_RFDecoding.png")
+                    plt.close()
+                    
+                else:
+                    print(f"{rat}{day} {targetlabel} had insufficient sampling for decoder")
+            
         print(f"Finished decoding {rat} {day}")
-    except:
-        print(f"Error with {rat} {day}")
+    except Exception:
+       print(traceback.format_exc())

@@ -12,7 +12,8 @@ data like we have here.
 Classifier will be written by hand as sci-kit learn doesn't deal with a latent
 group structure (i.e. track regions) afaik. 
 
-Concern is there is data leak
+Concern is there is data leak so decode based on other, uninteresting 
+data and see how classifier performs
 
 This file is just for decoding directionality 
 """
@@ -26,9 +27,6 @@ from sklearn.model_selection import KFold
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, precision_score, recall_score, f1_score, accuracy_score
 
-
-import ratterdam_CoreDataStructures as Core
-import ratterdam_ParseBehavior as Parse
 import numpy as np
 import utility_fx as util
 import os
@@ -65,8 +63,7 @@ savepath = "E:\\Ratterdam\\repetition_decoding\\21-09-07_decoding\\"
 
 for rat,day in zip(['R781', 'R781', 'R808', 'R808', 'R859', 'R859', 'R886', 'R886', 'R765'],['D3', 'D4', 'D6', 'D7', 'D1', 'D2', 'D1', 'D2','RFD5']):
 
-
-    ratborders = {'R781':nab.R781, 'R808':nab.R808, 'R859':nab.R859, 'R886':nab.R886, 'R765':nab.R765}[rat]
+    ratborders = nab.loadAlleyBounds(rat, day)
     datapath = f'E:\Ratterdam\\{rat}\\{rat}_RatterdamOpen_{day}\\'    
     
     turns, unit = RepCore.loadTurns(rat, day)
@@ -151,6 +148,5 @@ for rat,day in zip(['R781', 'R781', 'R808', 'R808', 'R859', 'R859', 'R886', 'R88
         
         
         
-        
-        
+
         

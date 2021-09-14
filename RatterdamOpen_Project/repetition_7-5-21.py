@@ -42,8 +42,7 @@ with open(datapath+"sessionEpochInfo.txt","r") as f:
     
 nepoch=3
 intervals = np.linspace(start,end,nepoch+1)
-ratborders = {'R781':nab.R781, 'R808':nab.R808, 'R859':nab.R859, 'R765':nab.R765, 'R886':nab.R886}[rat]
-       
+ratborders = nab.loadAlleyBounds(rat, day)       
 #%% Functions to support above
 
 def addTrajVariables(turnIdx, turns, turnarm):

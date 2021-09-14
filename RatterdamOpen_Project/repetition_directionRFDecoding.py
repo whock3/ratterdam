@@ -37,8 +37,8 @@ from matplotlib import path
 #%% Load data
 for rat,day in zip(['R859','R859','R781','R781','R808','R808'],['D1','D2','D3','D4','D6','D7']):
     print(rat,day)
-
-    ratborders = {'R781':nab.R781, 'R808':nab.R808, 'R859':nab.R859}[rat]
+    
+    ratborders = nab.loadAlleyBounds(rat, day)
     savepath = "E:\\Ratterdam\\repetition_decoding\\"
     datapath = f'E:\Ratterdam\\{rat}\\{rat}_RatterdamOpen_{day}\\'
     clustList, clustQuals = util.getClustList(datapath)

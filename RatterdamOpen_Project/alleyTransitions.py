@@ -5,7 +5,6 @@ Created on Fri Aug 14 21:13:25 2020
 @author: Ruo-Yah Lai
 """
 
-from newAlleyBounds import R781, R808, R859
 import matplotlib.pyplot as plt
 from matplotlib import cm
 from matplotlib.colors import Normalize

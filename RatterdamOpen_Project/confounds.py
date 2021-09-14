@@ -16,7 +16,6 @@ from collections import namedtuple
 from copy import deepcopy
 from bisect import bisect_left
 from alleyTransitions import alleyTransitions
-from newAlleyBounds import R781, R808, R859
 from alleyTransitions import crossBorder, crossBorder2
 import ratterdam_Defaults as Def
 from ratterdam_ParseBehavior import adjustPosCamera

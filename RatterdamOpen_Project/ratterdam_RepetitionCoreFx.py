@@ -578,7 +578,7 @@ def loadRecordingSessionData(rat,day,activityThreshType='Hertz',activityThresh=1
             - turn dataframe from alleyTransitions.py 
     Units loaded with qual thresh >= 3 and peak FR above 1Hz
     """
-    ratborders = {'R781':nab.R781, 'R808':nab.R808, 'R859':nab.R859, 'R765':nab.R765,'R886':nab.R886}[rat]
+    ratborders = nab.loadAlleyBounds(rat, day)
     datapath = f'E:\Ratterdam\\{rat}\\{rat}_RatterdamOpen_{day}\\'
     clustList, clustQuals = util.getClustList(datapath)
     population = {}
@@ -621,7 +621,7 @@ def loadTurns(rat, day):
     Loads the turns dataframe (without any filtering) for one recording day
     Silently loads a single neuron to get its associated pos array
     """
-    ratborders = {'R781':nab.R781, 'R808':nab.R808, 'R859':nab.R859, 'R765':nab.R765,'R886':nab.R886}[rat]
+    ratborders = nab.loadAlleyBounds(rat, day)
     datapath = f'E:\Ratterdam\\{rat}\\{rat}_RatterdamOpen_{day}\\'
     clustList, _ = util.getClustList(datapath)
     unit = loadRepeatingUnit(datapath, clustList[0], smoothing=1)   
@@ -635,3 +635,25 @@ def loadTurns(rat, day):
     turns.dropna(inplace=True) 
     
     return turns, unit
+
+def readinRewards(rat, day):
+    """
+    Parameters
+    ----------
+    rat : str
+        rat you want.
+    day : str
+        recording day format D[x] eg D3.
+
+    Returns
+    -------
+    array of reward times in neuralynx ts (microseconds)
+
+    """
+    df = f'E:\Ratterdam\\{rat}\\{rat}_RatterdamOpen_{day}\\'
+
+    with open(df+"rewardTimes.csv","r") as f:
+        rr = f.readlines()
+    rr = np.asarray([float(i) for i in rr])
+    
+    return rr

@@ -70,7 +70,7 @@ def drawTrack(ax=None):
 rat, day = 'R859', 'D1'
 df = f'E:\\Ratterdam\\{rat}\\{rat}_RatterdamOpen_{day}\\'
 turns,_ = RepCore.loadTurns(rat, day)
-ratborders = {'R781':nab.R781, 'R808':nab.R808, 'R859':nab.R859, 'R765':nab.R765, 'R886':nab.R886}[rat]
+ratborders = nab.loadAlleyBounds(rat, day)
 codedict = {'1':'N','2':'E','3':'S','4':'W','0':'X'}
 
 # Remove turnarounds/pivots

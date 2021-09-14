@@ -24,6 +24,7 @@ import ratterdam_RepetitionCoreFx as RepCore
 import RateMapClass_William_20190308 as RateMapClass
 import williamDefaults as wmDef
 import alleyTransitions as alleyTrans
+import newAlleyBounds as nab
 import math
 import bisect
 import pandas as pd
@@ -38,7 +39,7 @@ import pandas as pd
 
 rat = "R859"
 day = "D2"
-ratBorders = alleyTrans.R859
+ratBorders = nab.loadAlleyBounds(rat, day)
 savepath = f'E:\\Ratterdam\\{rat}\\ratterdam_plots\\{day}\\decoding\\'
 df = f'E:\Ratterdam\\{rat}\\{rat}_RatterdamOpen_{day}\\'
 clustList, clustQuals = util.getClustList(df)

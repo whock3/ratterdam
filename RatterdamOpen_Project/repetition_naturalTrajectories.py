@@ -33,8 +33,7 @@ import itertools
 #%% Load data
 rat, day = 'R859', 'D1'
 population, turns = RepCore.loadRecordingSessionData(rat, day)  
-ratborders = {'R781':nab.R781, 'R808':nab.R808, 'R859':nab.R859, 'R765':nab.R765, 'R886':nab.R886}[rat]
-
+ratborders = nab.loadAlleyBounds(rat, day)
 
 #%% Connectivity lookup and trajElement init
 directConnections = {'0':np.array(['2','3','4']),

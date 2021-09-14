@@ -176,7 +176,6 @@ alleyBounds_retroflective_onRim_manuallyshifted2={0: [[145, 250], [332, 415]],
  15: [[145, 250], [87, 158]],
  16: [[97, 174], [135, 230]]}
 
-alleyBounds = nab.R859.IAI
 #format is [n1...n8] where each is loc of IR/alley point that defines intersection. ni = [xi, yi]
 intersectionBounds = {'A':[[105, 385], [165, 385], [165, 385], [140, 340], [105, 340]],
                       'B':[[210, 385], [295, 390], [295, 352], [270, 340], [230, 340], [210, 345]],

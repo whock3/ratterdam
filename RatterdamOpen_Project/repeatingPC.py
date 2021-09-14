@@ -7,7 +7,7 @@ Created on Sat Aug  1 19:31:38 2020
 from matplotlib import path
 import numpy as np
 from collections import namedtuple, Counter
-from newAlleyBounds import R781, R808, R859, alleyInterType
+from newAlleyBounds import alleyInterType
 import utility_fx as util
 from RateMap import makeRM
 import ratterdam_RepetitionCoreFx as RepCore

@@ -39,7 +39,7 @@ import copy
 for rat,day in zip(['R781', 'R781', 'R808', 'R808', 'R859', 'R859', 'R886', 'R886', 'R765','R765'],['D3', 'D4', 'D6', 'D7', 'D1', 'D2', 'D1', 'D2','RFD5','DFD8']):
 
     try:
-        ratborders = {'R781':nab.R781, 'R808':nab.R808, 'R859':nab.R859, 'R765':nab.R765, 'R886':nab.R886}[rat]
+        ratborders = nab.loadAlleyBounds(rat, day)
         savepath = f"E:\\Ratterdam\\raw_data_for_JK\\{rat}{day}_trajectories\\"
         datapath = f'E:\Ratterdam\\{rat}\\{rat}_RatterdamOpen_{day}\\'
         

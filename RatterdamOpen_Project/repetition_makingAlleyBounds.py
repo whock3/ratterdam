@@ -24,13 +24,13 @@ import numpy as np
 #%% R886
 
 
-v = np.asarray([87, 132, 218, 262, 352, 402, 490, 533])
-h = np.asarray([83, 137, 210, 270, 350, 402])
+v = np.asarray([87+25, 132+30, 218+25, 262+25, 352+25, 402+25, 490+15, 533+15])
+h = np.asarray([83+10, 137+10, 210+10, 270+10, 350+10, 402+10])
 
 
 plt.figure()
 plt.scatter(unit.position[:,1], unit.position[:,2])
-plt.title("R886 No cam flip")
+#plt.title("R886 No cam flip")
 
 for i in v:
     plt.vlines(i,0,480,color='k')
