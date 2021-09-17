@@ -76,7 +76,7 @@ for rat,day in zip(['R781', 'R781', 'R808', 'R808', 'R859', 'R859', 'R886', 'R88
     print(f"Beginning decoding {rat} {day}...")
     try:
         ratborders = nab.loadAlleyBounds(rat, day)
-        savepath = "E:\\Ratterdam\\repetition_decoding\\21-09-07_decoding\\"
+        savepath = "E:\\Ratterdam\\repetition_decoding\\21-09-14_decoding\\"
         datapath = f'E:\\Ratterdam\\{rat}\\{rat}_RatterdamOpen_{day}\\'
         
         population, turns = RepCore.loadRecordingSessionData(rat, day)
@@ -130,7 +130,12 @@ for rat,day in zip(['R781', 'R781', 'R808', 'R808', 'R859', 'R859', 'R886', 'R88
             nD = turn_np1['Allo+']
             currentAlley.append(turn['Alley+']) # use this later to get visits to regions in a certain set 
             
-            start, stop = float(turn['Ts entry']), float(turn_np1['Ts exit'])
+            # time interval below, based on alley+ of each turn, is how it's previously been done
+            # for egocentric decoding, however, it becomes retrospective coding
+            # start, stop = float(turn['Ts entry']), float(turn_np1['Ts exit'])
+            
+            start, stop = float(turn_nm1['Ts entry']), float(turn['Ts exit'])
+
             duration = (stop-start)/1e6
             
             popvector = []
@@ -170,12 +175,10 @@ for rat,day in zip(['R781', 'R781', 'R808', 'R808', 'R859', 'R859', 'R886', 'R88
         
         #%% Run random forest
         
-        for regionsetlabel, regionset in region_sets.items():
-            
-            if regionsetlabel in ['RS6', 'RS7']:
-                targets, targetlabels = [currentDir], ['CurrentDirection']
-            elif regionsetlabel in ['RS8']:
-                targets, targetlabels = [egoTurn, turnsIn, turnsOut],['EgocentricTurn', 'TurnsIn', 'TurnsOut']
+        for regionsetlabel, regionset in [('RS8',region_sets['RS8'])]:
+
+
+            targets, targetlabels = [egoTurn],['EgocentricTurn']
            
                 
             for target, targetlabel in zip(targets, targetlabels):

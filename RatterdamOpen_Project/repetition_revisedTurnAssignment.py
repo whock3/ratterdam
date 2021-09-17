@@ -63,7 +63,7 @@ def drawTrack(ax=None):
                     
         
         
-rat, day = 'R808', 'D7'
+rat, day = 'R765', 'RFD5'
 df = f'E:\\Ratterdam\\{rat}\\{rat}_RatterdamOpen_{day}\\'
 population, turns = RepCore.loadRecordingSessionData(rat, day)
 

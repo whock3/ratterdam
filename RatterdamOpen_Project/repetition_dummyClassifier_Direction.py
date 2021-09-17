@@ -53,6 +53,7 @@ from matplotlib import path
 timestamp = util.genTimestamp()
 
 #region sets for 9-8-21: vertical vs horizontal alleys
+
 region_sets = {'RS6':[0,4,6,15,13,10,1,12,8],
                 'RS7':[2,16,3,14,5,11,7,9]
                 }

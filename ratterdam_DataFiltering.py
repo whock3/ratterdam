@@ -110,6 +110,10 @@ def unitVelocityFilter(ts, position, clust):
 
 def filterField(unit, index, rateThresh=0.2, pctThresh=10):
     """
+    This was deprecated in early september 2021 in favor of manually curtating
+    and redrawing place fields. all fields were processed in this way. see 
+    RepCore fx for details. 
+    
     Inputs: unit - Unit class object
             index - index of field to filter
             rateThresh - pixel rate that will be used to see % pixels below it
