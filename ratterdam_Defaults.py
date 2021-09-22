@@ -237,3 +237,9 @@ includeRewards = 0# flag to decide whether rewarded trials will be included in a
 beltwayAlleys = [16,17,3,1,5,7,8,10,11]
 beltwayAlleyLookup = {16:1, 17:2, 3:3, 1:4, 5:5, 7:6, 8:7, 10:8, 11:9}
 
+
+fieldOverlapThresh = 0.3 # threshold for repetition analysis, deciding what 
+                    # proportion of size of region the field overlaps with before
+                    # its said to overlap that region. e.g. if thresh is 0.1
+                    # then the field overlaps a region if it impinges on an area
+                    # equal to 10% or more of the size of that region in surface area 

@@ -13,7 +13,7 @@ from RateMap import makeRM
 import ratterdam_RepetitionCoreFx as RepCore
 import csv
 from string import ascii_uppercase
-
+import ratterdam_Defaults as Def
 
 def overlap(perim, alley):
     field = path.Path(perim)
@@ -52,7 +52,7 @@ def repeatingPF(unit, rat):
     subfields = [[] for _ in range(len(unit.perimeters))]
     overlaps = [[] for _ in range(len(unit.perimeters))]
     subfieldsAbbr = []
-    threshold = 0.2
+    threshold = Def.fieldOverlapThresh # expressed as decimal 0-1 of % region area field overlaps w 
     for i,perim in enumerate(unit.perimeters):
         fieldSize = PolyArea(perim[:,0], perim[:,1])
         for j in range(17):

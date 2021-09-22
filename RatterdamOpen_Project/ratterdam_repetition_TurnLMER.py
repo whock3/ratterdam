@@ -7,6 +7,13 @@ Created on Wed Jun 23 14:13:38 2021
 Script to set up csv for LMER in R 
 Repetition Project
 Specifically looking at turns in ego/allo coordinates and effect on firing
+
+
+DEPRECATED      DEPRECATED      DEPRECATED
+ 9/2021 because this associates field activity with behavior by 
+finding closest turn to beginning of each field visit. This is not right way -
+field visit can be multiple turns. and depending on exact arrangement of field and
+behavior, you dont get any turn that meaningfully interacts with field 
 """
 
 #%% Imports 

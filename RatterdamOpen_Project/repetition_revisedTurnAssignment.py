@@ -63,7 +63,7 @@ def drawTrack(ax=None):
                     
         
         
-rat, day = 'R765', 'RFD5'
+rat, day = 'R781', 'D3'
 df = f'E:\\Ratterdam\\{rat}\\{rat}_RatterdamOpen_{day}\\'
 population, turns = RepCore.loadRecordingSessionData(rat, day)
 
@@ -158,7 +158,7 @@ for clutName, unit in population.items():
                         visitData.append((refturns.iloc[idx-1]['Ts entry'], refturns.iloc[idx+1]['Ts exit'], codedict[turn['Allo-']]))
                         
     
-            # Now group data by common direction, i.e. if there are two consecutive alleys
+            # Now group data by common direction, e.g. if there are two consecutive alleys
             # traversed going north, then get the starting ts of the first and the ending
             # ts of the second and call that the "north leg" of the traversal. NB this should
             # work for arbitrary # of legs in the same direction and repeated legs in the same direction
