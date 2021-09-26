@@ -32,7 +32,7 @@ interdf$RetroEgo <- as.factor(interdf$RetroEgo)
 interdf$ProspEgo <- as.factor(interdf$ProspEgo)
 interdf$Repeating <- as.factor(interdf$Repeating)
 
-
+# Alleys
 # First and simplest way: two way anova, current direction interacting field 
 horizsig <- c()
 horiztotal <- 0
@@ -87,3 +87,25 @@ for(cid in unique(alleydf$CellID)){
     },silent=FALSE)
   }
 }
+
+# Intersection
+intersig <- c()
+intertotal <- 0
+
+for(cid in unique(interdf$CellID)){
+  fdf <- subset(interdf, CellID==cid)
+  
+  if(unique(fdf$Repeating=='TRUE') & length(unique(fdf$FieldNum))>1){
+    try({
+    mod <- aov(Rate ~ CurrentEgo*FieldNum, data=fdf)
+    p <- anova(mod)['CurrentEgo:FieldNum','Pr(>F)']
+    if(p < 0.05){
+      intersig <- c(intersig, cid)
+    }
+    intertotal <- intertotal + 1
+    
+    },silent=FALSE)
+  }
+}
+
+

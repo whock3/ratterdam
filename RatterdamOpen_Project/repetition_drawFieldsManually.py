@@ -22,10 +22,10 @@ import williamDefaults as wmDef
 import os, json
 
 
-rat = 'R765'
-day = 'RFD5'
+rat = 'R859'
+day = 'D2'
 df = f'E:\\Ratterdam\\{rat}\\{rat}_RatterdamOpen_{day}\\'
-clustname = "TT13\\cl-maze1.1"
+clustname = "TT14\\cl-maze1.5"
 
 cmap = util.makeCustomColormap()
 

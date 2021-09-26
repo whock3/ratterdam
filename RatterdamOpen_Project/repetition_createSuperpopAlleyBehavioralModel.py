@@ -63,6 +63,7 @@ previousDirection, currentDirection, nextDirection, prospectiveEgo, retrospectiv
 cellnames, fieldnums, cellIDs, fieldIDs = [], [], [], []
 repeating = []
 startTimes = []
+rats, days, alleys = [], [], []
 
 allocodedict = {'1':'N','2':'E','3':'S','4':'W','0':'X'}
 egocodedict = {'1':'S','2':'R','3':'B','4':'L','0':'X'}
@@ -129,7 +130,11 @@ for rat, day in zip(['R765', 'R781', 'R781', 'R808', 'R808', 'R859', 'R859', 'R8
                     filtOutcome = RepCore.filterVisit(dista,distb,behav,perim,length_thresh=0.3,dist_thresh=0.1,dist_point_thresh=3,inside_point_thresh=3)
                     
                     if filtOutcome == True:
+                        rats.append(rat)
+                        days.append(day)
                         turnNums.append(tnum)
+                        alleys.append(turn['Alley+'])
+                        
                         previousDirection.append(allocodedict[turn['Allo-']])
                         currentDirection.append(allocodedict[turn['Allo+']])
                         nextDirection.append(allocodedict[refturns.iloc[tnum+1]['Allo+']])
@@ -150,7 +155,7 @@ for rat, day in zip(['R765', 'R781', 'R781', 'R808', 'R808', 'R859', 'R859', 'R8
                         
                         # get spikes on alley (using the ts as endpoints) and filter by field perim to get spikes in field
                         rates.append(contour.contains_points(unit.spikes[(unit.spikes[:,0]>ts_start)&(unit.spikes[:,0]<= ts_end),1:]).shape[0]/((ts_end-ts_start)/1e6))
-                        cellnames.append(f"{rat}_{day}_{clustName}")
+                        cellnames.append(f"{clustName}")
                         fieldnums.append(fnum)
                         cellIDs.append(cellcounter)
                         fieldIDs.append(fieldcounter)
@@ -163,10 +168,13 @@ for rat, day in zip(['R765', 'R781', 'R781', 'R808', 'R808', 'R859', 'R859', 'R8
                 
 
     
-df = pd.DataFrame(data=list(zip(cellnames,
+df = pd.DataFrame(data=list(zip(rats,
+                                days,
+                                cellnames,
                                 cellIDs,
                                 fieldnums,
                                 fieldIDs,
+                                alleys,
                                 previousDirection,
                                 currentDirection,
                                 nextDirection,
@@ -178,10 +186,13 @@ df = pd.DataFrame(data=list(zip(cellnames,
                                 startTimes,
                                 rates
                                     )), 
-columns=["CellName",
+columns=["Rat",
+         "Day",
+         "CellName",
          "CellID",
          "FieldNum",
          "FieldID",
+         "Alleys",
          "PrevDir",
          "CurrDir",
          "NextDir",
