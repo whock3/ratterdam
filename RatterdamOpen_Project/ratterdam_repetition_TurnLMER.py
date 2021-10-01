@@ -59,7 +59,7 @@ for i,clust in enumerate(clustList):
    
         try:
             print(clust)
-            unit = RepCore.loadRepeatingUnit(df, clust, smoothing=1)
+            unit = RepCore.loadRepeatingUnit(rat, day, clust, smoothing=1)
             rm = util.makeRM(unit.spikes, unit.position)
             if np.nanpercentile(rm, 95) > 1.:
                 population[clust] = unit

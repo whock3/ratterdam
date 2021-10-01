@@ -137,7 +137,7 @@ if __name__ == '__main__':
     for clust in clustList:
         try:
             print(clust)
-            unit = RepCore.loadRepeatingUnit(df, clust, smoothing=1)
+            unit = RepCore.loadRepeatingUnit(rat, day, clust, smoothing=1)
             rm = util.makeRM(unit.spikes, unit.position)
             if np.nanpercentile(rm, 95) > 1.:
                 population[clust] = unit
@@ -168,7 +168,7 @@ if __name__ == '__main__':
         print(clust)
         try:
             unit = population[clust]
-            shuffunit = RepCore.loadRepeatingUnit(df, clust, smoothing=parmdict['smoothing'])
+            shuffunit = RepCore.loadRepeatingUnit(rat, day, clust, smoothing=parmdict['smoothing'])
     
     
             realperf = kNN_semaphore_decoding(unit.smoothedFields, reps=parmdict['nreps'], n=parmdict['nNeighbors'], epochs=parmdict['epochs'], stat=parmdict['stat'], 

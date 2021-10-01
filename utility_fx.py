@@ -15,6 +15,8 @@ import ratterdam_ParseBehavior as Parse
 import ratterdam_Defaults as Def
 import ratterdam_DataFiltering as Filt
 import newAlleyBounds as nab
+from string import ascii_uppercase
+
 
 
 
@@ -784,6 +786,8 @@ def drawRegion(ax, bounds,color,txt=None):
 
 def drawTrack(rat,day, ax=None, txt=[]):
     ratborders = nab.loadAlleyBounds(rat, day)
+    letters = [i for i in ascii_uppercase[:12]]
+
     if ax == None:
         ax = plt.gca()
     for i in range(17):
@@ -791,3 +795,5 @@ def drawTrack(rat,day, ax=None, txt=[]):
             drawRegion(ax, ratborders.alleyInterBounds[str(i)],'lightgrey',txt[i])
         else:
             drawRegion(ax, ratborders.alleyInterBounds[str(i)],'lightgrey')
+    for j in letters:
+        drawRegion(ax, ratborders.alleyInterBounds[j],'lightgrey')

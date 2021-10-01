@@ -45,7 +45,7 @@ for qual,clust in zip(clustQuals, clustList):
     if qual >= qualThresh:
    
         print(clust)
-        unit = RepCore.loadRepeatingUnit(df, clust, smoothing=2)
+        unit = RepCore.loadRepeatingUnit(rat, day, clust, smoothing=2)
         rm = util.makeRM(unit.spikes, unit.position)
         if unit.spikes.shape[0] > 50:
             population[clust] = unit

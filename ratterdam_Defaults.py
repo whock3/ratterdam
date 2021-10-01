@@ -243,3 +243,11 @@ fieldOverlapThresh = 0.3 # threshold for repetition analysis, deciding what
                     # its said to overlap that region. e.g. if thresh is 0.1
                     # then the field overlaps a region if it impinges on an area
                     # equal to 10% or more of the size of that region in surface area 
+                    
+# Codes are, in order, North,East,South,West
+# and Forward,Right,Back,Left (i.e. cw round circle centered on rat
+#in both cases) for allo, ego respectively 
+
+allocodedict = {'1':'N','2':'E','3':'S','4':'W','0':'X'}
+egocodedict = {'1':'S','2':'R','3':'B','4':'L','0':'X'}
+

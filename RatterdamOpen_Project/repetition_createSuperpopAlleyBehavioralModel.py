@@ -72,7 +72,7 @@ egocodedict = {'1':'S','2':'R','3':'B','4':'L','0':'X'}
 verticals = [str(i) for i in [2,3,5,7,16,14,11,9]]
 horizontals = [str(i) for i in [0,4,6,1,12,8,15,13,10]]
 trackperimeter = [str(i) for i in [0,4,6,7,9,10,13,15,16,2]]
-trackinterior = [str(i) for i in [1,3,14,12,5,11,8]]
+trackinterior = [str(i) for i in [1,3,14,12,5,11, 8]]
 
 
 

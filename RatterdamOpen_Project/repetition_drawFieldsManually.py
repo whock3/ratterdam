@@ -29,7 +29,7 @@ clustname = "TT14\\cl-maze1.5"
 
 cmap = util.makeCustomColormap()
 
-unit = RepCore.loadRepeatingUnit(df, clustname)
+unit = RepCore.loadRepeatingUnit(rat, day, clustname)
 
 class FieldDrawer():
     

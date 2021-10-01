@@ -31,9 +31,10 @@ import alleyTransitions as alleyTrans
 import newAlleyBounds as nab
 import json
 from itertools import groupby
+import repeatingPC as repPC
 
 
-def loadRepeatingUnit(df, clustName, smoothing=2, vthresh=Def.velocity_filter_thresh):
+def loadRepeatingUnit(rat, day, clustName, smoothing=2, vthresh=Def.velocity_filter_thresh):
 
     """take a path to a data dir
     load spikes and position into two np arrays
@@ -42,6 +43,7 @@ def loadRepeatingUnit(df, clustName, smoothing=2, vthresh=Def.velocity_filter_th
     use sessionEpochInfo.txt, specific for open Ratterdam exp
     to get session ts and clip spikes/pos"""
     
+    df = f'E:\Ratterdam\\{rat}\\{rat}_RatterdamOpen_{day}\\'
     with open(df+"sessionEpochInfo.txt","r") as f:
         lines = f.readlines()
     start, end = int(lines[0].split(',')[0]), int(lines[0].split(',')[1])
@@ -588,11 +590,14 @@ def loadRecordingSessionData(rat,day,activityThreshType='Hertz',activityThresh=1
         if clustQuals[i] >= qualThresh:
        
             print(clust)
-            unit = loadRepeatingUnit(datapath, clust, smoothing=1)                                   
+            unit = loadRepeatingUnit(rat, day, clust, smoothing=1)                                   
             rm = util.makeRM(unit.spikes, unit.position)
             
             if activityThreshType == 'spikes':
                 if unit.spikes.shape[0] > activityThresh:
+                    repeat, locCount, repeatType, overlaps = repPC.repeatingPF(unit,ratborders)
+                    unit.repeating = repeat
+                    unit.overlaps = overlaps
                     population[clust] = unit
                     print(f"{unit.name} INCLUDED using {activityThreshType} threshold of {activityThresh}")
                 else:
@@ -600,6 +605,9 @@ def loadRecordingSessionData(rat,day,activityThreshType='Hertz',activityThresh=1
                     
             if activityThreshType == 'Hertz':
                 if np.nanpercentile(rm, 95) > activityThresh:
+                    repeat, locCount, repeatType, overlaps = repPC.repeatingPF(unit,ratborders)
+                    unit.repeating = repeat
+                    unit.overlaps = overlaps
                     population[clust] = unit
                     print(f"{unit.name} INCLUDED using {activityThreshType} threshold of {activityThresh}")
                 else:
@@ -624,7 +632,7 @@ def loadTurns(rat, day):
     ratborders = nab.loadAlleyBounds(rat, day)
     datapath = f'E:\Ratterdam\\{rat}\\{rat}_RatterdamOpen_{day}\\'
     clustList, _ = util.getClustList(datapath)
-    unit = loadRepeatingUnit(datapath, clustList[0], smoothing=1)   
+    unit = loadRepeatingUnit(rat,day, clustList[0], smoothing=1)   
 
                                 
     pos, turns = alleyTrans.alleyTransitions(unit.position, ratborders, graph=False)

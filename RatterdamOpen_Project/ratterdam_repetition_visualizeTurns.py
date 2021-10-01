@@ -57,7 +57,6 @@ for rat,day in zip(['R781', 'R781', 'R808', 'R808', 'R859', 'R859', 'R886', 'R88
         
         cmap = util.makeCustomColormap()
         
-        
         #%% Helper fx 
         
         def drawRegion(ax, bounds,color):
