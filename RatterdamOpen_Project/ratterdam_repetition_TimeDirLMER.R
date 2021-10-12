@@ -65,10 +65,10 @@ for (cellname in unique(df$cell)){
     if (!is.null(mod)){
       celldf$fit <- predict(mod, newdata=celldf, re.form=NA)
       
-      #Designmat <- model.matrix(rate ~ ns(direction,nsplineknots):epoch + (ns(direction,nsplineknots)|field) + (epoch|field), celldf)
-      # Designmat <- model.matrix(rate ~ histdir*field, celldf)
-      # predvar <- diag(Designmat %*% vcov(mod) %*% t(Designmat))
-      # celldf$fitCI <- sqrt(predvar)*z
+      Designmat <- model.matrix(rate ~ ns(direction,nsplineknots):epoch + (ns(direction,nsplineknots)|field) + (epoch|field), celldf)
+      Designmat <- model.matrix(rate ~ histdir*field, celldf)
+      predvar <- diag(Designmat %*% vcov(mod) %*% t(Designmat))
+      celldf$fitCI <- sqrt(predvar)*z
       
       # interaction plot w spline fits
       # p <- ggplot(celldf, aes(x=histdir, y=rate, color=as.factor(epoch)))+

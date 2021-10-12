@@ -64,6 +64,7 @@ cellnames, fieldnums, cellIDs, fieldIDs = [], [], [], []
 repeating = []
 startTimes = []
 rats, days, alleys = [], [], []
+traversal = [] # list of bools corresponding to whether rat went thru alley (True) or turned around (False)
 
 allocodedict = {'1':'N','2':'E','3':'S','4':'W','0':'X'}
 egocodedict = {'1':'S','2':'R','3':'B','4':'L','0':'X'}
@@ -90,7 +91,10 @@ for rat, day in zip(['R765', 'R781', 'R781', 'R808', 'R808', 'R859', 'R859', 'R8
     for i in range(1,turns.shape[0]-1):
        row = turns.iloc[i]
        inter = row['Inter']
-       if row['Ego'] != '3' and turns.iloc[i+1].Inter != inter and turns.iloc[i-1].Inter != inter:
+       # edit 10/2 removing check that last turn's inter wasnt the same,
+       # i.e if alley- had a turnaround. since we are looking at things
+       # in terms of alley+, only remove a turn if thats where a turnaround was
+       if row['Ego'] != '3' and turns.iloc[i+1].Inter != inter:
            ballisticTurnIdx.append(i)
     
     refturns = copy.deepcopy(turns) # keep a copy without filtering.
@@ -115,50 +119,56 @@ for rat, day in zip(['R765', 'R781', 'R781', 'R808', 'R808', 'R859', 'R859', 'R8
             
             # R model will just use the IDs which will be unique for each cell and field.
             # but I still want the real name and field num there for inspection purposes
-            for tnum, turn in turns.iterrows():
+            for tnum, turn in refturns.iterrows():
+                if tnum < refturns.shape[0]-1:
                 
-                # Because turn definition is staggered as it moves across track,
-                # pick either alley+ or alley- by convention and make the ts, labels
-                # match that choice 
-                
-                if turn['Alley+'] in foverlap: 
+                    # Because turn definition is staggered as it moves across track,
+                    # pick either alley+ or alley- by convention and make the ts, labels
+                    # match that choice 
                     
-                    ts_start, ts_end = float(turn['Ts entry']), float(refturns.iloc[tnum+1]['Ts exit'])
-                    behav = unit.position[(unit.position[:,0]>ts_start)&(unit.position[:,0]<=ts_end)]
-                    behav = behav[(behav[:,1]>0)&(behav[:,2]>0)]
-                    
-                    filtOutcome = RepCore.filterVisit(dista,distb,behav,perim,length_thresh=0.3,dist_thresh=0.1,dist_point_thresh=3,inside_point_thresh=3)
-                    
-                    if filtOutcome == True:
-                        rats.append(rat)
-                        days.append(day)
-                        turnNums.append(tnum)
-                        alleys.append(turn['Alley+'])
+                    if turn['Alley+'] in foverlap: 
                         
-                        previousDirection.append(allocodedict[turn['Allo-']])
-                        currentDirection.append(allocodedict[turn['Allo+']])
-                        nextDirection.append(allocodedict[refturns.iloc[tnum+1]['Allo+']])
-                        prospectiveEgo.append(egocodedict[refturns.iloc[tnum+1]['Ego']])
-                        retrospectiveEgo.append(egocodedict[turn['Ego']])
-                        repeating.append(repeat) # label if cell is repeating so we can group by repeating status later in R
-                        startTimes.append(ts_start)
+                        ts_start, ts_end = float(turn['Ts entry']), float(refturns.iloc[tnum+1]['Ts exit'])
+                        behav = unit.position[(unit.position[:,0]>ts_start)&(unit.position[:,0]<=ts_end)]
+                        behav = behav[(behav[:,1]>0)&(behav[:,2]>0)]
                         
-                        if turn['Alley+'] in verticals:
-                            orientation.append('V')
-                        elif turn['Alley+'] in horizontals:
-                            orientation.append('H')
+                        filtOutcome = RepCore.filterVisit(dista,distb,behav,perim,length_thresh=0.3,dist_thresh=0.1,dist_point_thresh=3,inside_point_thresh=3)
+                        
+                        if filtOutcome == True:
+                            rats.append(rat)
+                            days.append(day)
+                            turnNums.append(tnum)
+                            alleys.append(turn['Alley+'])
                             
-                        if turn['Alley+'] in trackperimeter:
-                            location.append('P')
-                        elif turn['Alley+'] in trackinterior: 
-                            location.append('I')
-                        
-                        # get spikes on alley (using the ts as endpoints) and filter by field perim to get spikes in field
-                        rates.append(contour.contains_points(unit.spikes[(unit.spikes[:,0]>ts_start)&(unit.spikes[:,0]<= ts_end),1:]).shape[0]/((ts_end-ts_start)/1e6))
-                        cellnames.append(f"{clustName}")
-                        fieldnums.append(fnum)
-                        cellIDs.append(cellcounter)
-                        fieldIDs.append(fieldcounter)
+                            previousDirection.append(allocodedict[turn['Allo-']])
+                            currentDirection.append(allocodedict[turn['Allo+']])
+                            nextDirection.append(allocodedict[refturns.iloc[tnum+1]['Allo+']])
+                            prospectiveEgo.append(egocodedict[refturns.iloc[tnum+1]['Ego']])
+                            retrospectiveEgo.append(egocodedict[turn['Ego']])
+                            repeating.append(repeat) # label if cell is repeating so we can group by repeating status later in R
+                            startTimes.append(ts_start)
+                            
+                            if tnum in ballisticTurnIdx:
+                                traversal.append(True)
+                            else:
+                                traversal.append(False)
+                            
+                            if turn['Alley+'] in verticals:
+                                orientation.append('V')
+                            elif turn['Alley+'] in horizontals:
+                                orientation.append('H')
+                                
+                            if turn['Alley+'] in trackperimeter:
+                                location.append('P')
+                            elif turn['Alley+'] in trackinterior: 
+                                location.append('I')
+                            
+                            # get spikes on alley (using the ts as endpoints) and filter by field perim to get spikes in field
+                            rates.append(contour.contains_points(unit.spikes[(unit.spikes[:,0]>ts_start)&(unit.spikes[:,0]<= ts_end),1:]).shape[0]/((ts_end-ts_start)/1e6))
+                            cellnames.append(f"{clustName}")
+                            fieldnums.append(fnum)
+                            cellIDs.append(cellcounter)
+                            fieldIDs.append(fieldcounter)
                         
                         
                         
@@ -182,6 +192,7 @@ df = pd.DataFrame(data=list(zip(rats,
                                 retrospectiveEgo,
                                 orientation,
                                 location,
+                                traversal,
                                 repeating,
                                 startTimes,
                                 rates
@@ -200,6 +211,7 @@ columns=["Rat",
          "RetroEgo",
          "Orientation",
          "Location",
+         "Traversal",
          "Repeating",
          "StartTimes",
          "Rate"])

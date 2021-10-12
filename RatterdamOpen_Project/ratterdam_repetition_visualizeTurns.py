@@ -49,7 +49,7 @@ for rat,day in zip(['R781', 'R781', 'R808', 'R808', 'R859', 'R859', 'R886', 'R88
         for i in range(1,turns.shape[0]-1):
            row = turns.iloc[i]
            inter = row['Inter']
-           if row['Ego'] != '3' and turns.iloc[i+1].Inter != inter and turns.iloc[i-1].Inter != inter:
+           if row['Ego'] != '3' and turns.iloc[i+1].Inter != inter:
                ballisticTurnIdx.append(i)
         
         refturns = copy.deepcopy(turns) # keep a copy without filtering.
