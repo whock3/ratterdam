@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+==# -*- coding: utf-8 -*-
 """
 Created on Mon Jul 19 13:03:34 2021
 
@@ -53,7 +53,7 @@ import traceback
 
 #region sets for 7-20-21 decoding
 # region_sets = {'RS1':[3,5,14,11],
-#                 'RS2':[1,8],
+#                 'RS2':[1,8],---------------------
 #                 'RS3':[2,0,16,15,10,9,7,6,4,13],
 #                 'RS4':[12]
 #                 }

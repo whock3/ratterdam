@@ -61,9 +61,11 @@ region_sets = {'RS6':[0,4,6,15,13,10,1,12,8],
 codedict = {'1':'N','2':'E','3':'S','4':'W','0':'X'}
 savepath = "E:\\Ratterdam\\repetition_decoding\\21-09-07_decoding\\"
 
+naive_perfs_datasets = {}
 
 for rat,day in zip(['R781', 'R781', 'R808', 'R808', 'R859', 'R859', 'R886', 'R886', 'R765'],['D3', 'D4', 'D6', 'D7', 'D1', 'D2', 'D1', 'D2','RFD5']):
-
+    
+    naive_perfs_datasets[f"{rat}{day}"] = {'RS6':None, 'RS7':None}
     ratborders = nab.loadAlleyBounds(rat, day)
     datapath = f'E:\Ratterdam\\{rat}\\{rat}_RatterdamOpen_{day}\\'    
     
@@ -104,46 +106,16 @@ for rat,day in zip(['R781', 'R781', 'R808', 'R808', 'R859', 'R859', 'R886', 'R88
                         outcomes.append(0)
             naive_perf.append(sum(outcomes)/len(outcomes))
         print(np.percentile(naive_perf,95))
-        plt.figure(figsize=(12,12))
-        plt.hist(naive_perf,color='k',bins=25)
-        plt.vlines(np.percentile(naive_perf,95), 0, 200)
-        plt.title(f"{rat}{day} {rslabel} Stratified Classifier, {nreps}x, 95th%ile = {round(np.percentile(naive_perf,95),2)}%", fontsize=18)
-        plt.ylabel("Frequency", fontsize=16)
-        plt.xlabel("Performance Guessing Label", fontsize=16)
-        plt.savefig(savepath+f"{timestamp}_{rat}{day}_{rslabel}_NaiveStratifiedDecoding.png", dpi=300)
-        plt.close()
+        # plt.figure(figsize=(12,12))
+        # plt.hist(naive_perf,color='k',bins=25)
+        # plt.vlines(np.percentile(naive_perf,95), 0, 200)
+        # plt.title(f"{rat}{day} {rslabel} Stratified Classifier, {nreps}x, 95th%ile = {round(np.percentile(naive_perf,95),2)}%", fontsize=18)
+        # plt.ylabel("Frequency", fontsize=16)
+        # plt.xlabel("Performance Guessing Label", fontsize=16)
+        #plt.savefig(savepath+f"{timestamp}_{rat}{day}_{rslabel}_NaiveStratifiedDecoding.png", dpi=300)
+        #plt.close()
         
-    
-# #%% Testing 
-# nreps = 1000
-# rslabel = 'RS1'
-# rs = ['12']
-# naive_perf = []
-# for n in range(nreps):
-#     outcomes = []
-#     for alley in rs:
-#         alley = str(alley)
-#         turnsubset = turns[turns['Alley+']==str(alley)]
-#         for _,turn in turnsubset.iterrows():
-#             c=np.random.choice(['N','S','E','W'],size=1,p=[dirbias[alley]['N'],dirbias[alley]['S'],dirbias[alley]['E'],dirbias[alley]['W']])[0]
-#             real = codedict[turn['Allo+']]
-#             if real == c:
-#                 outcomes.append(1)
-#             else:
-#                 outcomes.append(0)
-#     naive_perf.append(sum(outcomes)/len(outcomes))
-# plt.figure(figsize=(12,12))
-# plt.hist(naive_perf,color='k',bins=25)
-# plt.vlines(np.percentile(naive_perf,95), 0, 200)
-# plt.title(f"Naive Classifier (Stratified) for {rslabel}, {nreps}x trial outcome simulation", fontsize=18)
-# plt.ylabel("Frequency", fontsize=16)
-# plt.xlabel("Performance Guessing Label", fontsize=16)
-
-    
-        
-        
-        
-        
+        naive_perfs_datasets[f"{rat}{day}"][rslabel] = np.percentile(naive_perf,95)
         
         
         

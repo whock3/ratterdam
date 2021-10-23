@@ -552,7 +552,7 @@ from matplotlib import path
 verticals = [2,3,5,7,16,14,11,9]
 horizontals = [0,4,6,1,12,8,15,13,10]
 
-with open("E:\\Ratterdam\\R_data_repetition\\superPopulationRepetition.pickle","rb") as f:
+with open("E:\\Ratterdam\\R_data_repetition\\21-10-19_superPopulationRepetition.pickle","rb") as f:
     superpop = pickle.load(f)      
  
 rat, day = 'R859', 'D2'
@@ -568,7 +568,7 @@ session_start, session_end = [float(i) for i in data[0].split(',')]
 # create time windows
 seconds = (session_end - session_start)/1e6
 wnSize= 2*60*1e6 # set num mins you want in a window
-wnStep = 1*60*1e6
+wnStep = 2*60*1e6
 time_windows = []
 stop = False
 begin = session_start
@@ -612,7 +612,6 @@ for alley in range(17):
                     for j,pj in enumerate(pop_rates.T):
                         corr = ma.corrcoef(ma.masked_invalid(pi), ma.masked_invalid(pj))[0,1]
                         corrs[i,j] = corr  
-
     pop_alleys[alley] = corrs
 
 
@@ -628,7 +627,7 @@ for i,(alley, mat) in enumerate(pop_alleys.items()):
     dirbias = [0]
     dirtime = [time_windows[0][0]]
     for t, turn in refturns.iterrows():
-        if turn['Alley+']==f"{i}":
+        if turn['Alley+']==f"{alley}":
             if turn['Allo+'] == dirA:
                 dirbias.append(dirbias[-1]+1)
                 dirtime.append(float(turn['Ts entry']))
@@ -640,15 +639,19 @@ for i,(alley, mat) in enumerate(pop_alleys.items()):
     dirbias = np.asarray(dirbias)
     
     
-    fig.axes[i].imshow(mat, aspect='auto',interpolation='None',extent=[time_windows[0][0], time_windows[-1][1], 0, mat.shape[0]])
+    fig.axes[i].imshow(mat, aspect='auto',interpolation='None',origin='lower',extent=[time_windows[0][0], time_windows[-1][1], 0, mat.shape[0]])
     ax2 = fig.axes[i].twinx()
     ax2.plot(dirtime,dirbias,color='k')
     fig.axes[i].set_title(alley)
 plt.suptitle(f"{rat}{day}, {(wnSize/1e6)/60}min windows, {(wnStep/1e6)/60}min step size")
     
-#%% Pop vector corr V vs H
+#%% Pop vector corr between blocks
 
-import numpy.ma as ma
+import numpy.ma as ma, pickle 
+import newAlleyBounds as nab
+import repeatingPC as repPC
+import matplotlib.path as path
+
 verticals = [2,3,5,7,16,14,11,9]
 horizontals = [0,4,6,1,12,8,15,13,10]
 blocks = [[2,0,3,1],
@@ -658,8 +661,10 @@ blocks = [[2,0,3,1],
           [14,12,11,13],
           [11,8,9,10]]
 
+with open("E:\\Ratterdam\\R_data_repetition\\superPopulationRepetition.pickle","rb") as f:
+    superpop = pickle.load(f)      
     
-rat, day = 'R859', 'D2'
+rat, day = 'R886', 'D2'
 population, turns, refturns = superpop[rat][day]['units'], superpop[rat][day]['turns'], superpop[rat][day]['refturns']
 df = f'E:\\Ratterdam\\{rat}\\{rat}_RatterdamOpen_{day}\\'
 ratborders = nab.loadAlleyBounds(rat, day)
@@ -669,7 +674,7 @@ session_start, session_end = [float(i) for i in data[0].split(',')]
 
 # create time windows
 seconds = (session_end - session_start)/1e6
-wnSize= 5*60*1e6 # set num mins you want in a window
+wnSize= 10*60*1e6 # set num mins you want in a window
 wnStep = 1*60*1e6
 time_windows = []
 stop = False
@@ -693,7 +698,7 @@ for orientation, alleys in zip(range(6), blocks):
     for _,unit in population.items():
         for perim,foverlap in zip(unit.perimeters, unit.overlaps):
             if any(a in alleys for a in foverlap):
-                repeating.append(repeat)
+                repeating.append(unit.repeating)
                 contour = path.Path(perim)
                 field_pos = unit.position[contour.contains_points(unit.position[:,1:])]
                 field_spikes = unit.spikes[contour.contains_points(unit.spikes[:,1:])] 
@@ -723,3 +728,92 @@ fig, ax = plt.subplots(2,3, figsize=(15,12))
 for i, block in enumerate(blocks):
     fig.axes[i].set_title(f"Block {i}")
     fig.axes[i].imshow(pop_alleys[i], aspect='auto', interpolation='None')
+plt.suptitle(f"{rat}{day} Track block-based population time correlation ({(wnSize/1e6)/60}min, {(wnStep/1e6)/60}step)")
+
+
+#%% Pop vector corr between V H,
+
+import numpy.ma as ma, pickle 
+import newAlleyBounds as nab
+import repeatingPC as repPC
+import matplotlib.path as path
+
+verticals = [2,3,5,7,16,14,11,9]
+horizontals = [0,4,6,1,12,8,15,13,10]
+perimeter = [0,4,6,7,9,15,13,10,2,16]
+interior = [3,14,5,11,12,1,8]
+blocks = [[2,0,3,1],
+          [3,4,5,12],
+          [5,6,7,8],
+          [16,1,14,15],
+          [14,12,11,13],
+          [11,8,9,10]]
+
+with open("E:\\Ratterdam\\R_data_repetition\\21-10-19_superPopulationRepetition.pickle","rb") as f:
+    superpop = pickle.load(f)      
+    
+rat, day = 'R886', 'D2'
+population, turns, refturns = superpop[rat][day]['units'], superpop[rat][day]['turns'], superpop[rat][day]['refturns']
+df = f'E:\\Ratterdam\\{rat}\\{rat}_RatterdamOpen_{day}\\'
+ratborders = nab.loadAlleyBounds(rat, day)
+with open(df+"sessionEpochInfo.txt","r") as f:
+    data = f.readlines()
+session_start, session_end = [float(i) for i in data[0].split(',')]
+
+# create time windows
+seconds = (session_end - session_start)/1e6
+wnSize= 5*60*1e6 # set num mins you want in a window
+wnStep = 1*60*1e6
+time_windows = []
+stop = False
+begin = session_start
+while not stop:
+    a,b = begin, begin + wnSize
+    if b <= session_end:
+        time_windows.append((a,b))
+        begin += wnStep
+    else:
+        stop = True
+time_windows = np.asarray(time_windows)
+
+pop_alleys = {i:None for i in range(6)}
+
+for orientation, alleys in zip(range(2), [verticals, horizontals]):
+    pop_rates = np.empty((0, time_windows.shape[0]))
+    repeating = []
+    includeTurnaround = []
+    repeating = []
+    for _,unit in population.items():
+        for perim,foverlap in zip(unit.perimeters, unit.overlaps):
+            if any(a in alleys for a in foverlap):
+                repeating.append(unit.repeating)
+                contour = path.Path(perim)
+                field_pos = unit.position[contour.contains_points(unit.position[:,1:])]
+                field_spikes = unit.spikes[contour.contains_points(unit.spikes[:,1:])] 
+                unit_rates = []
+                for win in time_windows:
+                    winStart, winEnd = win[0], win[1]
+                    winSpikes = field_spikes[(field_spikes[:,0]>winStart)&(field_spikes[:,0]<=winEnd)]
+                    winPos = field_pos[(field_pos[:,0]>winStart)&(field_pos[:,0]<=winEnd)]
+                    if winPos.shape[0] > 0:
+                        winRate = winSpikes.shape[0]/((winEnd-winStart)/1e6)
+                    else:
+                        winRate = np.nan
+                    unit_rates.append(winRate)
+                
+                pop_rates = np.vstack((pop_rates, unit_rates))
+                corrs = np.empty((time_windows.shape[0], time_windows.shape[0]))
+                # at least one day has no repeating cells
+                
+                for i, pi in enumerate(pop_rates.T):
+                    for j,pj in enumerate(pop_rates.T):
+                        corr = ma.corrcoef(ma.masked_invalid(pi), ma.masked_invalid(pj))[0,1]
+                        corrs[i,j] = corr  
+
+    pop_alleys[orientation] = corrs
+    
+fig, ax = plt.subplots(2,1, figsize=(15,12))
+for i, orien in enumerate(['Verticals','Horizontals']):
+    fig.axes[i].set_title(orien)
+    fig.axes[i].imshow(pop_alleys[i], aspect='auto', interpolation='None')
+plt.suptitle(f"{rat}{day} Verticals vs Horizontals time correlation ({(wnSize/1e6)/60}min, {(wnStep/1e6)/60}step)")

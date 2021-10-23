@@ -36,6 +36,8 @@ def loadAlleyBounds(rat, day):
     Returns
     -------
     named tuple with following structure alleyBounds(cityBlocks, alleyLines, alleyInterBounds, IAI)
+    
+    The bounds of alleys or intersections are in [[xmin, xmax],[ymin,ymax]] format 
 
     """
     if rat == 'R781':

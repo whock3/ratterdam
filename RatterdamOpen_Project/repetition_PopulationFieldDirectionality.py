@@ -69,8 +69,6 @@ for rat, day, fname in metadata:
         
         for f in fields:
             
-            
-            
             replabels.append(repeat)
             
             subdf = df[(df['Unit']==unitname)&(df['Field']==f)]
