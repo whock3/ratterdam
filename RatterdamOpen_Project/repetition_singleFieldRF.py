@@ -66,185 +66,188 @@ for unitname, unit in pop.items():
     horizontals = [str(i) for i in [0,4,6,1,12,8,15,13,10]]
     
     for i,(perim, foverlap) in enumerate(zip(unit.perimeters, unit.overlaps)):
-        print(f"Field {i}")
-        for alleyfield in foverlap:
-            
-            if type(alleyfield)==int:
-                print(f"Alley {alleyfield}")
-    
-                border = ratborders.alleyInterBounds[str(alleyfield)]
+        try:
+            print(f"Field {i}")
+            for alleyfield in foverlap:
                 
-                currentDirection, nextDirection, previousDirection = [], [], []
-                turnIn, turnOut, trajectory = [], [], []
-                
-                responses = []
-                
-                contour = path.Path(perim)
-                field_pos = unit.position[contour.contains_points(unit.position[:,1:])]
-                field_spikes = unit.spikes[contour.contains_points(unit.spikes[:,1:])] 
-                
-                #break alley into number of segments, used to 2d hist each turn's activity
-                numSections = 4
-                if str(alleyfield) in verticals:
-                    sections = np.linspace(border[1][0],border[1][1],num=numSections+1)
-                    walls = border[0]
-                elif str(alleyfield) in horizontals:
-                    sections = np.linspace(border[0][0],border[0][1],num=numSections+1)
-                    walls = border[1]
-                
-                # Get all behavioral events
-                for t, turn in turns.iterrows():
-                    if int(turn['Alley+']) in foverlap:
-                        currd = Def.allocodedict[turn['Allo+']]
-                        nd = Def.allocodedict[refturns.iloc[t+1]['Allo+']]
-                        pd = Def.allocodedict[turn['Allo-']]
-                        
-                        currentDirection.append(currd)
-                        nextDirection.append(nd)
-                        previousDirection.append(pd)
-                        
-                        turnIn.append(f"{pd}{currd}")
-                        turnOut.append(f"{currd}{nd}")
-                        trajectory.append(f"{pd}{currd}{nd}")
-                        
-                        winStart, winEnd = float(turn['Ts entry']), float(refturns.iloc[t+1]['Ts exit'])
-                        
-                        winSpikes = field_spikes[(field_spikes[:,0]>winStart)&(field_spikes[:,0]<=winEnd)]
-                        winPos = field_pos[(field_pos[:,0]>winStart)&(field_pos[:,0]<=winEnd)]
+                if type(alleyfield)==int:
+                    print(f"Alley {alleyfield}")
+        
+                    border = ratborders.alleyInterBounds[str(alleyfield)]
                     
-                        sh = np.histogram2d(winSpikes[:,2], winSpikes[:,1], bins=[walls,sections])
-                        ph = np.histogram2d(winPos[:,2], winPos[:,1], bins=[walls,sections])
+                    currentDirection, nextDirection, previousDirection = [], [], []
+                    turnIn, turnOut, trajectory = [], [], []
+                    
+                    responses = []
+                    
+                    contour = path.Path(perim)
+                    field_pos = unit.position[contour.contains_points(unit.position[:,1:])]
+                    field_spikes = unit.spikes[contour.contains_points(unit.spikes[:,1:])] 
+                    
+                    #break alley into number of segments, used to 2d hist each turn's activity
+                    numSections = 4
+                    if str(alleyfield) in verticals:
+                        sections = np.linspace(border[1][0],border[1][1],num=numSections+1)
+                        walls = border[0]
+                    elif str(alleyfield) in horizontals:
+                        sections = np.linspace(border[0][0],border[0][1],num=numSections+1)
+                        walls = border[1]
+                    
+                    # Get all behavioral events
+                    for t, turn in turns.iterrows():
+                        if int(turn['Alley+']) in foverlap:
+                            currd = Def.allocodedict[turn['Allo+']]
+                            nd = Def.allocodedict[refturns.iloc[t+1]['Allo+']]
+                            pd = Def.allocodedict[turn['Allo-']]
+                            
+                            currentDirection.append(currd)
+                            nextDirection.append(nd)
+                            previousDirection.append(pd)
+                            
+                            turnIn.append(f"{pd}{currd}")
+                            turnOut.append(f"{currd}{nd}")
+                            trajectory.append(f"{pd}{currd}{nd}")
+                            
+                            winStart, winEnd = float(turn['Ts entry']), float(refturns.iloc[t+1]['Ts exit'])
+                            
+                            winSpikes = field_spikes[(field_spikes[:,0]>winStart)&(field_spikes[:,0]<=winEnd)]
+                            winPos = field_pos[(field_pos[:,0]>winStart)&(field_pos[:,0]<=winEnd)]
                         
-                        rates = sh[0]/ph[0]
-                        responses.append(rates[0])
-                
-                                                
-                        
-                currentDirection = np.asarray(currentDirection)
-                nextDirection = np.asarray(nextDirection)
-                previousDirection = np.asarray(previousDirection)
-                
-                turnIn = np.asarray(turnIn)
-                turnOut = np.asarray(turnOut)
-                trajectory = np.asarray(trajectory)
-                responses = np.asarray(responses)
-                
-                
-                # Now filter 
-                
-                # 'X' is a lost turn bc algorithm couldnt 
-                goodidx = np.where(currentDirection!='X')[0]
-                currentDirection = currentDirection[goodidx]
-                nextDirection = nextDirection[goodidx]
-                previousDirection = previousDirection[goodidx]
-                turnIn = turnIn[goodidx]
-                turnOut = turnOut[goodidx]
-                trajectory = trajectory[goodidx]
-                responses = responses[goodidx]
-                
-                responses[np.where(~np.isfinite(responses))] = 0
-                responses = preprocessing.StandardScaler().fit_transform(responses)
-                
-                
-                
-                #%% Current Direction 
-                
-                
-                # Iterate over behaviors and include each with minimum # samples
-                # If the behavior type has sufficient num behaviors, decode it.
-                c = Counter(currentDirection)
-                validbehaviors = {}
-                for k,v in c.items():
-                    if v >= nsamples:
-                        validbehaviors[k] = v
-                if len(validbehaviors) >= nbehaviors:
-                
-                    realCurrent = Decoder.runRandomForest(responses, 
-                                                          currentDirection, 
-                                                          **params)
+                            sh = np.histogram2d(winSpikes[:,2], winSpikes[:,1], bins=[walls,sections])
+                            ph = np.histogram2d(winPos[:,2], winPos[:,1], bins=[walls,sections])
+                            
+                            rates = sh[0]/ph[0]
+                            responses.append(rates[0])
                     
-                    shuffCurrent = []
-                    for i in range(params['nshuff']):
-                        shuffCurrent.append(Decoder.runRandomForest(responses, 
-                                                                    np.random.permutation(currentDirection), 
-                                                                    **params))
+                                                    
+                            
+                    currentDirection = np.asarray(currentDirection)
+                    nextDirection = np.asarray(nextDirection)
+                    previousDirection = np.asarray(previousDirection)
                     
-                    print(f"Real current direction decodng: {realCurrent}")
-                    print(f"95th percentile shuffle current direction decoding: {np.nanpercentile(shuffCurrent,95)}")
-                #%% Turns in
-                
-                orientations = np.unique(currentDirection)
-                if len(orientations)>2:
-                    print(f"{rat}{day} {unitname} {alleyfield} ERROR - too many current directions")
+                    turnIn = np.asarray(turnIn)
+                    turnOut = np.asarray(turnOut)
+                    trajectory = np.asarray(trajectory)
+                    responses = np.asarray(responses)
                     
-                for cdir in orientations:
                     
-                    #filter by direction - we are trying to decode a signal beyond any directional signal
-                    filtTurnIn = turnIn[currentDirection==cdir]
-                    filtResponses = responses[currentDirection==cdir,:]
+                    # Now filter 
                     
-                    #filter behaviors by threshold and only analyze if there's enough sampling
-                    # within and between behaviors
-                    c = Counter(filtTurnIn)
+                    # 'X' is a lost turn bc algorithm couldnt 
+                    goodidx = np.where(currentDirection!='X')[0]
+                    currentDirection = currentDirection[goodidx]
+                    nextDirection = nextDirection[goodidx]
+                    previousDirection = previousDirection[goodidx]
+                    turnIn = turnIn[goodidx]
+                    turnOut = turnOut[goodidx]
+                    trajectory = trajectory[goodidx]
+                    responses = responses[goodidx]
+                    
+                    responses[np.where(~np.isfinite(responses))] = 0
+                    responses = preprocessing.StandardScaler().fit_transform(responses)
+                    
+                    
+                    
+                    #%% Current Direction 
+                    
+                    
+                    # Iterate over behaviors and include each with minimum # samples
+                    # If the behavior type has sufficient num behaviors, decode it.
+                    c = Counter(currentDirection)
                     validbehaviors = {}
                     for k,v in c.items():
                         if v >= nsamples:
                             validbehaviors[k] = v
                     if len(validbehaviors) >= nbehaviors:
-                        # keep valid behaviors only 
-                        filtTurnIn = [i for i in filtTurnIn if i in validbehaviors.keys()]
+                    
+                        realCurrent = Decoder.runRandomForest(responses, 
+                                                              currentDirection, 
+                                                              **params)
                         
-                        real = Decoder.runRandomForest(filtResponses, 
-                                                       filtTurnIn, 
-                                                       **params)
-                        
-                        shuff = []
+                        shuffCurrent = []
                         for i in range(params['nshuff']):
-                            shuff.extend(Decoder.runRandomForest(filtResponses, 
-                                                                        np.random.permutation(filtTurnIn), 
+                            shuffCurrent.append(Decoder.runRandomForest(responses, 
+                                                                        np.random.permutation(currentDirection), 
                                                                         **params))
                         
-                        print(f"Real {cdir} turn in decoding: {real}")
-                        print(f"95th percentile shuffle turn in decoding: {np.nanpercentile(shuff,95)}")
-                        
-                        
-                #%% Turns out
-                
-                orientations = np.unique(currentDirection)
-                if len(orientations)>2:
-                    print("ERROR - too many current directions")
+                        print(f"Real current direction decodng: {realCurrent}")
+                        print(f"95th percentile shuffle current direction decoding: {np.nanpercentile(shuffCurrent,95)}")
+                    #%% Turns in
                     
-                for cdir in orientations:
-                    print(cdir)
-                    
-                    #filter by direction - we are trying to decode a signal beyond any directional signal
-                    filtTurnOut = turnOut[currentDirection==cdir]
-                    filtResponses = responses[currentDirection==cdir,:]
-                    
-                    #filter behaviors by threshold and only analyze if there's enough sampling
-                    # within and between behaviors
-                    c = Counter(filtTurnOut)
-                    validbehaviors = {}
-                    for k,v in c.items():
-                        if v >= nsamples:
-                            validbehaviors[k] = v
-                    if len(validbehaviors) >= nbehaviors:
-                        # keep valid behaviors only 
-                        filtTurnOut = [i for i in filtTurnOut if i in validbehaviors.keys()]
+                    orientations = np.unique(currentDirection)
+                    if len(orientations)>2:
+                        print(f"{rat}{day} {unitname} {alleyfield} ERROR - too many current directions")
                         
-                        real = Decoder.runRandomForest(filtResponses, 
-                                                       filtTurnOut, 
-                                                       **params)
+                    for cdir in orientations:
                         
-                        shuff = []
-                        for i in range(params['nshuff']):
-                            shuff.extend(Decoder.runRandomForest(filtResponses, 
-                                                                 np.random.permutation(filtTurnOut), 
-                                                                 **params))
+                        #filter by direction - we are trying to decode a signal beyond any directional signal
+                        filtTurnIn = turnIn[currentDirection==cdir]
+                        filtResponses = responses[currentDirection==cdir,:]
+                        
+                        #filter behaviors by threshold and only analyze if there's enough sampling
+                        # within and between behaviors
+                        c = Counter(filtTurnIn)
+                        validbehaviors = {}
+                        for k,v in c.items():
+                            if v >= nsamples:
+                                validbehaviors[k] = v
+                        if len(validbehaviors) >= nbehaviors:
+                            # keep valid behaviors only 
+                            filtTurnIn = [i for i in filtTurnIn if i in validbehaviors.keys()]
                             
-                        print(f"Real {cdir} turn out decoding: {real}")
-                        print(f"95th percentile shuffle turn out decoding: {np.nanpercentile(shuff,95)}")
+                            real = Decoder.runRandomForest(filtResponses, 
+                                                           filtTurnIn, 
+                                                           **params)
+                            
+                            shuff = []
+                            for i in range(params['nshuff']):
+                                shuff.extend(Decoder.runRandomForest(filtResponses, 
+                                                                            np.random.permutation(filtTurnIn), 
+                                                                            **params))
+                            
+                            print(f"Real {cdir} turn in decoding: {real}")
+                            print(f"95th percentile shuffle turn in decoding: {np.nanpercentile(shuff,95)}")
+                            
+                            
+                    #%% Turns out
+                    
+                    orientations = np.unique(currentDirection)
+                    if len(orientations)>2:
+                        print("ERROR - too many current directions")
                         
-                
-                
-                
+                    for cdir in orientations:
+                        print(cdir)
+                        
+                        #filter by direction - we are trying to decode a signal beyond any directional signal
+                        filtTurnOut = turnOut[currentDirection==cdir]
+                        filtResponses = responses[currentDirection==cdir,:]
+                        
+                        #filter behaviors by threshold and only analyze if there's enough sampling
+                        # within and between behaviors
+                        c = Counter(filtTurnOut)
+                        validbehaviors = {}
+                        for k,v in c.items():
+                            if v >= nsamples:
+                                validbehaviors[k] = v
+                        if len(validbehaviors) >= nbehaviors:
+                            # keep valid behaviors only 
+                            filtTurnOut = [i for i in filtTurnOut if i in validbehaviors.keys()]
+                            
+                            real = Decoder.runRandomForest(filtResponses, 
+                                                           filtTurnOut, 
+                                                           **params)
+                            
+                            shuff = []
+                            for i in range(params['nshuff']):
+                                shuff.extend(Decoder.runRandomForest(filtResponses, 
+                                                                     np.random.permutation(filtTurnOut), 
+                                                                     **params))
+                                
+                            print(f"Real {cdir} turn out decoding: {real}")
+                            print(f"95th percentile shuffle turn out decoding: {np.nanpercentile(shuff,95)}")
+                            
+                    
+                    
+                    
+        except:
+            pass

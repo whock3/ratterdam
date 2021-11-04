@@ -115,7 +115,10 @@ for rat,day in zip(['R781', 'R781', 'R808', 'R808', 'R859', 'R859', 'R886', 'R88
         #plt.savefig(savepath+f"{timestamp}_{rat}{day}_{rslabel}_NaiveStratifiedDecoding.png", dpi=300)
         #plt.close()
         
-        naive_perfs_datasets[f"{rat}{day}"][rslabel] = np.percentile(naive_perf,95)
+        naive_perfs_datasets[f"{rat}{day}"][rslabel] = naive_perf 
+        
+    
+        
         
         
         

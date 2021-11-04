@@ -97,17 +97,19 @@ w=0.75
 ax.bar(range(len(rvals)),rvals,width=w, edgecolor='black',color='grey',linewidth=2)
 for i,sig in enumerate(rsigs):
     if sig<0.05:
-        ax.text(i-0.1,rvals[i]+0.015,'*',size=50,c='k')
+        ax.text(i-0.1,rvals[i]+0.015,'*',size=70,c='k')
 ax.set_xticks(range(len(rlabels)))
-ax.set_xticklabels(rlabels)
+ax.set_xticklabels(rlabels,rotation=90)
 ax.spines['top'].set_visible(False)
 ax.spines['right'].set_visible(False)
-ax.tick_params(axis='both', labelsize=22)
+ax.tick_params(axis='both', labelsize=Def.ticksize)
 ax.hlines(0.05,-0.5,9,color='k',linestyle='--',linewidth=2)
-ax.set_ylabel("Proportion of Repeating Cells", fontsize=28)
+ax.set_ylabel("Proportion of Repeating Cells", fontsize=Def.ylabelsize)
+plt.tight_layout()
 
 
 #%% How many fields per repeating cell
+from matplotlib.ticker import MaxNLocator
 
 nfields = []
 for rat in superpop.keys():
@@ -122,12 +124,15 @@ ax = fig.axes[0]
 ax.hist(nfields,facecolor='grey',edgecolor='k',linewidth=2,bins=5)
 ax.spines['top'].set_visible(False)
 ax.spines['right'].set_visible(False)
-ax.tick_params(axis='both', labelsize=22)
-ax.set_ylabel("Frequency", fontsize=28)
-ax.set_xlabel("Number of Fields Per Repeating Cell",fontsize=28)
+ax.tick_params(axis='both', labelsize=Def.ticksize)
+ax.set_ylabel("Neuron Frequency", fontsize=Def.ylabelsize)
+ax.set_xlabel("Number of Fields Per Repeating Cell",fontsize=Def.ylabelsize)
+ax.yaxis.set_major_locator(MaxNLocator(integer=True))
 
 
-#%% Peak Fr repeating and nonrepeating fields, as well as field gains in repeating cells
+
+#%% Peak Fr repeating and nonrepeating fields
+from matplotlib.ticker import MaxNLocator
 
 repPeaks = []
 nonrepPeaks = []
@@ -159,14 +164,17 @@ ax.hist(repPeaks,facecolor='red',bins=b,alpha=0.7,label='Repeating Fields')
 ax.hist(nonrepPeaks,facecolor='black',bins=b,alpha=0.7,label='Non-repeating Fields')
 ax.spines['top'].set_visible(False)
 ax.spines['right'].set_visible(False)
-ax.tick_params(axis='both', labelsize=22)
-ax.set_ylabel("Frequency", fontsize=28)
-ax.set_xlabel("Peak Field Rate (Hz)",fontsize=28)
-plt.legend(prop={'size':25})
+ax.tick_params(axis='both', labelsize=Def.ticksize)
+ax.set_ylabel("Frequency", fontsize=Def.ylabelsize)
+ax.set_xlabel("Peak Field Rate (Hz)",fontsize=Def.xlabelsize)
+#force integers, for some reason it natively shows decimals
+ax.yaxis.set_major_locator(MaxNLocator(integer=True))
+plt.legend(prop={'size':30})
 
 
-#%% Within repeating cells, bias towards being V or H only fields
+#%% Fig 2d Within repeating cells, bias towards being V or H only fields
 # call V +1 and H -1. So even split would have hist centered on 0
+from matplotlib.ticker import MaxNLocator
 
 verticals = [2,3,5,7,16,14,11,9]
 horizontals = [0,4,6,1,12,8,15,13,10]
@@ -176,7 +184,7 @@ orientationBias = []
 for rat in superpop.keys():
     for day in superpop[rat].keys():
         for unit in superpop[rat][day]['units'].values():
-            if unit.repeating == True:
+            if len(unit.fields)>1:
                 unitbias = []
                 for foverlap in unit.overlaps:
                     for regionoverlap in foverlap:
@@ -191,10 +199,113 @@ for rat in superpop.keys():
 
 fig, ax = plt.subplots(figsize=(20,15))
 ax = fig.axes[0]
-ax.hist(orientationBias,bins=10,facecolor='grey',edgecolor='black',linewidth=2)
+ax.hist(orientationBias,bins=np.linspace(-1,1,num=10),
+        facecolor='grey',
+        edgecolor='black',
+        linewidth=2)
 ax.set_xticks([-1,0,1])
+ax.set_xticklabels(["-1 (H)", "0", "+1 (V)"])
 ax.spines['top'].set_visible(False)
 ax.spines['right'].set_visible(False)
-ax.tick_params(axis='both', labelsize=22)
-ax.set_ylabel("Neuron Frequency", fontsize=28)
-ax.set_xlabel("Repetition Orientation Bias",fontsize=28)
+ax.tick_params(axis='both', labelsize=Def.ticksize)
+ax.set_ylabel("Neuron Frequency", fontsize=Def.ylabelsize)
+ax.set_xlabel("Repetition Orientation Bias",fontsize=Def.xlabelsize)
+ax.yaxis.set_major_locator(MaxNLocator(integer=True))
+
+
+
+#%% How many regions overlapping field
+
+repNumRegions = []
+nonrepNumRegions = []
+for rat in superpop.keys():
+    for day in superpop[rat].keys():
+        for unit in superpop[rat][day]['units'].values():
+            if unit.repeating == True:
+                for overlaps in unit.overlaps:
+                    repNumRegions.append(len(overlaps))
+            elif unit.repeating == False:
+                #bc not all multifielded cells are repeating
+                for overlaps in unit.overlaps:
+                    nonrepNumRegions.append(len(overlaps))
+                    
+repNumRegions = np.asarray(repNumRegions)
+nonrepNumRegions = np.asarray(nonrepNumRegions)
+
+
+#%% breakdown of being in alleys or intersections
+# 21-10-24: no difference. 45/54 A/I for rep, 52/48 for nonrep
+repRegions = []
+nonrepRegions = []
+for rat in superpop.keys():
+    for day in superpop[rat].keys():
+        for unit in superpop[rat][day]['units'].values():
+            if unit.repeating == True:
+                for overlaps in unit.overlaps:
+                    if any([type(i)==int for i in overlaps]):
+                        repRegions.append('A')
+                    if any([type(i)==str for i in overlaps]):
+                        repRegions.append('I')
+            elif unit.repeating == False:
+                #bc not all multifielded cells are repeating
+                for overlaps in unit.overlaps:
+                    if any([type(i)==int for i in overlaps]):
+                        nonrepRegions.append('A')
+                    if any([type(i)==str for i in overlaps]):
+                        nonrepRegions.append('I')
+                    
+                    
+repRegions = np.asarray(repRegions)
+nonrepRegions = np.asarray(nonrepRegions)
+
+
+#%% repeating  cells, more H or V alleys?
+
+verticals = [2,3,5,7,16,14,11,9]
+horizontals = [0,4,6,1,12,8,15,13,10]
+
+h, v = 0,0
+
+for rat in superpop.keys():
+    for day in superpop[rat].keys():
+        for unit in superpop[rat][day]['units'].values():
+            if unit.repeating == True:
+                for overlaps in unit.overlaps:
+                    for o in overlaps:
+                        if o in verticals:
+                            v +=(1/len(overlaps))
+                        elif o in horizontals:
+                            h += (1/len(overlaps))
+                    
+
+#%% Troubleshooting Fig 2C 
+# why is rep dist bimodal? why does nonrep dist have 2hz signal?
+
+# for nonrep, I think it's just an aliasing thing by chance after counting manualy and playing w bins
+# for rep bimodal, looking by rat seems like different rats are centered at
+#different rates and rats with more cells bias overall dist to their center
+
+plt.figure()
+plt.scatter(range(len(repPeaks)),repPeaks)
+plt.hlines(b,0,170,color='k')
+
+
+plt.figure()
+plt.hist(repPeaks,bins=b)
+
+
+
+for rat in superpop.keys():
+    for day in superpop[rat].keys():
+        m = []
+        for unit in superpop[rat][day]['units'].values():
+            if unit.repeating == True:
+                for field in unit.fields:
+                    m.append(max(field[:,1]))
+            elif unit.repeating == False:
+                #bc not all multifielded cells are repeating
+                for field in unit.fields:
+                    pass
+        plt.figure()
+        plt.hist(m,bins=b)
+        plt.title(f"{rat} {day}")

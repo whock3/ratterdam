@@ -251,3 +251,10 @@ fieldOverlapThresh = 0.3 # threshold for repetition analysis, deciding what
 allocodedict = {'1':'N','2':'E','3':'S','4':'W','0':'X'}
 egocodedict = {'1':'S','2':'R','3':'B','4':'L','0':'X'}
 
+
+# Defaults for plotting, particularly for posters. Equates label sizes etc
+
+ticksize = 52
+ylabelsize = 64
+xlabelsize = 64
+

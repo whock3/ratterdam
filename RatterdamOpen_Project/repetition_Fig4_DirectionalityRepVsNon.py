@@ -15,6 +15,7 @@ import pandas as pd
 import json, pickle
 from scipy.stats import mannwhitneyu
 from scipy.stats import sem 
+import ratterdam_Defaults as Def 
 
 datapath = "E:\\Ratterdam\\R_data_repetition\\20211003-201105_superPopAlleyBehaviorResponse_1.5vfilt.csv"
 df = pd.read_csv(datapath)
@@ -58,21 +59,46 @@ for el in ['cbars','cmaxes','cmins']:
     nonrepviolin[el].set_color('dodgerblue')
 
 ax.set_xticks([1,2])
-ax.set_xticklabels(["Repeating Fields", "Non-repeating Fields"],fontsize=24)
+ax.set_xticklabels(["Repeating Fields", "Non-repeating Fields"],fontsize=Def.xlabelsize)
 ax.spines['top'].set_visible(False)
 ax.spines['right'].set_visible(False)
-ax.set_ylabel("Absolute Mean Difference (Hz)",fontsize=24)
-ax.tick_params(axis='both', which='major', labelsize=24)
+ax.set_ylabel("Absolute Mean Difference (Hz)",fontsize=Def.ylabelsize)
+ax.tick_params(axis='both', which='major', labelsize=Def.ticksize)
 
 fig, _ax  = plt.subplots()
 ax = fig.axes[0]
-ax.scatter(range(meanDiff[repeating==True].shape[0]),meanDiff[repeating==True],c='red',s=30,zorder=99,label='Repeating')
-ax.scatter(range(meanDiff[repeating==False].shape[0]),meanDiff[repeating==False],c='dodgerblue',s=30,zorder=99,label='Non-repeating')
+ax.scatter(range(meanDiff[repeating==True].shape[0]),meanDiff[repeating==True],c='red',s=40,zorder=99,label='Repeating')
+ax.scatter(range(meanDiff[repeating==False].shape[0]),meanDiff[repeating==False],c='dodgerblue',s=40,zorder=99,label='Non-repeating')
 ax.spines['top'].set_visible(False)
 ax.spines['right'].set_visible(False)
-ax.set_ylabel("Absolute Mean Difference (Hz)",fontsize=24)
-ax.set_xlabel("Field ID",fontsize=24)
-ax.tick_params(axis='both', which='major', labelsize=24)
-plt.legend(prop={'size':20})
+ax.set_ylabel("Absolute Mean Difference (Hz)",fontsize=Def.ylabelsize)
+ax.set_xlabel("Field ID",fontsize=Def.xlabelsize)
+ax.tick_params(axis='both', which='major', labelsize=Def.ticksize)
+plt.legend(prop={'size':30})
 
+
+#%% fig 4c glm results from r, mse change in base glm vs base+CD
+
+cdmodel = pd.read_csv("E:\\Ratterdam\\2021_SfNPoster_WH\\Fig3_Directionality\\CD_model.csv")
+
+fig, ax = plt.subplots()
+ax.plot(cdmodel.m1_rmse[cdmodel.repOrNot==0],cdmodel.m2_rmse[cdmodel.repOrNot==0],
+        marker='o',
+        markersize=10,
+        linestyle='',
+        color='black',
+        label='Non-repeating')
+ax.plot(cdmodel.m1_rmse[cdmodel.repOrNot==1],cdmodel.m2_rmse[cdmodel.repOrNot==1],
+        marker='o',
+        markersize=10,
+        linestyle='',
+        color='red',
+        label='Repeating')
+ax.spines['top'].set_visible(False)
+ax.spines['right'].set_visible(False)
+ax.set_ylabel("Base Model \n+ Current Direction RMSE",fontsize=Def.ylabelsize)
+ax.set_xlabel("Base Model RMSE",fontsize=Def.xlabelsize)
+ax.tick_params(axis='both', which='major', labelsize=Def.ticksize)
+plt.legend(prop={'size':30})
+ax.set_aspect('equal', adjustable='box')
 

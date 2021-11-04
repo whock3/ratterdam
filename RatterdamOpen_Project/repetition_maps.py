@@ -71,7 +71,7 @@ for i,field in enumerate(fields):
     ax2.plot(dirtime,dirbias,color='k',linewidth=2,marker='.')
     ax.set_ylabel("Firing Rate (Hz)",fontsize=16)
     ax2.set_ylabel("Accumulated Direction Bias", fontsize=16)
-    ax.set_title(f"{names[i]}")
+    ax.set_title(f"{names[i]}") 
 plt.suptitle(f"Alley {alley}")
 fig.subplots_adjust(hspace=0.5)
 

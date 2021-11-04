@@ -65,7 +65,7 @@ repeating = []
 startTimes = []
 rats, days, alleys = [], [], []
 traversal = [] # list of bools corresponding to whether rat went thru alley (True) or turned around (False)
-
+visitRewards = []
 allocodedict = {'1':'N','2':'E','3':'S','4':'W','0':'X'}
 egocodedict = {'1':'S','2':'R','3':'B','4':'L','0':'X'}
 
@@ -77,13 +77,15 @@ trackinterior = [str(i) for i in [1,3,14,12,5,11, 8]]
 
 
 
-for rat, day in zip(['R765', 'R781', 'R781', 'R808', 'R808', 'R859', 'R859', 'R886', 'R886'], ['RFD5', 'D3', 'D4', 'D6', 'D7', 'D1', 'D2', 'D1','D2']):
+for rat, day in zip(['R808', 'R808', 'R859', 'R859', 'R886', 'R886'], ['D6', 'D7', 'D1', 'D2', 'D1','D2']):
     df = f'E:\\Ratterdam\\{rat}\\{rat}_RatterdamOpen_{day}\\'
     population, turns = RepCore.loadRecordingSessionData(rat, day)
     
     superpopAlleyDf = []
     
     ratborders = nab.loadAlleyBounds(rat, day)
+    rewards = RepCore.readinRewards(rat, day)
+
     codedict = {'1':'N','2':'E','3':'S','4':'W','0':'X'}
     
     # Remove turnarounds/pivots
@@ -140,6 +142,12 @@ for rat, day in zip(['R765', 'R781', 'R781', 'R808', 'R808', 'R859', 'R859', 'R8
                             turnNums.append(tnum)
                             alleys.append(turn['Alley+'])
                             
+                            isReward = np.where(np.asarray([(ts_start < i < ts_end) for i in rewards])==True)[0]
+                            if isReward.shape[0]>0:
+                                visitRewards.append(True)
+                            else:
+                                visitRewards.append(False)
+                            
                             previousDirection.append(allocodedict[turn['Allo-']])
                             currentDirection.append(allocodedict[turn['Allo+']])
                             nextDirection.append(allocodedict[refturns.iloc[tnum+1]['Allo+']])
@@ -195,6 +203,7 @@ df = pd.DataFrame(data=list(zip(rats,
                                 traversal,
                                 repeating,
                                 startTimes,
+                                visitRewards,
                                 rates
                                     )), 
 columns=["Rat",
@@ -214,6 +223,7 @@ columns=["Rat",
          "Traversal",
          "Repeating",
          "StartTimes",
+         "Reward",
          "Rate"])
 
 df.dropna(inplace=True)

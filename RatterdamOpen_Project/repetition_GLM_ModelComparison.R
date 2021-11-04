@@ -40,112 +40,185 @@ nonrepCD <- 0
 nonrepPD <- 0
 nonrepND <- 0
 
+m1_rmse <- c()
+m2_rmse <- c()
+m3_rmse <- c()
+m4_rmse <- c()
+m5_rmse <- c()
+
+m1_aic <- c()
+m2_aic <- c()
+m3_aic <- c()
+m4_aic <- c()
+m5_aic <- c()
+
+repOrNot <- c() # keep track of which fields are repeating for slicing purposes 
+
+lrCurr_pvals <- c() # keep all pvalues from lrtest(base, base+cd) regardless
+                    # if thats the best model because want to plot rmse colored
+                    # by whether cd was helpful for fig 3 sfn2021. fig 5 then gets
+                    # into whats the best model. 
+
 msigCD <- 0 # how many models have better fit w current dir, use to see if
             # num models with better fit of P+C+N is sig  by binomial 
 actualRunRep <- 0
 actualRunNonrep <- 0
 
+startTimeKnots = 3
 
-o <- 'H'
-oriendf <- subset(alleydf, Orientation==o)
+nshuffle <- 1000
+shuffle <- TRUE
 
-for(fid in unique(oriendf$FieldID)){
-  
-  field <- subset(oriendf, FieldID == fid)
-  mrun <- try({
-    m1 <- glm(Rate+1 ~ 1, family='Gamma', data=field)
-    m2 <- glm(Rate+1 ~ CurrDir, family = 'Gamma', data=field)
-    m3 <- glm(Rate+1 ~ PrevDir + CurrDir, family='Gamma',data=field)
-    m4 <- glm(Rate+1 ~ CurrDir + NextDir, family='Gamma',data=field)
-    m5 <- glm(Rate+1 ~ PrevDir + CurrDir + NextDir, family='Gamma',data=field)
-    
-  
-    #keep track of how many fields were tested by group
-    if(unique(field$Repeating)=='True'){
-      actualRunRep <- actualRunRep + 1
-    }
-    else if(unique(field$Repeating)=='False'){
-      actualRunNonrep <- actualRunNonrep + 1
-    }
-    
+shuff_rep_CD <- c()
+shuff_rep_ND <- c()
+shuff_rep_PD <- c()
+shuff_rep_Full <- c()
 
+shuff_nonrep_CD <- c()
+shuff_nonrep_ND <- c()
+shuff_nonrep_PD <- c()
+shuff_nonrep_Full <- c()
+
+
+if(shuffle==TRUE){
+  for(s in 1:nshuffle){
+    print(s)
+    for(o in c('V','H')){
+      oriendf <- subset(alleydf, Orientation==o)
       
-    lrCurr <- lrtest(m1,m2)
-    lrPrev <- lrtest(m2,m3)
-    lrNext <- lrtest(m2,m4)
-    lrFullA <- lrtest(m3,m5)
-    lrFullB <- lrtest(m4,m5)
-    bfAdj <- 5
-    
-    # Case checks for repeating fields
-    if(unique(field$Repeating)=='True'){
+      for(fid in unique(oriendf$FieldID)){
+        
+        field_ <- subset(oriendf, FieldID == fid)
+        
+        n <- sample(nrow(field_))
+        shuff.field <- data.frame(field_)
+        shuff.field$CurrDir <- shuff.field$CurrDir[n]
+        shuff.field$PrevDir <- shuff.field$PrevDir[n]
+        shuff.field$NextDir <- shuff.field$NextDir[n]
+        
+        if(shuffle==TRUE){
+          field <- shuff.field
+          
+        }
+        else if(shuffle==FALSE){
+          field <- field_
+        }
+        
+        
+        mrun <- try({
+          # 21-10-24 changed models to include main effect of time expressed as 
+          # ns(StartTimes,nknots). Before the m1 ws y ~ 1 and other models were same minus that time term
+          m1 <- glm(Rate+1 ~ ns(StartTimes,startTimeKnots), family='Gamma', data=field)
+          m2 <- glm(Rate+1 ~ CurrDir + ns(StartTimes,startTimeKnots), family = 'Gamma', data=field)
+          m3 <- glm(Rate+1 ~ PrevDir + CurrDir + ns(StartTimes,startTimeKnots), family='Gamma',data=field)
+          m4 <- glm(Rate+1 ~ CurrDir + NextDir + ns(StartTimes,startTimeKnots), family='Gamma',data=field)
+          m5 <- glm(Rate+1 ~ PrevDir + CurrDir + NextDir + ns(StartTimes,startTimeKnots), family='Gamma',data=field)
+          
+          m1_rmse <- c(m1_rmse, sqrt(mean((field$Rate-m1$fitted.values)^2)))
+          m2_rmse <- c(m2_rmse, sqrt(mean((field$Rate-m2$fitted.values)^2)))
+          m3_rmse <- c(m3_rmse, sqrt(mean((field$Rate-m3$fitted.values)^2)))
+          m4_rmse <- c(m4_rmse, sqrt(mean((field$Rate-m4$fitted.values)^2)))
+          m5_rmse <- c(m5_rmse, sqrt(mean((field$Rate-m5$fitted.values)^2)))
+          
+          m1_aic <- c(m1_aic, m1$aic)
+          m2_aic <- c(m2_aic, m2$aic)
+          m3_aic <- c(m3_aic, m3$aic)
+          m4_aic <- c(m4_aic, m4$aic)
+          m5_aic <- c(m5_aic, m5$aic)
+          
+          
+          #keep track of how many fields were tested by group
+          if(unique(field$Repeating)=='True'){
+            actualRunRep <- actualRunRep + 1
+            repOrNot <- c(repOrNot, TRUE)
+          }
+          else if(unique(field$Repeating)=='False'){
+            actualRunNonrep <- actualRunNonrep + 1
+            repOrNot <- c(repOrNot, FALSE)
+          }
+          
       
-      #check full model against partial C+N and partial P+C, see if its better than both
-      if((lrFullA[2,"Pr(>Chisq)"]<(0.05/bfAdj))&(lrFullB[2,"Pr(>Chisq)"]<(0.05/bfAdj))){
-        repFull <- repFull + 1
-      }
-      #otherwise drop down to test C vs C+P
-      else if(lrPrev[2,"Pr(>Chisq)"]<(0.05/bfAdj)){
-        repPD <- repPD + 1
-      }
-      #otherwise drop down to test C vs C+N
-      else if(lrNext[2,"Pr(>Chisq)"]<(0.05/bfAdj)){
-        repND <- repND + 1
-      }
-      #otherwise drop down to test null vs C
-      else if(lrCurr[2,"Pr(>Chisq)"]<(0.05/bfAdj)){
-        repCD <- repCD + 1
+            
+          lrCurr <- lrtest(m1,m2)
+          lrPrev <- lrtest(m2,m3)
+          lrNext <- lrtest(m2,m4)
+          lrFullA <- lrtest(m3,m5)
+          lrFullB <- lrtest(m4,m5)
+          
+          lrCurr_pvals <- c(lrCurr_pvals, lrCurr[2,"Pr(>Chisq)"])
+          
+          bfAdj <- 5 # adjust for multiple comparisons via Bonferroni correction
+          
+          # Case checks for repeating fields
+          if(unique(field$Repeating)=='True'){
+              if((lrFullA[2,"Pr(>Chisq)"]<(0.05/bfAdj))&(lrFullB[2,"Pr(>Chisq)"]<(0.05/bfAdj))){
+                repFull <- repFull + 1
+              }
+              else if((lrPrev[2,"Pr(>Chisq)"]<(0.05/bfAdj))&(lrNext[2,"Pr(>Chisq)"]>(0.05/bfAdj))){
+                repPD <- repPD + 1
+                
+              }
+              else if((lrPrev[2,"Pr(>Chisq)"]>(0.05/bfAdj))&(lrNext[2,"Pr(>Chisq)"]<(0.05/bfAdj))){
+                repND <- repND + 1 
+              }
+              else if(lrCurr[2,"Pr(>Chisq)"]<(0.05/bfAdj)){
+                repCD <- repCD + 1 
+                
+              }
+              
+              
+          }
+          
+          
+          # Case checks for nonrepeating fields
+          else if(unique(field$Repeating)=='False'){
+              if((lrFullA[2,"Pr(>Chisq)"]<(0.05/bfAdj))&(lrFullB[2,"Pr(>Chisq)"]<(0.05/bfAdj))){
+                nonrepFull <- nonrepFull + 1
+              }
+              else if((lrPrev[2,"Pr(>Chisq)"]<(0.05/bfAdj))&(lrNext[2,"Pr(>Chisq)"]>(0.05/bfAdj))){
+                nonrepPD <- nonrepPD + 1
+                
+              }
+              else if((lrPrev[2,"Pr(>Chisq)"]>(0.05/bfAdj))&(lrNext[2,"Pr(>Chisq)"]<(0.05/bfAdj))){
+                nonrepND <- nonrepND + 1 
+              }
+              else if(lrCurr[2,"Pr(>Chisq)"]<(0.05/bfAdj)){
+                nonrepCD <- nonrepCD + 1 
+              }
+              
+            
+            
+          }
+          
+          
+        },silent=TRUE) 
       }
     }
     
+    shuff_rep_CD <- c(shuff_rep_CD, repCD/actualRunRep)
+    shuff_rep_ND <- c(shuff_rep_ND, repND/actualRunRep)
+    shuff_rep_PD <- c(shuff_rep_PD, repPD/actualRunRep)
+    shuff_rep_Full <- c(shuff_rep_Full, repFull/actualRunRep)
     
-    # Case checks for nonrepeating fields
-    if(unique(field$Repeating)=='False'){
-      
-      #check full model against partial C+N and partial P+C, see if its better than both
-      if((lrFullA[2,"Pr(>Chisq)"]<(0.05/bfAdj))&(lrFullB[2,"Pr(>Chisq)"]<(0.05/bfAdj))){
-        nonrepFull <- nonrepFull + 1
-      }
-      #otherwise drop down to test C vs C+P
-      else if(lrPrev[2,"Pr(>Chisq)"]<(0.05/bfAdj)){
-        nonrepPD <- nonrepPD + 1
-      }
-      #otherwise drop down to test C vs C+N
-      else if(lrNext[2,"Pr(>Chisq)"]<(0.05/bfAdj)){
-        nonrepND <- nonrepND + 1
-      }
-      #otherwise drop down to test null vs C
-      else if(lrCurr[2,"Pr(>Chisq)"]<(0.05/bfAdj)){
-        nonrepCD <- nonrepCD + 1
-      }
-    }
-      
-   
+    shuff_nonrep_CD <- c(shuff_nonrep_CD, nonrepCD/actualRunNonrep)
+    shuff_nonrep_ND <- c(shuff_nonrep_ND, nonrepND/actualRunNonrep)
+    shuff_nonrep_PD <- c(shuff_nonrep_PD, nonrepPD/actualRunNonrep)
+    shuff_nonrep_Full <- c(shuff_nonrep_Full, nonrepFull/actualRunNonrep)
     
-  },silent=TRUE) 
+  }
 }
-sprintf("%s Alleys",o)
-
-print(sprintf("Repeating fields best model is P+C+N: %s",repFull/actualRunRep))
-print(sprintf("Repeating fields best mode is Current Dir: %s",repCD/actualRunRep))
-print(sprintf("Repeating fields best model is Previous Dir: %s",repPD/actualRunRep))
-print(sprintf("Repeating fields best model is Next Dir: %s",repND/actualRunRep))
-
-print(sprintf("Non-repeating fields best model is P+C+N: %s",nonrepFull/actualRunNonrep))
-print(sprintf("Non-repeating fields best mode is Current Dir: %s",nonrepCD/actualRunNonrep))
-print(sprintf("Non-repeating fields best model is Previous Dir: %s",nonrepPD/actualRunNonrep))
-print(sprintf("Non-repeating fields best model is Next Dir: %s",nonrepND/actualRunNonrep))
 
 
-
-
-
-
-
-
-
-
-
+# total <- actualRunRep + actualRunNonrep
+# print(sprintf("Repeating fields best model is P+C+N: %s",repFull/actualRunRep))
+# print(sprintf("Repeating fields best mode is Current Dir: %s",repCD/actualRunRep))
+# print(sprintf("Repeating fields best model is Previous Dir: %s",repPD/actualRunRep))
+# print(sprintf("Repeating fields best model is Next Dir: %s",repND/actualRunRep))
+# 
+# print(sprintf("Non-repeating fields best model is P+C+N: %s",nonrepFull/actualRunNonrep))
+# print(sprintf("Non-repeating fields best mode is Current Dir: %s",nonrepCD/actualRunNonrep))
+# print(sprintf("Non-repeating fields best model is Previous Dir: %s",nonrepPD/actualRunNonrep))
+# print(sprintf("Non-repeating fields best model is Next Dir: %s",nonrepND/actualRunNonrep))
 
 
 
