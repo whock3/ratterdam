@@ -28,8 +28,8 @@ two pages per sheet, on your printer options. That way it's only like 3pages pri
 from sys import argv
 import os, datetime, numpy as np
 
-script, data_directory = argv
-
+#script, data_directory = argv
+data_directory  =  "E:\\Ratterdam\\R808\\R808BRD6"
 
 
 def readNEV(datafile):

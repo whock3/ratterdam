@@ -20,7 +20,7 @@ import ratterdam_Defaults as Def
 datapath = "E:\\Ratterdam\\R_data_repetition\\20211003-201105_superPopAlleyBehaviorResponse_1.5vfilt.csv"
 df = pd.read_csv(datapath)
 passThresh = 5
-
+df = df[df.Traversal==True]
 
 #%% Fig 4a, 4b- violins of repeating vs nonrepeating, then scatter same
 meanDiff = []
@@ -82,23 +82,44 @@ plt.legend(prop={'size':30})
 cdmodel = pd.read_csv("E:\\Ratterdam\\2021_SfNPoster_WH\\Fig3_Directionality\\CD_model.csv")
 
 fig, ax = plt.subplots()
-ax.plot(cdmodel.m1_rmse[cdmodel.repOrNot==0],cdmodel.m2_rmse[cdmodel.repOrNot==0],
+ax.plot(cdmodel.m1_rmse[(cdmodel.repOrNot==0)&(cdmodel.sigP==1)],cdmodel.m2_rmse[(cdmodel.repOrNot==0)&(cdmodel.sigP==1)],
         marker='o',
         markersize=10,
         linestyle='',
         color='black',
-        label='Non-repeating')
-ax.plot(cdmodel.m1_rmse[cdmodel.repOrNot==1],cdmodel.m2_rmse[cdmodel.repOrNot==1],
+        alpha=0.6,
+        label='Non-repeating Significant')
+ax.plot(cdmodel.m1_rmse[(cdmodel.repOrNot==1)&(cdmodel.sigP==1)],cdmodel.m2_rmse[(cdmodel.repOrNot==1)&(cdmodel.sigP==1)],
         marker='o',
         markersize=10,
         linestyle='',
         color='red',
-        label='Repeating')
+        alpha=0.6,
+        label='Repeating Significant')
+
+ax.plot(cdmodel.m1_rmse[(cdmodel.repOrNot==0)&(cdmodel.sigP==0)],cdmodel.m2_rmse[(cdmodel.repOrNot==0)&(cdmodel.sigP==0)],
+        marker='s',
+        markersize=10,
+        linestyle='',
+        color='black',
+        alpha=0.6,
+        label='Non-repeating Non-significant')
+ax.plot(cdmodel.m1_rmse[(cdmodel.repOrNot==1)&(cdmodel.sigP==0)],cdmodel.m2_rmse[(cdmodel.repOrNot==1)&(cdmodel.sigP==0)],
+        marker='s',
+        markersize=10,
+        linestyle='',
+        color='red',
+        alpha=0.6,
+        label='Repeating Non-significant')
+
 ax.spines['top'].set_visible(False)
 ax.spines['right'].set_visible(False)
 ax.set_ylabel("Base Model \n+ Current Direction RMSE",fontsize=Def.ylabelsize)
 ax.set_xlabel("Base Model RMSE",fontsize=Def.xlabelsize)
 ax.tick_params(axis='both', which='major', labelsize=Def.ticksize)
-plt.legend(prop={'size':30})
+plt.legend(prop={'size':40},loc='upper right')
 ax.set_aspect('equal', adjustable='box')
 
+# to do
+# rep vs non scatter different color for rep status and marker for sig
+# redo tuning x bias with rep or non

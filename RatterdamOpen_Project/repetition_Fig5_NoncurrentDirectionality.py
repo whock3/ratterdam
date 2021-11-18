@@ -18,8 +18,8 @@ from scipy.stats import mannwhitneyu
 
 # taken from r, proportion of fields tested with best model being:
 #,c,p,n, pcn
-replrts = [0.238,0.137,0.119,0.045]
-nonreplrts = [0.238,0.119,0.071,0.047]
+replrts = [0.196,0.13,0.074,0.056]
+nonreplrts = [0.275,0.1,0.075,0.075]
 labels = ['+C','+C+P','+C+N','+P+C+N']
 
 fig, _ax = plt.subplots()
@@ -52,7 +52,7 @@ plt.subplots_adjust(left=0.2)
 
 #%% 5c - violins of rmse changes
 
-df = pd.read_csv("E:\\Ratterdam\\2021_SfNPoster_WH\\Fig5_NoncurrentDirectionality\\lrt_models_RMSE.csv")
+df = pd.read_csv("E:\\Ratterdam\\2021_SfNPoster_WH\\Fig5_NoncurrentDirectionality\\lrt_models_RMSE_noturnarounds.csv")
 
 fig, ax = plt.subplots()
 v = ax.violinplot([df.m2_rmse-df.m1_rmse,
@@ -81,7 +81,7 @@ plt.subplots_adjust(left=0.15)
 
 #%% 5d - violins of aic changes
 
-df = pd.read_csv("E:\\Ratterdam\\2021_SfNPoster_WH\\Fig5_NoncurrentDirectionality\\lrt_models_aic.csv")
+df = pd.read_csv("E:\\Ratterdam\\2021_SfNPoster_WH\\Fig5_NoncurrentDirectionality\\lrt_models_aic_noturnarounds.csv")
 df.dropna(inplace=True)
 fig, ax = plt.subplots()
 v = ax.violinplot([df.m2_aic-df.m1_aic,
@@ -107,3 +107,9 @@ ax.hlines(0,-0.5,3.5,color='k',linestyle='--',linewidth=2)
 ax.spines['top'].set_visible(False)
 ax.spines['right'].set_visible(False) 
 plt.subplots_adjust(left=0.15)
+
+
+
+
+##########################
+

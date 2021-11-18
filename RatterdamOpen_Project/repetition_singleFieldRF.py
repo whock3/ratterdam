@@ -41,10 +41,10 @@ from sklearn import svm, preprocessing, metrics
 from collections import Counter
 
  
-with open("E:\\Ratterdam\\R_data_repetition\\superPopulationRepetition.pickle","rb") as f:
+with open("E:\\Ratterdam\\R_data_repetition\\21-10-19_superpopulationRepetition.pickle","rb") as f:
     superpop = pickle.load(f)
     
-rat, day = 'R781', 'D3'
+rat, day = 'R859','D2'
 turns = superpop[rat][day]['turns']
 refturns = superpop[rat][day]['refturns']
 pop = superpop[rat][day]['units']
@@ -53,8 +53,13 @@ ratborders = nab.loadAlleyBounds(rat, day)
 #%% Parameters
 
 params = {'ntrees':1000,'nreps':1,'nshuff':1000}
-nsamples = 5
+nsamples = 3
 nbehaviors = 2
+
+verticals = [str(i) for i in [2,3,5,7,16,14,11,9]]
+horizontals = [str(i) for i in [0,4,6,1,12,8,15,13,10]]
+trackperimeter = [str(i) for i in [0,4,6,7,9,10,13,15,16,2]]
+trackinterior = [str(i) for i in [1,3,14,12,5,11, 8]]
 
 #sys.stdout = open("E:\\Ratterdam\\repetition_decoding\\21-10-14_decoding\\21-10-14_decoding.txt","w")
 
@@ -70,15 +75,11 @@ for unitname, unit in pop.items():
             print(f"Field {i}")
             for alleyfield in foverlap:
                 
+                #only looking at alleys right now
                 if type(alleyfield)==int:
                     print(f"Alley {alleyfield}")
         
                     border = ratborders.alleyInterBounds[str(alleyfield)]
-                    
-                    currentDirection, nextDirection, previousDirection = [], [], []
-                    turnIn, turnOut, trajectory = [], [], []
-                    
-                    responses = []
                     
                     contour = path.Path(perim)
                     field_pos = unit.position[contour.contains_points(unit.position[:,1:])]
@@ -92,10 +93,16 @@ for unitname, unit in pop.items():
                     elif str(alleyfield) in horizontals:
                         sections = np.linspace(border[0][0],border[0][1],num=numSections+1)
                         walls = border[1]
+                        
+                        
+                    currentDirection, nextDirection, previousDirection = [], [], []
+                    turnIn, turnOut, trajectory = [], [], []
+                    
+                    responses = np.empty((0,numSections))
                     
                     # Get all behavioral events
                     for t, turn in turns.iterrows():
-                        if int(turn['Alley+']) in foverlap:
+                        if int(turn['Alley+']) == alleyfield:
                             currd = Def.allocodedict[turn['Allo+']]
                             nd = Def.allocodedict[refturns.iloc[t+1]['Allo+']]
                             pd = Def.allocodedict[turn['Allo-']]
@@ -113,12 +120,16 @@ for unitname, unit in pop.items():
                             winSpikes = field_spikes[(field_spikes[:,0]>winStart)&(field_spikes[:,0]<=winEnd)]
                             winPos = field_pos[(field_pos[:,0]>winStart)&(field_pos[:,0]<=winEnd)]
                         
-                            sh = np.histogram2d(winSpikes[:,2], winSpikes[:,1], bins=[walls,sections])
-                            ph = np.histogram2d(winPos[:,2], winPos[:,1], bins=[walls,sections])
+                            if str(alleyfield) in horizontals:
+                                sh = np.histogram2d(winSpikes[:,2], winSpikes[:,1], bins=[walls,sections])
+                                ph = np.histogram2d(winPos[:,2], winPos[:,1], bins=[walls,sections])
+                            elif str(alleyfield) in verticals:
+                                sh = np.histogram2d(winSpikes[:,2], winSpikes[:,1], bins=[sections, walls])
+                                ph = np.histogram2d(winPos[:,2], winPos[:,1], bins=[sections, walls])
+                                
                             
-                            rates = sh[0]/ph[0]
-                            responses.append(rates[0])
-                    
+                            rate = sh[0]/ph[0]
+                            responses = np.vstack((responses, rate.reshape(1,rate.shape[0])))
                                                     
                             
                     currentDirection = np.asarray(currentDirection)
@@ -128,12 +139,11 @@ for unitname, unit in pop.items():
                     turnIn = np.asarray(turnIn)
                     turnOut = np.asarray(turnOut)
                     trajectory = np.asarray(trajectory)
-                    responses = np.asarray(responses)
                     
                     
                     # Now filter 
                     
-                    # 'X' is a lost turn bc algorithm couldnt 
+                    # 'X' is a lost turn bc algorithm couldnt ID the turn properly.
                     goodidx = np.where(currentDirection!='X')[0]
                     currentDirection = currentDirection[goodidx]
                     nextDirection = nextDirection[goodidx]
@@ -170,7 +180,7 @@ for unitname, unit in pop.items():
                                                                         np.random.permutation(currentDirection), 
                                                                         **params))
                         
-                        print(f"Real current direction decodng: {realCurrent}")
+                        print(f"Real current direction decoding: {realCurrent}")
                         print(f"95th percentile shuffle current direction decoding: {np.nanpercentile(shuffCurrent,95)}")
                     #%% Turns in
                     
@@ -193,16 +203,20 @@ for unitname, unit in pop.items():
                                 validbehaviors[k] = v
                         if len(validbehaviors) >= nbehaviors:
                             # keep valid behaviors only 
-                            filtTurnIn = [i for i in filtTurnIn if i in validbehaviors.keys()]
+                            sampledResponses, sampledTurnIn = [], []
+                            for r,s in zip(filtResponses, filtTurnIn):
+                                if s in validbehaviors.keys():
+                                    sampledResponses.append(r)
+                                    sampledTurnIn.append(s)
                             
-                            real = Decoder.runRandomForest(filtResponses, 
-                                                           filtTurnIn, 
+                            real = Decoder.runRandomForest(sampledResponses, 
+                                                           sampledTurnIn, 
                                                            **params)
                             
                             shuff = []
                             for i in range(params['nshuff']):
-                                shuff.extend(Decoder.runRandomForest(filtResponses, 
-                                                                            np.random.permutation(filtTurnIn), 
+                                shuff.append(Decoder.runRandomForest(sampledResponses, 
+                                                                            np.random.permutation(sampledTurnIn), 
                                                                             **params))
                             
                             print(f"Real {cdir} turn in decoding: {real}")
@@ -231,16 +245,20 @@ for unitname, unit in pop.items():
                                 validbehaviors[k] = v
                         if len(validbehaviors) >= nbehaviors:
                             # keep valid behaviors only 
-                            filtTurnOut = [i for i in filtTurnOut if i in validbehaviors.keys()]
+                            sampledResponses, sampledTurnOut = [],[]
+                            for r,s in zip(filtResponses, filtTurnOut):
+                                if s in validbehaviors.keys():
+                                    sampledResponses.append(r)
+                                    sampledTurnOut.append(s)
                             
-                            real = Decoder.runRandomForest(filtResponses, 
-                                                           filtTurnOut, 
+                            real = Decoder.runRandomForest(sampledResponses, 
+                                                           sampledTurnOut, 
                                                            **params)
                             
                             shuff = []
                             for i in range(params['nshuff']):
-                                shuff.extend(Decoder.runRandomForest(filtResponses, 
-                                                                     np.random.permutation(filtTurnOut), 
+                                shuff.append(Decoder.runRandomForest(sampledResponses, 
+                                                                     np.random.permutation(sampledTurnOut), 
                                                                      **params))
                                 
                             print(f"Real {cdir} turn out decoding: {real}")

@@ -24,7 +24,7 @@ cmap = util.makeCustomColormap()
 #%% Alleys
 datapath = "E:\\Ratterdam\\R_data_repetition\\20211003-201105_superPopAlleyBehaviorResponse_1.5vfilt.csv"
 df = pd.read_csv(datapath)
-
+df = df[df.Traversal==True]
 totalAnovas = 0
 fdirIntsAlley = []
 fdirAlley = []

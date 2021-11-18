@@ -15,6 +15,8 @@ library(splines)
 alleypath <- "E:\\Ratterdam\\R_data_repetition\\211005_AlleySuperpopDirVisitFiltered.csv"
 alleydf <- read.csv(alleypath,header=TRUE)
 
+
+
 alleydf$PrevDir <- as.factor(alleydf$PrevDir)
 alleydf$CurrDir <- as.factor(alleydf$CurrDir)
 alleydf$NextDir <- as.factor(alleydf$NextDir)
@@ -27,7 +29,7 @@ alleydf$FieldNum <- as.factor(alleydf$FieldNum)
 alleydf$FieldID <- as.factor(alleydf$FieldID)
 alleydf$Alleys <- as.factor(alleydf$Alleys)
 
-
+alleydf = alleydf[alleydf$Traversal=="True",]
 
 ###
 ### Time * Current Direction
@@ -103,29 +105,3 @@ for(o in c("V","H")){
     
 }
 
-
-
-##
-## Time alone
-##
-
-
-sigTime <- c()
-set.seed(123)
-for(o in c("V","H")){
-  oriendf <- subset(alleydf, Orientation==o)
-  
-  for(fid in unique(oriendf$FieldID)){
-    u<-try({
-      field <- subset(oriendf, FieldID==fid)
-      mod <- glm(Rate + 1 ~ ns(StartTimes,3),family='Gamma',data=field)
-      s<-summary(mod)
-      anysig <- FALSE
-      
-      print(fid)
-      print(s)
-      
-      
-    },silent=TRUE)
-  }
-}

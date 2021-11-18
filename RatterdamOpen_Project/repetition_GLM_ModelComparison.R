@@ -30,15 +30,8 @@ alleydf$Alleys <- as.factor(alleydf$Alleys)
 
 
 
-repFull <- 0
-repCD <- 0
-repPD <- 0
-repND <- 0
 
-nonrepFull <- 0
-nonrepCD <- 0
-nonrepPD <- 0
-nonrepND <- 0
+alleydf = alleydf[alleydf$Traversal=='True',]
 
 m1_rmse <- c()
 m2_rmse <- c()
@@ -52,7 +45,6 @@ m3_aic <- c()
 m4_aic <- c()
 m5_aic <- c()
 
-repOrNot <- c() # keep track of which fields are repeating for slicing purposes 
 
 lrCurr_pvals <- c() # keep all pvalues from lrtest(base, base+cd) regardless
                     # if thats the best model because want to plot rmse colored
@@ -61,13 +53,11 @@ lrCurr_pvals <- c() # keep all pvalues from lrtest(base, base+cd) regardless
 
 msigCD <- 0 # how many models have better fit w current dir, use to see if
             # num models with better fit of P+C+N is sig  by binomial 
-actualRunRep <- 0
-actualRunNonrep <- 0
 
 startTimeKnots = 3
 
-nshuffle <- 1000
-shuffle <- TRUE
+nshuffle <- 1
+shuffle <- FALSE
 
 shuff_rep_CD <- c()
 shuff_rep_ND <- c()
@@ -79,9 +69,28 @@ shuff_nonrep_ND <- c()
 shuff_nonrep_PD <- c()
 shuff_nonrep_Full <- c()
 
+sigP <- c() # save whether CD is sig, for figures
 
-if(shuffle==TRUE){
+if(shuffle==FALSE){
   for(s in 1:nshuffle){
+    
+    
+    repFull <- 0
+    repCD <- 0
+    repPD <- 0
+    repND <- 0
+    
+    nonrepFull <- 0
+    nonrepCD <- 0
+    nonrepPD <- 0
+    nonrepND <- 0
+    
+    actualRunRep <- 0
+    actualRunNonrep <- 0
+    
+    repOrNot <- c() # keep track of which fields are repeating for slicing purposes 
+    
+    
     print(s)
     for(o in c('V','H')){
       oriendf <- subset(alleydf, Orientation==o)
@@ -147,6 +156,14 @@ if(shuffle==TRUE){
           
           lrCurr_pvals <- c(lrCurr_pvals, lrCurr[2,"Pr(>Chisq)"])
           
+          if((lrCurr[2,"Pr(>Chisq)"] < 0.05)&(!is.nan(lrCurr[2,"Pr(>Chisq)"]))){
+            
+            sigP <- c(sigP, 1)
+          }
+          else{
+            sigP <- c(sigP, 0)
+          }
+          
           bfAdj <- 5 # adjust for multiple comparisons via Bonferroni correction
           
           # Case checks for repeating fields
@@ -209,16 +226,16 @@ if(shuffle==TRUE){
 }
 
 
-# total <- actualRunRep + actualRunNonrep
-# print(sprintf("Repeating fields best model is P+C+N: %s",repFull/actualRunRep))
-# print(sprintf("Repeating fields best mode is Current Dir: %s",repCD/actualRunRep))
-# print(sprintf("Repeating fields best model is Previous Dir: %s",repPD/actualRunRep))
-# print(sprintf("Repeating fields best model is Next Dir: %s",repND/actualRunRep))
-# 
-# print(sprintf("Non-repeating fields best model is P+C+N: %s",nonrepFull/actualRunNonrep))
-# print(sprintf("Non-repeating fields best mode is Current Dir: %s",nonrepCD/actualRunNonrep))
-# print(sprintf("Non-repeating fields best model is Previous Dir: %s",nonrepPD/actualRunNonrep))
-# print(sprintf("Non-repeating fields best model is Next Dir: %s",nonrepND/actualRunNonrep))
+total <- actualRunRep + actualRunNonrep
+print(sprintf("Repeating fields best model is P+C+N: %s",repFull/actualRunRep))
+print(sprintf("Repeating fields best mode is Current Dir: %s",repCD/actualRunRep))
+print(sprintf("Repeating fields best model is Previous Dir: %s",repPD/actualRunRep))
+print(sprintf("Repeating fields best model is Next Dir: %s",repND/actualRunRep))
+
+print(sprintf("Non-repeating fields best model is P+C+N: %s",nonrepFull/actualRunNonrep))
+print(sprintf("Non-repeating fields best mode is Current Dir: %s",nonrepCD/actualRunNonrep))
+print(sprintf("Non-repeating fields best model is Previous Dir: %s",nonrepPD/actualRunNonrep))
+print(sprintf("Non-repeating fields best model is Next Dir: %s",nonrepND/actualRunNonrep))
 
 
 

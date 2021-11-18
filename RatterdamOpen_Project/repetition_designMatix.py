@@ -26,7 +26,7 @@ retroegolevels = ["S","R","B","L"]
 # (defined as three turns together) regardless of field locations. (also this overcounts bc >>1 field at some locations)
 df = pd.read_csv('E:\\Ratterdam\\R_data_repetition\\20210924-145911_superPopAlleyBehaviorResponse_1.5vfilt.csv')
 
-rat, day = 'R781', 'D3'
+rat, day = 'R859', 'D2'
 rdf = df[(df['Rat']==rat)&(df['Day']==day)]
 
 designSpace = {}
@@ -51,15 +51,20 @@ for k,v in designSpace.items():
         
         
         
-plt.figure()
-plt.bar(range(len(validDesignSpace)), validDesignSpace.values())
-plt.xticks(ticks=range(len(validDesignSpace)),labels=validDesignSpace.keys(),rotation=45)
-plt.ylabel("Frequency",fontsize=20)
-plt.title(f"{rat}{day} Population Obtained Design Space (Alleys)",fontsize=24)
-plt.text(8,800,s="Key:\nPrevDir > CurrDir > NextDir > RetroEgo > ProspEgo",fontsize=14)
+fig, ax = plt.subplots()
+ax.bar(range(len(validDesignSpace)), validDesignSpace.values())
+ax.set_xticks(ticks=range(len(validDesignSpace)))
+ax.set_xticklabels(labels=validDesignSpace.keys(),rotation=45)
+ax.ylabel("Frequency",fontsize=20)
+ax.title(f"{rat}{day} Population Obtained Design Space (Alleys)",fontsize=24)
+ax.text(8,800,s="Key:\nPrevDir > CurrDir > NextDir > RetroEgo > ProspEgo",fontsize=14)
 for i,(k,v) in enumerate(validDesignSpace.items()):
-    plt.text(i-0.2,v+1.5,s=v,fontsize=12)
-    
+    ax.text(i-0.2,v+1.5,s=v,fontsize=24)
+ax.spines['top'].set_visible(False)
+ax.spines['right'].set_visible(False)
+ax.set_ylabel("Absolute Mean Difference (Hz)",fontsize=Def.ylabelsize)
+ax.set_xlabel("Field ID",fontsize=Def.xlabelsize)
+ax.tick_params(axis='both', which='major', labelsize=Def.ticksize)
 
 #%% 
 
