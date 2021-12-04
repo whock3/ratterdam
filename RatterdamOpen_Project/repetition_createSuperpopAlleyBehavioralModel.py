@@ -77,7 +77,7 @@ trackinterior = [str(i) for i in [1,3,14,12,5,11, 8]]
 
 
 
-for rat, day in zip(['R808', 'R808', 'R859', 'R859', 'R886', 'R886'], ['D6', 'D7', 'D1', 'D2', 'D1','D2']):
+for rat, day in zip(['R765','R781','R781','R808','R808','R859','R859','R886','R886'], ['RFD5','D3','D4','D6','D7','D1','D2','D1','D2']):
     df = f'E:\\Ratterdam\\{rat}\\{rat}_RatterdamOpen_{day}\\'
     population, turns = RepCore.loadRecordingSessionData(rat, day)
     

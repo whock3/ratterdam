@@ -54,7 +54,8 @@ fig.axes[0].set_ylabel("Frequency",fontsize=30)
 #%% Fig 3b and 3c - scatterplot of each field's directional tuning and hist of same
 # v
 from scipy.stats import mannwhitneyu
-datapath = "E:\\Ratterdam\\R_data_repetition\\20211003-201105_superPopAlleyBehaviorResponse_1.5vfilt.csv"
+#datapath = "E:\\Ratterdam\\R_data_repetition\\20211003-201105_superPopAlleyBehaviorResponse_1.5vfilt.csv"
+datapath  = "E:\\Ratterdam\\R_data_repetition\\211127_AlleySuperpopDirVisitFiltered.csv"
 df = pd.read_csv(datapath)
 
 passThresh = 5

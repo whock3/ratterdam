@@ -29,7 +29,7 @@ from sys import argv
 import os, datetime, numpy as np
 
 #script, data_directory = argv
-data_directory  =  "E:\\Ratterdam\\R808\\R808BRD6"
+data_directory  =  "E:\\Ratterdam\\R781\\R781BRD2"
 
 
 def readNEV(datafile):

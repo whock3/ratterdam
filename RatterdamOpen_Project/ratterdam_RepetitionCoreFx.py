@@ -46,7 +46,7 @@ def loadRepeatingUnit(rat, day, clustName, smoothing=2, vthresh=Def.velocity_fil
     df = f'E:\Ratterdam\\{rat}\\{rat}_RatterdamOpen_{day}\\'
     with open(df+"sessionEpochInfo.txt","r") as f:
         lines = f.readlines()
-    start, end = int(lines[0].split(',')[0]), int(lines[0].split(',')[1])
+    start, end = float(lines[0].split(',')[0]), float(lines[0].split(',')[1])
     pos = util.read_pos(df)
     ts = np.asarray(sorted(list(pos.keys())))
     posx, posy = Parse.adjustPosCamera(df, pos, ts)

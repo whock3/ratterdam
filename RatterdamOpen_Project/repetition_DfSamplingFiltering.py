@@ -37,7 +37,7 @@ def filterUnitDirSampling(uOriented, direction, passThresh=3):
         if directions[0] in dircounts.keys() and directions[1] in dircounts.keys():
             if dircounts[directions[0]] >= passThresh and dircounts[directions[1]] >= passThresh:
                 includedFields.append(fnum)
-    if len(includedFields)>=2:
+    if len(includedFields)>=1:
         uValid = uOriented[uOriented['FieldNum'].isin(includedFields)]
     else:
         uValid = None
