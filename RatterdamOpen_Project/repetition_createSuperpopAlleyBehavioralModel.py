@@ -64,6 +64,7 @@ cellnames, fieldnums, cellIDs, fieldIDs = [], [], [], []
 repeating = []
 startTimes = []
 rats, days, alleys = [], [], []
+nfields = [] # number of fields a cell has. want to look at things by fieldedness and # fields 
 traversal = [] # list of bools corresponding to whether rat went thru alley (True) or turned around (False)
 visitRewards = []
 allocodedict = {'1':'N','2':'E','3':'S','4':'W','0':'X'}
@@ -134,7 +135,11 @@ for rat, day in zip(['R765','R781','R781','R808','R808','R859','R859','R886','R8
                         behav = unit.position[(unit.position[:,0]>ts_start)&(unit.position[:,0]<=ts_end)]
                         behav = behav[(behav[:,1]>0)&(behav[:,2]>0)]
                         
-                        filtOutcome = RepCore.filterVisit(dista,distb,behav,perim,length_thresh=0.3,dist_thresh=0.1,dist_point_thresh=3,inside_point_thresh=3)
+                        filtOutcome = RepCore.filterVisit(dista,distb,behav,perim,
+                                                          length_thresh=0.25,
+                                                          dist_thresh=0.1,
+                                                          dist_point_thresh=2,
+                                                          inside_point_thresh=2)
                         
                         if filtOutcome == True:
                             rats.append(rat)
@@ -177,6 +182,7 @@ for rat, day in zip(['R765','R781','R781','R808','R808','R859','R859','R886','R8
                             fieldnums.append(fnum)
                             cellIDs.append(cellcounter)
                             fieldIDs.append(fieldcounter)
+                            nfields.append(len(unit.fields))
                         
                         
                         
@@ -192,6 +198,7 @@ df = pd.DataFrame(data=list(zip(rats,
                                 cellIDs,
                                 fieldnums,
                                 fieldIDs,
+                                nfields,
                                 alleys,
                                 previousDirection,
                                 currentDirection,
@@ -212,6 +219,7 @@ columns=["Rat",
          "CellID",
          "FieldNum",
          "FieldID",
+         "NumFields",
          "Alleys",
          "PrevDir",
          "CurrDir",

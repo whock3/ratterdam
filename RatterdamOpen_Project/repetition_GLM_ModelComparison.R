@@ -1,6 +1,6 @@
 ## (G)LMM Models and Model Comparisons For Testing Effect of Behavioral Variables
 ## On Individual Field Firing.
-## WH Repetition Project 18-10-21
+## WH Repetition Project 21-10-18
 
 library(lme4)
 library(ggplot2)
@@ -12,7 +12,13 @@ library(ggpubr)
 library(splines)
 
 # Load data and recode factors
-alleypath <- "E:\\Ratterdam\\R_data_repetition\\211127_AlleySuperpopDirVisitFiltered.csv"
+
+# 211207 has 30% field overlap threshold and revised traversal thresholds as of 12-6-21
+alleypath <- "E:\\Ratterdam\\R_data_repetition\\211207_AlleySuperpopDirVisitFiltered.csv"
+
+# 211206 has 45% field overlap threshold and revised traversal thresholds as of 12-6-21
+#alleypath <- "E:\\Ratterdam\\R_data_repetition\\211206_AlleySuperpopDirVisitFiltered.csv"
+
 
 alleydf <- read.csv(alleypath,header=TRUE)
 
@@ -27,6 +33,7 @@ alleydf$CellID <- as.factor(alleydf$CellID)
 alleydf$FieldNum <- as.factor(alleydf$FieldNum)
 alleydf$FieldID <- as.factor(alleydf$FieldID)
 alleydf$Alleys <- as.factor(alleydf$Alleys)
+alleydf$NumFields <- as.numeric(alleydf$NumFields)
 
 
 
@@ -134,20 +141,7 @@ if(shuffle==FALSE){
           m3_aic <- c(m3_aic, m3$aic)
           m4_aic <- c(m4_aic, m4$aic)
           m5_aic <- c(m5_aic, m5$aic)
-          
-          
-          #keep track of how many fields were tested by group
-          if(unique(field$Repeating)=='True'){
-            actualRunRep <- actualRunRep + 1
-            repOrNot <- c(repOrNot, TRUE)
-          }
-          else if(unique(field$Repeating)=='False'){
-            actualRunNonrep <- actualRunNonrep + 1
-            repOrNot <- c(repOrNot, FALSE)
-          }
-          
-      
-            
+ 
           lrCurr <- lrtest(m1,m2)
           lrPrev <- lrtest(m2,m3)
           lrNext <- lrtest(m2,m4)
@@ -165,9 +159,11 @@ if(shuffle==FALSE){
           }
           
           bfAdj <- 5 # adjust for multiple comparisons via Bonferroni correction
-          
+          nfields <- as.numeric(unique(as.character(field$NumFields)))
           # Case checks for repeating fields
           if(unique(field$Repeating)=='True'){
+            actualRunRep <- actualRunRep + 1
+            repOrNot <- c(repOrNot, TRUE)
               if((lrFullA[2,"Pr(>Chisq)"]<(0.05/bfAdj))&(lrFullB[2,"Pr(>Chisq)"]<(0.05/bfAdj))){
                 repFull <- repFull + 1
               }
@@ -183,17 +179,19 @@ if(shuffle==FALSE){
                 
               }
               
-              
           }
           
           
           # Case checks for nonrepeating fields
-          else if(unique(field$Repeating)=='False'){
+          else if((unique(field$Repeating)=='False')&(nfields==1)){
+            actualRunNonrep <- actualRunNonrep + 1
+            repOrNot <- c(repOrNot, FALSE)
               if((lrFullA[2,"Pr(>Chisq)"]<(0.05/bfAdj))&(lrFullB[2,"Pr(>Chisq)"]<(0.05/bfAdj))){
                 nonrepFull <- nonrepFull + 1
               }
               else if((lrPrev[2,"Pr(>Chisq)"]<(0.05/bfAdj))&(lrNext[2,"Pr(>Chisq)"]>(0.05/bfAdj))){
                 nonrepPD <- nonrepPD + 1
+                print(fid)
                 
               }
               else if((lrPrev[2,"Pr(>Chisq)"]>(0.05/bfAdj))&(lrNext[2,"Pr(>Chisq)"]<(0.05/bfAdj))){
@@ -227,15 +225,46 @@ if(shuffle==FALSE){
 
 
 total <- actualRunRep + actualRunNonrep
-print(sprintf("Repeating fields best model is P+C+N: %s",repFull/actualRunRep))
-print(sprintf("Repeating fields best mode is Current Dir: %s",repCD/actualRunRep))
-print(sprintf("Repeating fields best model is Previous Dir: %s",repPD/actualRunRep))
-print(sprintf("Repeating fields best model is Next Dir: %s",repND/actualRunRep))
+print(sprintf("Repeating fields best model is P+C+N: %s (%s/%s)",repFull/actualRunRep,repFull,actualRunRep))
+print(sprintf("Repeating fields best mode is Current Dir: %s (%s/%s)",repCD/actualRunRep,repCD,actualRunRep))
+print(sprintf("Repeating fields best model is Previous Dir: %s (%s/%s)",repPD/actualRunRep,repPD,actualRunRep))
+print(sprintf("Repeating fields best model is Next Dir: %s (%s/%s)",repND/actualRunRep,repND,actualRunRep))
 
-print(sprintf("Non-repeating fields best model is P+C+N: %s",nonrepFull/actualRunNonrep))
-print(sprintf("Non-repeating fields best mode is Current Dir: %s",nonrepCD/actualRunNonrep))
-print(sprintf("Non-repeating fields best model is Previous Dir: %s",nonrepPD/actualRunNonrep))
-print(sprintf("Non-repeating fields best model is Next Dir: %s",nonrepND/actualRunNonrep))
+print(sprintf("Non-repeating fields best model is P+C+N: %s (%s/%s)",nonrepFull/actualRunNonrep,nonrepFull,actualRunNonrep))
+print(sprintf("Non-repeating fields best mode is Current Dir: %s (%s/%s)",nonrepCD/actualRunNonrep,nonrepCD,actualRunNonrep))
+print(sprintf("Non-repeating fields best model is Previous Dir: %s (%s/%s)",nonrepPD/actualRunNonrep,nonrepPD,actualRunNonrep))
+print(sprintf("Non-repeating fields best model is Next Dir: %s (%s/%s)",nonrepND/actualRunNonrep,nonrepND,actualRunNonrep))
+
+counts <- c(repFull/actualRunRep,
+            repCD/actualRunRep,
+            repPD/actualRunRep,
+            repND/actualRunRep,
+            nonrepFull/actualRunNonrep,
+            nonrepCD/actualRunNonrep,
+            nonrepPD/actualRunNonrep,
+            nonrepND/actualRunNonrep
+            )
+barnames <- c("Rep Full",
+              "Rep CD",
+              "Rep PD",
+              "Rep ND",
+              "Nonrep Full",
+              "Nonrep CD",
+              "Nonrep PD",
+              "Nonrep ND")
+
+barplot(counts, names.arg=barnames,
+        col=c('red','red','red','red','grey','grey','grey','grey'),
+        main='Repeating versus Single-Fielded Non-repeating (>=45% alley overlap)')
+abline(h = 0.05, col="black", lwd=3, lty=2)
+
+
+
+
+
+
+
+
 
 
 

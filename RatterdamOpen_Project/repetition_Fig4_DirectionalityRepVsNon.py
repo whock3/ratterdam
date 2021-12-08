@@ -18,7 +18,7 @@ from scipy.stats import sem
 import ratterdam_Defaults as Def 
 
 #datapath = "E:\\Ratterdam\\R_data_repetition\\20211003-201105_superPopAlleyBehaviorResponse_1.5vfilt.csv"
-datapath  = "E:\\Ratterdam\\R_data_repetition\\211127_AlleySuperpopDirVisitFiltered.csv"
+datapath  = "E:\\Ratterdam\\R_data_repetition\\211206_AlleySuperpopDirVisitFiltered.csv"
 
 df = pd.read_csv(datapath)
 passThresh = 5

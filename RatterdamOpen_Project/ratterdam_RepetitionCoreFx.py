@@ -164,7 +164,7 @@ def filterVisit(dista,distb,traj,perim,length_thresh=0.4,dist_thresh=0.10,dist_p
     dist_point_thresh : int, optional
         How many points must be dist_thresh away. The default is 3.
     inside_point_thresh : int, optional
-        What # of points must be inside field. The default is 3.
+        What # of points must be inside field. The default is 
     
     Returns
     -------
@@ -178,21 +178,26 @@ def filterVisit(dista,distb,traj,perim,length_thresh=0.4,dist_thresh=0.10,dist_p
     
     # test 0 - is the trajectory even inside the field?
     contour = path.Path(perim)
-    pctInside = sum(contour.contains_points(traj[:,1:]))
-    if pctInside >= inside_point_thresh:
-        
+    ptsInside = sum(contour.contains_points(traj[:,1:]))
+    if ptsInside >= inside_point_thresh:
+        trajin = traj[contour.contains_points(traj[:,1:])]
         #test 1 - how far into the field does the trajectory excurse 
         #below,compute distance between 1st point and all others to get max dist inside field
         # Check against a threshold to see if visit passes this test 
-        maxdist = max(np.linalg.norm(traj[0,1:]-traj[:,1:],axis=1))
+        
+        #max dist using either beginning or end as entpoint against which
+        # to compare other points (in the field)
+        maxdistA = max(np.linalg.norm(trajin[0,1:]-trajin[:,1:],axis=1)) # original way did comparison vs first pt
+        maxdistB = max(np.linalg.norm(trajin[-1,1:]-trajin[:,1:],axis=1))
+        maxdist = max(maxdistA, maxdistB)
         if maxdist >= length_thresh*dista or maxdist >= length_thresh*distb:
             passLengthThresh = True 
         
         # test 2 - does the trajectory in the field get far enough
         # from the borders to avoid just "skirting" the edge of the field
-        trajin = traj[contour.contains_points(traj[:,1:])]
+        
         mind = [min(np.linalg.norm(i[1:]-perim,axis=1)) for i in trajin]
-        minDist = max(dist_thresh*dista, dist_thresh*distb)
+        minDist = min(dist_thresh*dista, dist_thresh*distb)
         for k, g in groupby((mind>minDist)):
             if k == True:
                 g = list(g)
