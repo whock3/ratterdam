@@ -369,7 +369,7 @@ def plotRoutine_RepPF_TempDyn(unit, nf=99, time='time', save=False, savepath=[])
     
     """
     clust = unit.name
-    fig, ax = plt.subplots(1,2, figsize=(17,5))
+    fig, ax = plt.subplots(2,1, figsize=(17,5))
     
     fig.axes[0].imshow(unit.repUnit.rateMap2D, origin='lower', aspect='auto', interpolation='None', 
                        cmap=cmap, vmax=np.nanpercentile(unit.repUnit.rateMap2D, 98),
@@ -409,17 +409,19 @@ def plotRoutine_RepPF_TempDyn(unit, nf=99, time='time', save=False, savepath=[])
             elif time  == 'visit' or time == 'visits':
                 xval = range(field.shape[0])
             
-            fig.axes[1].plot(xval, field[:,1], color=unit.colors[i], marker='.',alpha=0.8,label=f"Field {i}")
-            fig.axes[0].plot(unit.perimeters[i][:,0], unit.perimeters[i][:,1],color=unit.colors[i])
+            fig.axes[1].plot(xval, field[:,1], color=unit.colors[i],alpha=0.8,label=f"Field {i}",linewidth=5)
+            fig.axes[0].plot(unit.perimeters[i][:,0], unit.perimeters[i][:,1],color=unit.colors[i],linewidth=5)
             fig.axes[1].text(xval[0]-0.1,field[0,1]-0.1,i)
-            fig.axes[1].tick_params(axis='y', labelsize=14)
-            fig.axes[1].tick_params(axis='x', labelsize=14)
-            fig.axes[1].set_xlabel(f"Time in session ({(lambda x: 'min' if x == 'time' else 'visits')(time)})", fontsize=18)
-            fig.axes[1].set_ylabel(f"Firing Rate Hz (sigma = {unit.smoothing})", fontsize=18)
+            fig.axes[1].tick_params(axis='y', labelsize=32)
+            fig.axes[1].tick_params(axis='x', labelsize=32)
+            fig.axes[1].set_xlabel(f"Time in session ({(lambda x: 'min' if x == 'time' else 'visits')(time)})", fontsize=32)
+            fig.axes[1].set_ylabel(f"Firing Rate Hz (sigma = {unit.smoothing})", fontsize=32)
             fig.axes[1].spines['right'].set_visible(False)
             fig.axes[1].spines['top'].set_visible(False)
-            fig.axes[1].set_title("Place Field Dynamics", fontsize=20)
-            fig.axes[1].legend()
+            fig.axes[1].set_title("Place Field Time Dynamics", fontsize=42)
+            lgnd = fig.axes[1].legend(prop={'size':32})
+            for handle in lgnd.legendHandles:
+                handle._legmarker.set_markersize(30)
     
     if save:
         clustname = clust.replace("\\","_")
@@ -495,6 +497,7 @@ def interpolateField(fields,name,wnSize=5*1e6*60, wnStep=2*1e6*60,s=5,k=3,plot=T
     if ret:
         return xs, ys
     
+import datetime
 def plotMats(clustname, mats, wins, mattype='diff',vthresh=[],cm=None):
     ncol=10
     if cm is None:
@@ -508,14 +511,17 @@ def plotMats(clustname, mats, wins, mattype='diff',vthresh=[],cm=None):
     
     for i in range(len(mats)):
         im = fig.axes[i].imshow(mats[i], aspect='auto',interpolation='None', cmap=cm, vmin=_min, vmax=_max)
-        fig.axes[i].set_title(f"Mins {wins[i][0]}-{wins[i][1]}")
-    fig.subplots_adjust(right=0.8)
-    cbar_ax = fig.add_axes([0.85, 0.15, 0.05, 0.7])
-    fig.colorbar(im, cax=cbar_ax)
+        a = str(datetime.timedelta(seconds=(wins[i][0]-wins[0][0])/1e6))[2:4]
+        b = str(datetime.timedelta(seconds=(wins[i][1]-wins[0][0])/1e6))[2:4]
+        fig.axes[i].set_title(f"{a}-{b}''",fontsize=30)
+    #fig.subplots_adjust(right=0.8)
+    #cbar_ax = fig.add_axes([0.85, 0.15, 0.05, 0.7])
+    #fig.colorbar(im, cax=cbar_ax)
     for i in range(len(fig.axes)):
         fig.axes[i].set_xticks([])
         fig.axes[i].set_yticks([])
     plt.suptitle(f"{clustname} Time Varying Unsigned Mean {mattype} Matrices", fontsize=16)
+    plt.tight_layout()
     
 def corrOfMats(mats, plot=True, ret=False):
     corrOfcorrs = np.empty((len(mats),len(mats)))

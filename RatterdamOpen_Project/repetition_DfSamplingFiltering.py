@@ -44,14 +44,23 @@ def filterUnitDirSampling(uOriented, direction, passThresh=3):
     return uValid
 
 
-def filterAlleyDatasets(df,filterFx):
+def filterAlleyDatasets(df,filterFx,filterR=True,filterT=True):
     """
     FOr alleys 
     Take pd df for whole dataset (rats + days)
     Apply filterFx to each cell within it 
     And return new df with filtered units
+    
+    filterR - remove alley traversals that were rewarded
+    filterT - remove turnarounds in alleys
     """
     newDf = []
+    
+    if filterT:
+        df = df[df.Traversal==True]
+    if filterR:
+        df = df[df.Reward==False]
+    
     for cellid in df['CellID'].unique():
         u = df[df['CellID']==cellid]
         for d in ['V','H']:

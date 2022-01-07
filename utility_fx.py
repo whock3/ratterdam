@@ -769,7 +769,7 @@ def readRepeatingCells(file, df):
     cells = tabulations[np.where(tabulations[:,1]=="True")[0], 0]
     return cells
 
-def drawRegion(ax, bounds,color,txt=None):
+def drawRegion(ax, bounds,color,txt=None,txtcolor=None):
     """
     Bounds are the corners of a region on the track
     Format is [[xmin, xmax], [ymin, ymax]]
@@ -780,7 +780,11 @@ def drawRegion(ax, bounds,color,txt=None):
     w,h = bounds[0][1] - bounds[0][0], bounds[1][1] - bounds[1][0]
     ax.add_patch(Rectangle((x0,y0),w,h,color=color))
     if txt is not None:
-        ax.text(x0+(w/2), y0+(h/2), txt, fontsize=20)
+        if txtcolor == None:
+            ax.text(x0+(w/2), y0+(h/2), txt, fontsize=54)
+        else:
+            ax.text(x0+(w/2), y0+(h/2), txt, fontsize=54,color=txtcolor)
+
     ax.autoscale_view() # for some reason the axes dont update automatically, so run this
 
 

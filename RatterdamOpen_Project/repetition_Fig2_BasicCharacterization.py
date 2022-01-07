@@ -23,7 +23,7 @@ import utility_fx as util
 
 
 #%%  Setting up superpop raw and saving 
-failsafe
+failsafe # cause error so i dont accidently start regenerating this data dict
 superpop = {}
 ts = util.genTimestamp()
 

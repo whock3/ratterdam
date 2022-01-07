@@ -238,12 +238,22 @@ beltwayAlleys = [16,17,3,1,5,7,8,10,11]
 beltwayAlleyLookup = {16:1, 17:2, 3:3, 1:4, 5:5, 7:6, 8:7, 10:8, 11:9}
 
 
-fieldOverlapThresh = 0.3 # threshold for repetition analysis, deciding what 
+fieldOverlapThresh_min = 0.3 # threshold for repetition analysis, deciding what 
                     # proportion of size of region the field overlaps with before
                     # its said to overlap that region. e.g. if thresh is 0.1
                     # then the field overlaps a region if it impinges on an area
                     # equal to 10% or more of the size of that region in surface area 
                     
+                    
+fieldOverlapThresh_max = 1.0   # 21-12-08, adding a max overlap argument for
+                                # analyses where I just want to look at portions
+                                #of fields encroaching slightly on an alley
+                                # (eg 10-30% overlap). For existing analysis
+                                #looking at fields overlapping significantly w 
+                                # alley the max will simply be 1 
+
+
+    
 # Codes are, in order, North,East,South,West
 # and Forward,Right,Back,Left (i.e. cw round circle centered on rat
 #in both cases) for allo, ego respectively 

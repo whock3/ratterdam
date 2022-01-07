@@ -14,10 +14,22 @@ library(splines)
 # Load data and recode factors
 
 # 211207 has 30% field overlap threshold and revised traversal thresholds as of 12-6-21
-alleypath <- "E:\\Ratterdam\\R_data_repetition\\211207_AlleySuperpopDirVisitFiltered.csv"
+#alleypath <- "E:\\Ratterdam\\R_data_repetition\\211207_AlleySuperpopDirVisitFiltered.csv"
 
 # 211206 has 45% field overlap threshold and revised traversal thresholds as of 12-6-21
 #alleypath <- "E:\\Ratterdam\\R_data_repetition\\211206_AlleySuperpopDirVisitFiltered.csv"
+
+
+# 211208 has 10-45% overlap. I.e. we want just the penumbra. Traversal thresholds same
+# except length thresh is 0.1 not 0.25 (because field pieces so small you dont want
+# to miss everything)
+#alleypath <- "E:\\Ratterdam\\R_data_repetition\\211208_AlleySuperpopDirVisitFiltered.csv"
+
+
+# 211210 has 30% field overlap threshold and slightly looser traversal thresholds 
+alleypath <- "E:\\Ratterdam\\R_data_repetition\\211220_AlleySuperpopDirVisitFiltered.csv"
+
+
 
 
 alleydf <- read.csv(alleypath,header=TRUE)
@@ -34,11 +46,6 @@ alleydf$FieldNum <- as.factor(alleydf$FieldNum)
 alleydf$FieldID <- as.factor(alleydf$FieldID)
 alleydf$Alleys <- as.factor(alleydf$Alleys)
 alleydf$NumFields <- as.numeric(alleydf$NumFields)
-
-
-
-
-alleydf = alleydf[alleydf$Traversal=='True',]
 
 m1_rmse <- c()
 m2_rmse <- c()
@@ -124,10 +131,16 @@ if(shuffle==FALSE){
         mrun <- try({
           # 21-10-24 changed models to include main effect of time expressed as 
           # ns(StartTimes,nknots). Before the m1 ws y ~ 1 and other models were same minus that time term
+          # m1 <- glm(Rate+1 ~ ns(StartTimes,startTimeKnots), family='Gamma', data=field)
+          # m2 <- glm(Rate+1 ~ CurrDir + ns(StartTimes,startTimeKnots), family = 'Gamma', data=field)
+          # m3 <- glm(Rate+1 ~ PrevDir + CurrDir + ns(StartTimes,startTimeKnots), family='Gamma',data=field)
+          # m4 <- glm(Rate+1 ~ CurrDir + NextDir + ns(StartTimes,startTimeKnots), family='Gamma',data=field)
+          # m5 <- glm(Rate+1 ~ PrevDir + CurrDir + NextDir + ns(StartTimes,startTimeKnots), family='Gamma',data=field)
+          
           m1 <- glm(Rate+1 ~ ns(StartTimes,startTimeKnots), family='Gamma', data=field)
-          m2 <- glm(Rate+1 ~ CurrDir + ns(StartTimes,startTimeKnots), family = 'Gamma', data=field)
-          m3 <- glm(Rate+1 ~ PrevDir + CurrDir + ns(StartTimes,startTimeKnots), family='Gamma',data=field)
-          m4 <- glm(Rate+1 ~ CurrDir + NextDir + ns(StartTimes,startTimeKnots), family='Gamma',data=field)
+          m2 <- glm(Rate+1 ~ NextDir + ns(StartTimes,startTimeKnots), family = 'Gamma', data=field)
+          m3 <- glm(Rate+1 ~ NextDir + CurrDir + ns(StartTimes,startTimeKnots), family='Gamma',data=field)
+          m4 <- glm(Rate+1 ~ NextDir + PrevDir + ns(StartTimes,startTimeKnots), family='Gamma',data=field)
           m5 <- glm(Rate+1 ~ PrevDir + CurrDir + NextDir + ns(StartTimes,startTimeKnots), family='Gamma',data=field)
           
           m1_rmse <- c(m1_rmse, sqrt(mean((field$Rate-m1$fitted.values)^2)))
@@ -191,8 +204,7 @@ if(shuffle==FALSE){
               }
               else if((lrPrev[2,"Pr(>Chisq)"]<(0.05/bfAdj))&(lrNext[2,"Pr(>Chisq)"]>(0.05/bfAdj))){
                 nonrepPD <- nonrepPD + 1
-                print(fid)
-                
+
               }
               else if((lrPrev[2,"Pr(>Chisq)"]>(0.05/bfAdj))&(lrNext[2,"Pr(>Chisq)"]<(0.05/bfAdj))){
                 nonrepND <- nonrepND + 1 
@@ -255,7 +267,7 @@ barnames <- c("Rep Full",
 
 barplot(counts, names.arg=barnames,
         col=c('red','red','red','red','grey','grey','grey','grey'),
-        main='Repeating versus Single-Fielded Non-repeating (>=45% alley overlap)')
+        main='Repeating versus Single-Fielded Non-repeating')
 abline(h = 0.05, col="black", lwd=3, lty=2)
 
 

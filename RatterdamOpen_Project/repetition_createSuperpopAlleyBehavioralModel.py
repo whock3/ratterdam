@@ -136,7 +136,7 @@ for rat, day in zip(['R765','R781','R781','R808','R808','R859','R859','R886','R8
                         behav = behav[(behav[:,1]>0)&(behav[:,2]>0)]
                         
                         filtOutcome = RepCore.filterVisit(dista,distb,behav,perim,
-                                                          length_thresh=0.25,
+                                                          length_thresh=0.2,
                                                           dist_thresh=0.1,
                                                           dist_point_thresh=2,
                                                           inside_point_thresh=2)

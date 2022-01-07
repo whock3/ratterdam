@@ -18,11 +18,11 @@ from scipy.stats import sem
 
 savepath = 'E:\\Ratterdam\\repetition_models\\21-09-29_anovas\\'
 
-passThresh = 3
+passThresh = 1
 cmap = util.makeCustomColormap()
 
 #%% Alleys
-datapath = "E:\\Ratterdam\\R_data_repetition\\20211003-201105_superPopAlleyBehaviorResponse_1.5vfilt.csv"
+datapath = "E:\\Ratterdam\\R_data_repetition\\211220_AlleySuperpopDirVisitFiltered.csv"
 df = pd.read_csv(datapath)
 df = df[df.Traversal==True]
 totalAnovas = 0
@@ -120,7 +120,7 @@ for celldata in fdirIntsAlley:
     plt.savefig(savepath+f"{rat}{day}_{clustName}_{celldata[1]}"+"AlleyFieldDirAnovas.png",dpi=300)    
     plt.close()
 #%%  Intersections
-datapath = "E:\\Ratterdam\\R_data_repetition\\20211005-170829_superPopInterBehaviorResponse_1.5vfilt.csv"
+datapath = "E:\\Ratterdam\\R_data_repetition\\211220_AlleySuperpopDirVisitFiltered.csv"
 df = pd.read_csv(datapath)
 totalAnovas = 0
 fdirIntsInter = []
@@ -231,6 +231,11 @@ for celldata in fdirIntsInter:
     
     
 #%% Making directional ratemaps using net travel (ie. schematic track) method (not pt-by-pt dir)
+import pickle 
+cmap = util.makeCustomColormap()
+with open("E:\\Ratterdam\\R_data_repetition\\21-10-19_superPopulationRepetition.pickle","rb") as f:
+    superpop = pickle.load(f) 
+    
 bins=[50,70]
 savepath = 'E:\\Ratterdam\\repetition_models\\netTravelDirectionalityRMs\\'
 for rat in superpop.keys():
@@ -314,7 +319,7 @@ for rat in superpop.keys():
             
             
             plt.suptitle(f"{rat}{day} {unit.name} {title}")
-            plt.savefig(savepath+f"{rat}{day}_{cn}_netTravelDirectionality.png",dpi=300)
+            plt.savefig(savepath+f"{rat}{day}_{cn}_netTravelDirectionality.svg",dpi=300)
             plt.close()
         
 

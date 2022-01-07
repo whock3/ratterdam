@@ -1,13 +1,11 @@
 # -*- coding: utf-8 -*-
 """
-Created on Sat Oct 23 18:26:47 2021
+Created on Mon Dec 20 15:29:12 2021
 
 @author: whockei1
 
-Fig 4  - Directionality in Repeating vs Nonrepeating Neurons
-for Sfn 2021 and first draft paper 
+Figure 3 - Repeating versus Non-repeating Cells wrt Directionality
 """
-#%% Imports and loading data
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -16,28 +14,26 @@ import json, pickle
 from scipy.stats import mannwhitneyu
 from scipy.stats import sem 
 import ratterdam_Defaults as Def 
+import repetition_manuscript_defaults as MDef
 
-#datapath = "E:\\Ratterdam\\R_data_repetition\\20211003-201105_superPopAlleyBehaviorResponse_1.5vfilt.csv"
-datapath  = "E:\\Ratterdam\\R_data_repetition\\211210_AlleySuperpopDirVisitFiltered.csv"
 
+datapath  = "E:\\Ratterdam\\R_data_repetition\\211220_AlleySuperpopDirVisitFiltered.csv"
 df = pd.read_csv(datapath)
-df = df[df.Traversal==True]
 
-#%% Fig 4a, 4b- violins of repeating vs nonrepeating, then scatter same
+#%% Figure 4A - Violins of Repeating vs Non-repeating directionality (abs mean diff)
+
 meanDiff = []
 repeating = []
 for orien in ['V','H']:
     odf = df[df.Orientation==orien]
     for fname, fgroup in odf.groupby("FieldID"):
         dirs = np.unique(fgroup.CurrDir)
-        # there are two unique directions through an alley. If there are fewer,
-        # then dont run bc not enough sampling. If more, there's an error
-        if len(dirs) == 2:
+        if len(dirs)==2:
             dirA = fgroup[fgroup.CurrDir==dirs[0]]
             dirB = fgroup[fgroup.CurrDir==dirs[1]]
             meanDiff.append(abs(dirA.Rate.mean()-dirB.Rate.mean()))
             repeating.append(np.unique(fgroup.Repeating)[0])
-                
+                    
 meanDiff = np.asarray(meanDiff)
 repeating = np.asarray(repeating)
                 
@@ -59,29 +55,16 @@ for el in ['cbars','cmaxes','cmins']:
     nonrepviolin[el].set_color('dodgerblue')
 
 ax.set_xticks([1,2])
-ax.set_xticklabels(["Repeating Fields", "Non-repeating Fields"],fontsize=Def.xlabelsize)
+ax.set_xticklabels(["Repeating Fields", "Non-repeating Fields"],fontsize=MDef.xlabelsize)
 ax.spines['top'].set_visible(False)
 ax.spines['right'].set_visible(False)
-ax.spines['left'].set_linewidth(3)
-ax.spines['bottom'].set_linewidth(3)
-ax.set_ylabel("Absolute Mean Difference (Hz)",fontsize=Def.ylabelsize)
-ax.tick_params(axis='both', which='major', labelsize=Def.ticksize)
-
-fig, _ax  = plt.subplots()
-ax = fig.axes[0]
-ax.scatter(range(meanDiff[repeating==True].shape[0]),meanDiff[repeating==True],c='red',s=40,zorder=99,label='Repeating')
-ax.scatter(range(meanDiff[repeating==False].shape[0]),meanDiff[repeating==False],c='dodgerblue',s=40,zorder=99,label='Non-repeating')
-ax.spines['top'].set_visible(False)
-ax.spines['right'].set_visible(False)
-ax.spines['left'].set_linewidth(3)
-ax.spines['bottom'].set_linewidth(3)
-ax.set_ylabel("Absolute Mean Difference (Hz)",fontsize=Def.ylabelsize)
-ax.set_xlabel("Field ID",fontsize=Def.xlabelsize)
-ax.tick_params(axis='both', which='major', labelsize=Def.ticksize)
-plt.legend(prop={'size':30})
+ax.spines['left'].set_linewidth(MDef.spine_width)
+ax.spines['bottom'].set_linewidth(MDef.spine_width)
+ax.set_ylabel("Absolute Mean Difference (Hz)",fontsize=MDef.ylabelsize)
+ax.tick_params(axis='both', which='major', labelsize=MDef.ticksize)
 
 
-#%% fig 4c glm results from r, mse change in base glm vs base+CD
+#%% Figure 4B - GLM LRT CD, rep vs nonrep 
 
 cdmodel = pd.read_csv("E:\\Ratterdam\\repetition_manuscript\\Figure2\\211216_CDmodel.csv")
 
@@ -118,16 +101,52 @@ ax.plot(cdmodel.m1_rmse[(cdmodel.repOrNot==1)&(cdmodel.sigP==0)],cdmodel.m2_rmse
 
 ax.spines['top'].set_visible(False)
 ax.spines['right'].set_visible(False)
-ax.spines['left'].set_linewidth(3)
-ax.spines['bottom'].set_linewidth(3)
-ax.set_ylabel("Base Model \n+ Current Direction RMSE",fontsize=Def.ylabelsize)
-ax.set_xlabel("Base Model RMSE",fontsize=Def.xlabelsize)
-ax.tick_params(axis='both', which='major', labelsize=Def.ticksize)
-lgnd = plt.legend(prop={'size':40},loc='upper right')
-for leg_handle in lgnd.legendHandles:
-    leg_handle._legmarker.set_markersize(30)
-ax.set_aspect('equal', adjustable='box')
+ax.spines['left'].set_linewidth(MDef.spine_width)
+ax.spines['bottom'].set_linewidth(MDef.spine_width)
+ax.set_ylabel("Base Model \n+ Current Direction RMSE",fontsize=MDef.ylabelsize)
+ax.set_xlabel("Base Model RMSE",fontsize=MDef.xlabelsize)
+ax.tick_params(axis='both', which='major', labelsize=MDef.ticksize)
+lgnd = plt.legend(prop={'size':MDef.legend_size})
+for lhand in lgnd.legendHandles:
+    lhand._legmarker.set_markersize(MDef.legend_marker_size)
+lgnd.get_frame().set_linewidth(MDef.legend_frame_width)
 
-# to do
-# rep vs non scatter different color for rep status and marker for sig
-# redo tuning x bias with rep or non
+
+#%% Figure 3C - schematic of GLM LRT tests. No py code used here
+
+#%% Fig 3D - results of GLM LRTs 
+
+#taken from R results 
+rep = [31/128, 18/128, 9/128, 2/128]
+nr_all = [18/75, 6/75, 6/75, 4/75]
+nr_multi = [12/45, 6/45, 4/45, 2/45]
+nr_single = [6/30, 0/30, 2/30, 2/30]
+
+rows = ["+Current Dir", "+Previous Dir", "+Next Dir", "All Dirs"]
+
+data = {'Repeating':rep,
+        "Multi-field Non-repeating":nr_multi,
+        "Single field Non-repeating":nr_single
+       }
+
+df = pd.DataFrame(data)
+
+ax = df.plot(kind='bar',
+        color=['red','navy','cornflowerblue','lightblue'],
+        fontsize=MDef.xlabelsize
+        )
+
+ax.set_xticks([0,1,2,3])
+ax.set_xticklabels(rows,rotation=0)
+ax.set_ylabel("Proportion of Fields",fontsize=MDef.ylabelsize)
+ax.spines['top'].set_visible(False)
+ax.spines['right'].set_visible(False)
+ax.spines['left'].set_linewidth(MDef.spine_width)
+ax.spines['bottom'].set_linewidth(MDef.spine_width)
+ax.hlines(0.05,-0.5,4,linestyle='--',color='k',linewidth=5)
+plt.subplots_adjust(bottom=0.2)
+lgnd = plt.legend(prop={'size':MDef.legend_size})
+for lhand in lgnd.legendHandles:
+    #for some reason, lgnd.legendHandles._legmarker doesnt work here? But does elsewhere?
+    lhand._sizes = [MDef.legend_marker_size]
+lgnd.get_frame().set_linewidth(MDef.legend_frame_width)

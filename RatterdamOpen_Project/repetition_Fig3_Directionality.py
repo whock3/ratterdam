@@ -38,7 +38,7 @@ plt.xlabels(fontsize=16)
 fig, ax = plt.subplots()
 fig.axes.hist(naive_perf,bins=np.linspace(0,1,100),facecolor='dodgerblue', edgecolor='navy')
 fig.axes[0].hist(naive_perf,bins=np.linspace(0,1,100),facecolor='dodgerblue', edgecolor='navy')
-fig.axes[0].hist(real[5],bins=np.linspace(0,1,100),facecolor='black', edgecolor='grey')
+fig.axes[0].hist(real[5],bins=np.linspace(0,1,100),facecolor='b lack', edgecolor='grey')
 fig.axes[0].vlines(real[4],0,250,color='r',linewidth=3)
 fig.axes[0].tick_params(axis='both', which='major', labelsize=18)
 fig.axes[0].tick_params(axis='both', which='major', labelsize=20)
@@ -55,10 +55,8 @@ fig.axes[0].set_ylabel("Frequency",fontsize=30)
 # v
 from scipy.stats import mannwhitneyu
 #datapath = "E:\\Ratterdam\\R_data_repetition\\20211003-201105_superPopAlleyBehaviorResponse_1.5vfilt.csv"
-datapath  = "E:\\Ratterdam\\R_data_repetition\\211127_AlleySuperpopDirVisitFiltered.csv"
+datapath  = "E:\\Ratterdam\\R_data_repetition\\211210_AlleySuperpopDirVisitFiltered.csv"
 df = pd.read_csv(datapath)
-
-passThresh = 5
 
 pvals = []
 meanDiff = []
@@ -71,9 +69,12 @@ for orien in ['V','H']:
         if len(dirs) == 2:
             dirA = fgroup[fgroup.CurrDir==dirs[0]]
             dirB = fgroup[fgroup.CurrDir==dirs[1]]
-            if dirA.shape[0] >= passThresh and dirB.shape[0] >= passThresh:
+            try:
                 pvals.append(mannwhitneyu(dirA.Rate, dirB.Rate).pvalue)
                 meanDiff.append(abs(dirA.Rate.mean()-dirB.Rate.mean()))
+            except:
+                pvals.append(1)
+                meanDiff.append(0)
             
             
 
@@ -81,14 +82,31 @@ meanDiff = np.asarray(meanDiff)
 pvals = np.asarray(pvals)
 fig, _ax = plt.subplots()
 ax = fig.axes[0]
-ax.plot(meanDiff[pvals>=0.05],linestyle='',marker='.',color='k',markersize=15,label='Non-Directional')
-ax.plot(meanDiff[pvals<0.05],linestyle='',marker='.',color='r',markersize=15,label='Directional')
+ax.plot(np.where(pvals>=0.05)[0],meanDiff[pvals>=0.05],
+        linestyle='',
+        marker='.',
+        color='k',
+        markersize=30,
+        label='Non-directional')
+ax.plot(np.where(pvals<0.05)[0],meanDiff[pvals<0.05],
+        linestyle='',
+        marker='.',
+        color='r',
+        markersize=30,
+        label='Directional')
+
 ax.tick_params(axis='both', which='major', labelsize=Def.ticksize)
 ax.spines['top'].set_visible(False)
 ax.spines['right'].set_visible(False)
+ax.spines['left'].set_linewidth(5)
+ax.spines['bottom'].set_linewidth(5)
 ax.set_ylabel("Absolute Mean Difference (Hz)",fontsize=Def.ylabelsize)
 ax.set_xlabel("Field Number",fontsize=Def.xlabelsize)
-plt.legend(prop={'size':30})
+lgnd = plt.legend(prop={'size':44})
+#change the marker size manually for both lines
+lgnd.legendHandles[0]._legmarker.set_markersize(30)
+lgnd.legendHandles[1]._legmarker.set_markersize(30)
+lgnd.get_frame().set_linewidth(4)
 
 fig, _ax = plt.subplots()
 ax = fig.axes[0]
@@ -205,7 +223,7 @@ plt.subplots_adjust(bottom=0.3)
 
 #%% 3f - model comparison - lrt base vs base+CD
 
-cdmodel = pd.read_csv("E:\\Ratterdam\\2021_SfNPoster_WH\\Fig3_Directionality\\CD_model.csv")
+cdmodel = pd.read_csv("E:\\Ratterdam\\repetition_manuscript\\Figure2\\211216_CDmodel.csv")
 
 fig, ax = plt.subplots()
 ax.plot(cdmodel.m1_rmse[cdmodel.sigP==0],cdmodel.m2_rmse[cdmodel.sigP==0],

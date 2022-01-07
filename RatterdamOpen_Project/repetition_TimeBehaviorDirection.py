@@ -19,7 +19,7 @@ import ratterdam_RepetitionCoreFx as RepCore
 
 #%% Load data
 
-datapath =  "E:\\Ratterdam\\R_data_repetition\\211005_AlleySuperpopDirVisitFiltered.csv"
+datapath =  "E:\\Ratterdam\\R_data_repetition\\211210_AlleySuperpopDirVisitFiltered.csv"
 df = pd.read_csv(datapath)
 wnSizeMin = 10
 wnStepMin = 5
@@ -125,62 +125,81 @@ dbins = np.linspace(0,max(diffs),nbins)
 bbins = np.linspace(0.5,max(biases),nbins)
 sbins = np.linspace(1.5,max(speeds),nbins)
 
-fig, _ax = plt.subplots(2,3)
+fig, _ax = plt.subplots(1,3,figsize=(12,9))
 plt.suptitle(f"Directional Bias vs Directionality, {wnSizeMin}min win, {wnStepMin}min step, all datasets",
              fontsize=30)
 ax = fig.axes[0]
 ax.scatter(biases,diffs,s=_msize,alpha=_a,c=_c)
-ax.set_xlabel("Directional Bias", fontsize=18)
-ax.set_ylabel("Normalized Abs Mean Difference in FR By Dir",fontsize=18)
-ax.set_title("Behavioral Bias in Direction vs Directional Tuning",fontsize=20)
+ax.set_xlabel("Directional Bias", fontsize=32)
+ax.set_ylabel("Normalized Abs Mean Difference\n in FR By Dir",fontsize=32)
+ax.set_title("Behavioral Bias in Direction \n vs Directional Tuning",fontsize=32)
+
+ax.tick_params(axis='both', which='major', labelsize=Def.ticksize)
+ax.spines['top'].set_visible(False)
+ax.spines['right'].set_visible(False)
+ax.spines['left'].set_linewidth(3)
+ax.spines['bottom'].set_linewidth(3)
 
 ax = fig.axes[1]
 ax.scatter(speeds,diffs,s=_msize,alpha=_a,c=_c)
-ax.set_xlabel("Average running Speed (cm/s)",fontsize=18)
+ax.set_xlabel("Average running Speed (cm/s)",fontsize=32)
 ax.set_xlim([sbins[0],sbins[-1]])
-ax.set_ylabel("Normalized Abs Mean Difference in FR by Dir",fontsize=18)
-ax.set_title("Running Speed vs Directional Tuning",fontsize=20)
+ax.set_ylabel("Normalized Abs Mean Difference\n in FR by Dir",fontsize=32)
+ax.set_title("Running Speed vs Directional Tuning",fontsize=32)
+
+ax.tick_params(axis='both', which='major', labelsize=Def.ticksize)
+ax.spines['top'].set_visible(False)
+ax.spines['right'].set_visible(False)
+ax.spines['left'].set_linewidth(3)
+ax.spines['bottom'].set_linewidth(3)
 
 ax = fig.axes[2]
 ax.scatter(speeds,biases,s=_msize,alpha=_a,c=_c)
-ax.set_xlabel("Average running speed (cm/s)",fontsize=18)
+ax.set_xlabel("Average running speed (cm/s)",fontsize=32)
 ax.set_xlim([sbins[0],sbins[-1]])
-ax.set_ylabel("Directional Bias",fontsize=18)
-ax.set_title("Running Speed vs Directional Bias", fontsize=20)
+ax.set_ylabel("Directional Bias",fontsize=32)
+ax.set_title("Running Speed vs Directional Bias", fontsize=32)
+
+ax.tick_params(axis='both', which='major', labelsize=Def.ticksize)
+ax.spines['top'].set_visible(False)
+ax.spines['right'].set_visible(False)
+ax.spines['left'].set_linewidth(3)
+ax.spines['bottom'].set_linewidth(3)
 
 
-ax = fig.axes[3]
-h,_,_ = np.histogram2d(diffs,biases,bins=[dbins,bbins])
-ax.imshow(h/h.sum(axis=0),
-                        origin='lower',
-                        extent=[bbins[0],bbins[-1],dbins[0],dbins[-1]],
-                        aspect='auto',
-                        vmax=.3)
-ax.set_xlabel("Behavioral Direction Bias",fontsize=18)
-ax.set_ylabel("Absolute Mean Difference in Directions, \n normalized by field mean (%)",fontsize=18)
-ax.set_title("row-wise normed")
+# ax = fig.axes[3]
+# h,_,_ = np.histogram2d(diffs,biases,bins=[dbins,bbins])
+# ax.imshow(h/h.sum(axis=0),
+#                         origin='lower',
+#                         extent=[bbins[0],bbins[-1],dbins[0],dbins[-1]],
+#                         aspect='auto',
+#                         vmax=.3)
+# ax.set_xlabel("Behavioral Direction Bias",fontsize=18)
+# ax.set_ylabel("Absolute Mean Difference in Directions, \n normalized by field mean (%)",fontsize=18)
+# ax.set_title("row-wise normed")
 
 
-ax = fig.axes[4]
-h,_,_ = np.histogram2d(diffs,speeds,bins=[dbins,sbins])
-ax.imshow(h,
-                        origin='lower',
-                        extent=[sbins[0],sbins[-1],dbins[0],dbins[-1]],
-                        aspect='auto')
-ax.set_xlabel("Average Running Speed (cm/s)",fontsize=18)
-ax.set_ylabel("Absolute Mean Difference in Directions, \n normalized by field mean (%)",fontsize=18)
+
+# ax = fig.axes[4]
+# h,_,_ = np.histogram2d(diffs,speeds,bins=[dbins,sbins])
+# ax.imshow(h,
+#                         origin='lower',
+#                         extent=[sbins[0],sbins[-1],dbins[0],dbins[-1]],
+#                         aspect='auto')
+# ax.set_xlabel("Average Running Speed (cm/s)",fontsize=18)
+# ax.set_ylabel("Absolute Mean Difference in Directions, \n normalized by field mean (%)",fontsize=18)
 
 
-ax = fig.axes[5]
-h,_,_ = np.histogram2d(speeds,biases,bins=[sbins,bbins])
-ax.imshow(h/h.sum(axis=0),
-                        origin='lower',
-                        extent=[bbins[0],bbins[-1],sbins[0],sbins[-1]],
-                        aspect='auto'
-                        )
-ax.set_xlabel("Behavioral Direction Bias",fontsize=18)
-ax.set_ylabel("Average Running Speed",fontsize=18)
-ax.set_title("row-wise normed")
+# ax = fig.axes[5]
+# h,_,_ = np.histogram2d(speeds,biases,bins=[sbins,bbins])
+# ax.imshow(h/h.sum(axis=0),
+#                         origin='lower',
+#                         extent=[bbins[0],bbins[-1],sbins[0],sbins[-1]],
+#                         aspect='auto'
+#                         )
+# ax.set_xlabel("Behavioral Direction Bias",fontsize=18)
+# ax.set_ylabel("Average Running Speed",fontsize=18)
+# ax.set_title("row-wise normed")
 
 #%% troubleshooting weird envelope thing
 

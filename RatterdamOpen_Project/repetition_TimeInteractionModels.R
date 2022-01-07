@@ -12,7 +12,7 @@ library(ggpubr)
 library(splines)
 
 # Load data and recode factors
-alleypath <- "E:\\Ratterdam\\R_data_repetition\\211206_AlleySuperpopDirVisitFiltered.csv"
+alleypath <- "E:\\Ratterdam\\R_data_repetition\\211220_AlleySuperpopDirVisitFiltered.csv"
 alleydf <- read.csv(alleypath,header=TRUE)
 
 
