@@ -36,7 +36,7 @@ alleydf$Alleys <- as.factor(alleydf$Alleys)
 alleydf$NumFields <- as.numeric(alleydf$NumFields)
 
 
-#alleydf <- subset(alleydf, NumFields==1)
+alleydf <- subset(alleydf, Repeating=='True')
 
 startTimeKnots = 3
 shuffle <- FALSE
