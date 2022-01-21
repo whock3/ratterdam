@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Created on Thu Sep 23 15:29:40 2021
+Created on Thu Jan 20 16:47:11 2022
 
 @author: whockei1
 
@@ -8,6 +8,10 @@ Script to create and assess statistics of design matrix
 - of cross rat/day
 - of single rat/day
 - viewing pop response across behavioral types 
+
+For intersections. Spiking data for each intersection labelled with the previous
+allocentric direction, current egocentric turn, and next allocentric direction
+(2/3 define the 3rd, however). 
 """
 import pandas as pd, numpy as np
 from matplotlib import pyplot as plt 
@@ -17,22 +21,20 @@ from collections import Counter
 
 prevdirlevels = ["N","E","S","W"]
 nextdirlevels = ["N","E","S","W"]
-currdirlevels = ["N","E","S","W"]
-prospegolevels = ["S","R","B","L"]
-retroegolevels = ["S","R","B","L"]
+egolevels = ["S","R","B","L"]
 
 # defining the design space from the csv below, or anything like it, is wrong because it takes into account
 # field locations. It's defining the FR response and labels for visits to fields. But we want ethogram of all behaviors
 # (defined as three turns together) regardless of field locations. (also this overcounts bc >>1 field at some locations)
 #df = pd.read_csv('E:\\Ratterdam\\R_data_repetition\\20210924-145911_superPopAlleyBehaviorResponse_1.5vfilt.csv')
 
-datapath = "E:\\Ratterdam\\R_data_repetition\\211220_AlleySuperpopDirVisitFiltered.csv"
+datapath = "E:\\Ratterdam\\R_data_repetition\\20220120-164311_superPopInterBehaviorResponse_1.5vfilt.csv"
 df = pd.read_csv(datapath)
 
 
 codes = []
 for r, row in df.iterrows():
-   code = f'{row["PrevDir"]}{row["CurrDir"]}{row["NextDir"]}'
+   code = f'{row["PrevDir"]}{row["CurrEgo"]}{row["NextDir"]}'
    codes.append(code)
 df = df.assign(code=codes)
    
@@ -40,20 +42,20 @@ df = df.assign(code=codes)
 
 timestamp = util.genTimestamp()
 
-rat, day = 'R859', 'D2'
+#%%
+rat, day = 'R781', 'D3'
 rdf = df[(df['Rat']==rat)&(df['Day']==day)]
 
 designSpace = {}
 for ld in prevdirlevels:
-    for cd in currdirlevels:
+    for ed in egolevels:
         for nd in nextdirlevels:
-            for re in retroegolevels:
-                for pe in prospegolevels:
-                    designSpace[f'{ld}{cd}{nd}{re}{pe}'] = 0
+        
+            designSpace[f'{ld}{ed}{nd}'] = 0
                     
 
 for tnum, traversal in rdf.iterrows():
-    designSpace[f"{traversal['PrevDir']}{traversal['CurrDir']}{traversal['NextDir']}{traversal['RetroEgo']}{traversal['ProspEgo']}"] += 1
+    designSpace[f"{traversal['PrevDir']}{traversal['CurrEgo']}{traversal['NextDir']}"] += 1
     
 
 validDesignSpace = {}
@@ -70,8 +72,8 @@ ax.bar(range(len(validDesignSpace)), validDesignSpace.values())
 ax.set_xticks(ticks=range(len(validDesignSpace)))
 ax.set_xticklabels(labels=validDesignSpace.keys(),rotation=45)
 ax.set_ylabel("Frequency",fontsize=20)
-ax.set_title(f"{rat}{day} Population Obtained Design Space (Alleys)",fontsize=24)
-ax.text(8,800,s="Key:\nPrevDir > CurrDir > NextDir > RetroEgo > ProspEgo",fontsize=14)
+ax.set_title(f"{rat}{day} Population Obtained Design Space (Intersections)",fontsize=24)
+ax.text(8,800,s="Key:\nPrev Dir > Ego Turn > Next Dir",fontsize=14)
 for i,(k,v) in enumerate(validDesignSpace.items()):
     ax.text(i-0.2,v+1.5,s=v,fontsize=24)
 ax.spines['top'].set_visible(False)
@@ -100,7 +102,7 @@ for c, uname in zip(colors,np.unique(rdf['CellName'])):
 #         fig.axes[i].plot(ugroup.StartTimes,ugroup.Rate,linestyle='',marker='o',color=cdict[uname])
         
 # figure for each alley. subplot for each behavior. bar for each cell mean. +/- std
-for a, agroup in rdf.groupby('Alleys'):
+for a, agroup in rdf.groupby('Inters'):
     fig, ax = plt.subplots(int(np.ceil(agroup['code'].unique().shape[0]/5)),5,sharey=True,figsize=(15,10))
     for i,(cname, codegroup) in enumerate(agroup.groupby('code')):
         means, stds, names = [], [], []
@@ -114,8 +116,8 @@ for a, agroup in rdf.groupby('Alleys'):
         fig.axes[i].set_ylabel("Mean +/- SEM",fontsize=12)
         fig.axes[i].set_title(cname)
         fig.axes[i].grid(True)
-    plt.suptitle(f"Alley {a}")
-    plt.savefig("E:\\Ratterdam\\temp\\ethogramsByField\\"+f"{timestamp}_{rat}{day}_Alley{a}_TrajResponse.png",dpi=300)
+    plt.suptitle(f"Intersection {a}")
+    plt.savefig("E:\\Ratterdam\\temp\\ethogramsByField\\"+f"{timestamp}_{rat}{day}_Intersection{a}_TrajResponse.png",dpi=300)
     plt.close()
     
     

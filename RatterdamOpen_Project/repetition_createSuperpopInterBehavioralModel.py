@@ -67,11 +67,13 @@ def drawTrack(ax=None):
 # label. So lmer RE component doesnt think, e.g. field 4 from two different repeating
 # cells is the same thing. 
 cellcounter, fieldcounter = 0, 0
-previousDirection, currentEgo, nextDirection, prospectiveEgo, retrospectiveEgo, turnNums, rates = [], [], [], [], [], [], []
+previousDirection , nextDirection, currentEgo, turnNums, rates = [], [], [], [], []
 cellnames, fieldnums, cellIDs, fieldIDs = [], [], [], []
 repeating = []
 startTimes = []
-
+rats, days, inters = [], [], []
+nfields = [] # number of fields a cell has. want to look at things by fieldedness and # fields 
+traversal = [] # list of bools corresponding to whether rat went thru alley (True) or turned around (False)
 allocodedict = {'1':'N','2':'E','3':'S','4':'W','0':'X'}
 egocodedict = {'1':'S','2':'R','3':'B','4':'L','0':'X'}
 
@@ -79,17 +81,19 @@ egocodedict = {'1':'S','2':'R','3':'B','4':'L','0':'X'}
 verticals = [str(i) for i in [2,3,5,7,16,14,11,9]]
 horizontals = [str(i) for i in [0,4,6,1,12,8,15,13,10]]
 trackperimeter = [str(i) for i in [0,4,6,7,9,10,13,15,16,2]]
-trackinterior = [str(i) for i in [1,3,14,12,5,11,8]]
+trackinterior = [str(i) for i in [1,3,14,12,5,11, 8]]
 
 
 
-for rat, day in zip(['R765', 'R781', 'R781', 'R808', 'R808', 'R859', 'R859', 'R886', 'R886'], ['RFD5', 'D3', 'D4', 'D6', 'D7', 'D1', 'D2', 'D1','D2']):
+for rat, day in zip(['R765','R781','R781','R808','R808','R859','R859','R886','R886'], ['RFD5','D3','D4','D6','D7','D1','D2','D1','D2']):
     df = f'E:\\Ratterdam\\{rat}\\{rat}_RatterdamOpen_{day}\\'
     population, turns = RepCore.loadRecordingSessionData(rat, day)
     
-    superpopAlleyDf = []
+    superpopInterDf = []
     
     ratborders = nab.loadAlleyBounds(rat, day)
+    rewards = RepCore.readinRewards(rat, day)
+
     codedict = {'1':'N','2':'E','3':'S','4':'W','0':'X'}
     
     # Remove turnarounds/pivots
@@ -97,7 +101,10 @@ for rat, day in zip(['R765', 'R781', 'R781', 'R808', 'R808', 'R859', 'R859', 'R8
     for i in range(1,turns.shape[0]-1):
        row = turns.iloc[i]
        inter = row['Inter']
-       if row['Ego'] != '3' and turns.iloc[i+1].Inter != inter and turns.iloc[i-1].Inter != inter:
+       # edit 10/2 removing check that last turn's inter wasnt the same,
+       # i.e if alley- had a turnaround. since we are looking at things
+       # in terms of alley+, only remove a turn if thats where a turnaround was
+       if row['Ego'] != '3' and turns.iloc[i+1].Inter != inter:
            ballisticTurnIdx.append(i)
     
     refturns = copy.deepcopy(turns) # keep a copy without filtering.
@@ -122,38 +129,60 @@ for rat, day in zip(['R765', 'R781', 'R781', 'R808', 'R808', 'R859', 'R859', 'R8
             
             # R model will just use the IDs which will be unique for each cell and field.
             # but I still want the real name and field num there for inspection purposes
-            for tnum, turn in turns.iterrows():
+            for tnum, turn in refturns.iterrows():
+                if tnum < refturns.shape[0]-1:
                 
-                # Because turn definition is staggered as it moves across track,
-                # pick either alley+ or alley- by convention and make the ts, labels
-                # match that choice 
-                
-                if turn['Inter'] in foverlap:
+                    # Because turn definition is staggered as it moves across track,
+                    # pick either alley+ or alley- by convention and make the ts, labels
+                    # match that choice 
                     
-                    ts_start, ts_end = float(turn['Ts exit']), float(turn['Ts entry'])
-                    behav = unit.position[(unit.position[:,0]>ts_start)&(unit.position[:,0]<=ts_end)]
-                    behav = behav[(behav[:,1]>0)&(behav[:,2]>0)]
-                    
-                    filtOutcome = RepCore.filterVisit(dista,distb,behav,perim,length_thresh=0.3,dist_thresh=0.1,dist_point_thresh=3,inside_point_thresh=3)
-                    
-                    if filtOutcome == True:
-                        turnNums.append(tnum)
-                        previousDirection.append(allocodedict[turn['Allo-']])
-                        nextDirection.append(allocodedict[turn['Allo+']])
-                        startTimes.append(ts_start)
+                    if turn['Inter'] in foverlap: 
+                        
+                        ts_start, ts_end = float(turn['Ts entry']), float(refturns.iloc[tnum+1]['Ts exit'])
+                        behav = unit.position[(unit.position[:,0]>ts_start)&(unit.position[:,0]<=ts_end)]
+                        behav = behav[(behav[:,1]>0)&(behav[:,2]>0)]
+                        
+                        filtOutcome = RepCore.filterVisit(dista,distb,behav,perim,
+                                                          length_thresh=0.2,
+                                                          dist_thresh=0.1,
+                                                          dist_point_thresh=2,
+                                                          inside_point_thresh=2)
+                        
+                        if filtOutcome == True:
+                            rats.append(rat)
+                            days.append(day)
+                            turnNums.append(tnum)
+                            inters.append(turn['Inter'])
                             
-                        currentEgo.append(egocodedict[turn['Ego']])
-                        prospectiveEgo.append(egocodedict[refturns.iloc[tnum+1]['Ego']])
-                        retrospectiveEgo.append(egocodedict[refturns.iloc[tnum-1]['Ego']])
-                        repeating.append(repeat) # label if cell is repeating so we can group by repeating status later in R
-                        
-                        
-                        # get spikes on alley (using the ts as endpoints) and filter by field perim to get spikes in field
-                        rates.append(contour.contains_points(unit.spikes[(unit.spikes[:,0]>ts_start)&(unit.spikes[:,0]<= ts_end),1:]).shape[0]/((ts_end-ts_start)/1e6))
-                        cellnames.append(f"{rat}_{day}_{clustName}")
-                        fieldnums.append(fnum)
-                        cellIDs.append(cellcounter)
-                        fieldIDs.append(fieldcounter)
+                            # 1-20-22: copied code from script to create superpop for alley data
+                            # That script notes rewards so they can be removed later. They may confound response
+                            # But you don't get rewarded at Intersections, so don't note them. may add back if I change mind.
+                            
+                            # isReward = np.where(np.asarray([(ts_start < i < ts_end) for i in rewards])==True)[0]
+                            # if isReward.shape[0]>0:
+                            #     visitRewards.append(True)
+                            # else:
+                            #     visitRewards.append(False)
+                            
+                            previousDirection.append(allocodedict[turn['Allo-']])
+                            nextDirection.append(allocodedict[turn['Allo+']])
+                            currentEgo.append(egocodedict[turn['Ego']])
+                            repeating.append(repeat) # label if cell is repeating so we can group by repeating status later in R
+                            startTimes.append(ts_start)
+                            
+                            if tnum in ballisticTurnIdx:
+                                traversal.append(True)
+                            else:
+                                traversal.append(False)
+                            
+                            
+                            # get spikes on alley (using the ts as endpoints) and filter by field perim to get spikes in field
+                            rates.append(contour.contains_points(unit.spikes[(unit.spikes[:,0]>ts_start)&(unit.spikes[:,0]<= ts_end),1:]).shape[0]/((ts_end-ts_start)/1e6))
+                            cellnames.append(f"{clustName}")
+                            fieldnums.append(fnum)
+                            cellIDs.append(cellcounter)
+                            fieldIDs.append(fieldcounter)
+                            nfields.append(len(unit.fields))
                         
                         
                         
@@ -163,35 +192,41 @@ for rat, day in zip(['R765', 'R781', 'R781', 'R808', 'R808', 'R859', 'R859', 'R8
                 
 
     
-df = pd.DataFrame(data=list(zip(cellnames,
+df = pd.DataFrame(data=list(zip(rats,
+                                days,
+                                cellnames,
                                 cellIDs,
                                 fieldnums,
                                 fieldIDs,
+                                nfields,
+                                inters,
                                 previousDirection,
-                                nextDirection,
-                                prospectiveEgo,
                                 currentEgo,
-                                retrospectiveEgo,
+                                nextDirection,
+                                traversal,
                                 repeating,
                                 startTimes,
                                 rates
                                     )), 
-columns=["CellName",
+columns=["Rat",
+         "Day",
+         "CellName",
          "CellID",
          "FieldNum",
          "FieldID",
+         "NumFields",
+         "Inters",
          "PrevDir",
+         "CurrEgo",
          "NextDir",
-         "ProspEgo",
-         "CurrentEgo",
-         "RetroEgo",
+         "Traversal",
          "Repeating",
-         "StartTime",
+         "StartTimes",
          "Rate"])
 
 df.dropna(inplace=True)
 # drop rows with missing data, coded as a '0' in the turn df (and then an X in the lookup table)
-for var in ['PrevDir','NextDir','ProspEgo','RetroEgo','CurrentEgo']:
+for var in ['PrevDir','NextDir', 'CurrEgo']:
     df.drop(df[df[var]=='X'].index, inplace=True)
     
 

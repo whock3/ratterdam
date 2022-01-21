@@ -54,17 +54,41 @@ for(o in c('V','H')){
     print(fid)
     
     field <- subset(oriendf, FieldID == fid)
-    
     try({
-      rm(em_m, pwc, sig)
-    })
-    
-    try({
-    total_models_run <- total_models_run + 1
     m <- glm(Rate + 1 ~ CurrDir + PrevDir + NextDir,family='Gamma',data=field)
+    al <- alias(m)
+    if(!("Complete" %in% names(al))){
     
-    try({
+    v <- vif(m) # will error out if there are any cases of complete MC
+    
+    #sometimes vif() returns a single value for each var,
+    # sometimes 2 values (gvif and gvif^(1/(2*df)))
+    if(length(v)==9){
+      cvif <- v['CurrDir',3]
+      pvif <- v['PrevDir',3]
+      nvif <- v['NextDir',3]
+    }
+    else if(length(v)==3){
+      cvif <- v['CurrDir']
+      pvif <- v['PrevDir']
+      nvif <- v['NextDir']
+    }
+    
+    total_models_run <- total_models_run + 1
+    
+    #Previous Direction
+    if(pvif < 2){
+      total_previous <- total_previous + 1
+      em_m <- emmeans(m,"PrevDir")
+      pwc <- summary(pairs(em_m))
+      sig <- pwc[1][pwc[6]<alpha]
+      if(length(sig)>=1){
+        previous_responsive <- c(previous_responsive, fid)
+      }
+    }
+    
     #Current Direction
+    if(cvif < 2){
     total_current <- total_current + 1
     em_m <- emmeans(m,"CurrDir")
     pwc <- summary(pairs(em_m))
@@ -72,10 +96,12 @@ for(o in c('V','H')){
     if(length(sig)>=1){
       current_responsive <- c(current_responsive, fid)
     }
-    },silent=FALSE)
+    }
+
     
-    try({
+
     #Next Direction
+    if(nvif < 2){
     total_next <- total_next + 1
     em_m <- emmeans(m,"NextDir")
     pwc = summary(pairs(em_m))
@@ -83,22 +109,13 @@ for(o in c('V','H')){
     if(length(sig)>=1){
       next_responsive <- c(next_responsive, fid)
     }
-    },silent=FALSE)
-    
-    try({
-    #Previous Direction
-    total_previous <- total_previous + 1
-    em_m <- emmeans(m,"PrevDir")
-    pwc <- summary(pairs(em_m))
-    sig <- pwc[1][pwc[6]<alpha]
-    if(length(sig)>=1){
-      previous_responsive <- c(previous_responsive, fid)
     }
-    },silent=FALSE)
+    
+    
+    
+    }
     
     },silent=FALSE)
-  
-    
     
   }
   
