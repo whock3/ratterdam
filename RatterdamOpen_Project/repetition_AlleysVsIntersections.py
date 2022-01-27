@@ -54,6 +54,7 @@ for fid, field in interdf.groupby("FieldID"):
 alleyDiffs = np.asarray(alleyDiffs)
 interDiffs = np.asarray(interDiffs)
 
+plt.figure()
 plt.hist(alleyDiffs,bins=50,density=True,label='Alleys')
 plt.hist(interDiffs,bins=50,alpha=0.5,density=True,label='Intersections')
 plt.title(" Mean Directional Firing Rate Difference, Per Field", fontsize=22)
