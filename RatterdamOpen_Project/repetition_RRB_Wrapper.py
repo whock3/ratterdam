@@ -19,6 +19,8 @@ interdatapath = "E:\\Ratterdam\\R_data_repetition\\20220120-164311_superPopInter
 interdf = pd.read_csv(interdatapath)
 
 
+
+
 #%% Helper fx 
 
 def convert_toggles_to_string(toggles):
@@ -33,45 +35,21 @@ def convert_toggles_to_string(toggles):
     return label
         
 
-#%% 
-
-all_rep = RRB.calculate_subgroup_directionality(alleydf, interdf, 
-                                                toggles = {
-                                                'repeating_type':'R',
-                                                'region_type':'All',
-                                                'region_location':'All'
-                                                            }
-                                                )
-
-
-all_sf = RRB.calculate_subgroup_directionality(alleydf, interdf, 
-                                                toggles = {
-                                                'repeating_type':'SF',
-                                                'region_type':'All',
-                                                'region_location':'All'
-                                                            }
-                                                )
-
-
 
 #%% 
 
 toggle_list = [
     {
-    'repeating_type':'All',
-    'region_type':'All',
+    'repeating_type':'R',
+    'region_type':'I',
     'region_location':'I'
                         },
     {
-    'repeating_type':'All',
-    'region_type':'All',
+    'repeating_type':'SF',
+    'region_type':'A',
     'region_location':'P'
                         },
-        
-
-
-      
-     
+   
     ]
 
 labels = []
@@ -82,11 +60,16 @@ for tog in toggle_list:
     diffs.append(RRB.calculate_subgroup_directionality(alleydf, interdf, tog))
     labels.append(convert_toggles_to_string(tog))
     
-    
+   
 fig, ax = plt.subplots()
 ax.violinplot(diffs, positions=range(len(diffs)))
+
+diffs = np.asarray(diffs)
+
+for i,d in enumerate(diffs):
+    ax.scatter(np.asarray([i]*len(d))+np.random.normal(0,0.1,len(d)),d,color='blue')
 ax.set_title("Mean Directional Difference Across Fields", fontsize=20)
 ax.set_xticks(range(len(labels)))
 ax.set_xticklabels(labels,rotation=45,fontsize=14)
-ax.set_ylabel("Mean Directional Firing Rate (Hz)", fontsize=14)
+ax.set_ylabel("Normalized Mean Directional Firing Rate (Hz)", fontsize=14)
     

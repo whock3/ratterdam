@@ -117,8 +117,11 @@ def calculate_subgroup_directionality(alleydf, interdf, toggles):
             dirs = np.unique(ofield.CurrDir)
             if len(dirs) > 2:
                 print(f"ERROR - too many directions for {o} {fid}")
-            diff = abs(ofield[ofield.CurrDir==dirs[0]].Rate.mean()-ofield[ofield.CurrDir==dirs[1]].Rate.mean())
-            alleydiffs.append(diff)
+            try:
+                diff = abs(ofield[ofield.CurrDir==dirs[0]].Rate.mean()-ofield[ofield.CurrDir==dirs[1]].Rate.mean())/ofield.Rate.max()
+                alleydiffs.append(diff)
+            except:
+                pass
         
         
     # Field Chunk Directionality for Intersections. If field overlaps multiple
@@ -134,8 +137,10 @@ def calculate_subgroup_directionality(alleydf, interdf, toggles):
             for direction in dirs:
                 meanDirDiffs.append(ifield[ifield.CurrEgo==direction].Rate.mean())
     
-            interdiffs.append(max(meanDirDiffs)-min(meanDirDiffs))
-            
+            try:
+                interdiffs.append((max(meanDirDiffs)-min(meanDirDiffs))/ifield.Rate.max())
+            except:
+                pass
         
     loc = toggles['region_type']
     if loc == 'A':
