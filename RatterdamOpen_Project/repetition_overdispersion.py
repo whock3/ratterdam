@@ -27,16 +27,10 @@ interdatapath = "E:\\Ratterdam\\R_data_repetition\\20220120-164311_superPopInter
 interdf = pd.read_csv(interdatapath)
 
 
-# r,d = 'R859', 'D2'
+r,d = 'R781', 'D4'
 
-# alleydf = alleydf[(alleydf.Rat==r)&(alleydf.Day==d)]
-# interdf = interdf[(interdf.Rat==r)&(interdf.Day==d)]
-
-# alleydf = alleydf[alleydf.Repeating==True]
-# interdf = interdf[interdf.Repeating==True]
-
-# alleydf = alleydf[alleydf.NumFields==1]
-# interdf = interdf[interdf.NumFields==1]
+alleydf = alleydf[(alleydf.Rat==r)&(alleydf.Day==d)]
+interdf = interdf[(interdf.Rat==r)&(interdf.Day==d)]
 
 #%% 1-28-22 Overdispersion based on choice DoF at different track locations
 # Group alleys and intersections, separately, into groups with the same number
@@ -134,7 +128,6 @@ ax.set_ylabel("Z-score of Average FR over each Field Pass", fontsize=16)
 
 # But 1/31 edit I realize that for intersections that doesn't really break direction down so will revise in new cell
 
-zscores = []
 ntrajs = []
 diffs = []
 
@@ -166,9 +159,7 @@ for rname, rat in alleydf.groupby("Rat"):
                         ntrajs.append(alleyNumTrajs)
                     except:
                         pass
-                
-                zscores.extend(zs)
-        
+                        
      
         
 #%% Inters

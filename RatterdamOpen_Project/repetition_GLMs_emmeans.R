@@ -13,6 +13,7 @@ library(emmeans)
 library(tidyr)
 library(ggpubr)
 library(splines)
+library(car)
 
 # 211210 has 30% field overlap threshold and slightly looser traversal thresholds 
 alleypath <- "E:\\Ratterdam\\R_data_repetition\\211220_AlleySuperpopDirVisitFiltered.csv"

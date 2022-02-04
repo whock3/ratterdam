@@ -115,32 +115,51 @@ def calculate_subgroup_directionality(alleydf, interdf, toggles):
         for o in oriens:
             ofield = field[field.Orientation==o]
             dirs = np.unique(ofield.CurrDir)
-            if len(dirs) > 2:
-                print(f"ERROR - too many directions for {o} {fid}")
-            try:
-                diff = abs(ofield[ofield.CurrDir==dirs[0]].Rate.mean()-ofield[ofield.CurrDir==dirs[1]].Rate.mean())/ofield.Rate.max()
-                alleydiffs.append(diff)
-            except:
-                pass
+            diff = abs(ofield[ofield.CurrDir==dirs[0]].Rate.mean()-ofield[ofield.CurrDir==dirs[1]].Rate.mean())
+            alleydiffs.append(diff)
+
         
         
     # Field Chunk Directionality for Intersections. If field overlaps multiple
     # intersections (less likely than for alleys), analyze each piece separately 
+    
+    # To compute intersection directionality, take the direction with the max firing
+    # and subtract the FR under the opposite direction. So it's a fair comparison
+    # to alleys. And the direction you use needs to be chosen, here using prevdir
+    opposite_dir_lookup = {'N':'S',
+                           'E':'W',
+                           'W':'E',
+                           'S':'N'
+                            }
+    
     for fid, field in f_interdf.groupby("FieldID"):
     
         # most fields will overlap only 1 intersection (if any), but some are long enough to overlap 2
         inters = np.unique(field.Inters)
         for inter in inters:
             ifield = field[field.Inters==inter]
-            dirs = np.unique(ifield.CurrEgo)
-            meanDirDiffs = []
-            for direction in dirs:
-                meanDirDiffs.append(ifield[ifield.CurrEgo==direction].Rate.mean())
-    
-            try:
-                interdiffs.append((max(meanDirDiffs)-min(meanDirDiffs))/ifield.Rate.max())
-            except:
-                pass
+            dirs = np.unique(ifield.PrevDir)
+            if len(dirs)>1:
+                meanDirDiffs = {}
+                for direction in dirs:
+                    meanDirDiffs[direction] = ifield[ifield.PrevDir==direction].Rate.mean()
+                maxdir = max(meanDirDiffs, key = lambda x: meanDirDiffs[x])
+                maxdirrate = meanDirDiffs[maxdir]
+                
+                #try to get opposite dir FR, if that doesnt exist just pick randomly
+                try:
+                    mindirrate = meanDirDiffs[opposite_dir_lookup[maxdir]]
+                except: 
+                    # this convoluted line randomly selects a direction to be 
+                    # compared with the max FR direction to get a directionality value
+                    # the reshaping business is bc choice needs 1d and argwhere returns 2d
+                    mindir = dirs[np.random.choice(np.argwhere(dirs!=maxdir).reshape(np.argwhere(dirs!=maxdir).shape[0],))]
+                    mindirrate = meanDirDiffs[mindir]
+                    
+
+                diff = maxdirrate = mindirrate
+                interdiffs.append(diff)
+
         
     loc = toggles['region_type']
     if loc == 'A':

@@ -100,8 +100,15 @@ for rat,day in zip(['R781', 'R781', 'R808', 'R808', 'R859', 'R859', 'R886', 'R88
                     dirA, dirB = wf[wf.CurrDir==d[0]], wf[wf.CurrDir==d[1]]
                     if dirA.shape[0] >= passThresh and dirB.shape[0] >= passThresh:
                         try:
+                            
+                            ## 2-2-22 note: this isnt good as np.mean returns a nan
+                            # if any sample is a nan, and matplotlib will just ignore it.
+                            # so plots based on this are missing (potentialy a lot) of data.
+                            # pandas series.mean() ignores nans by default
+                            
+                            
                             bias = max(dirA.shape[0]/wf.shape[0],dirB.shape[0]/wf.shape[0])                            
-                            diff = abs(np.mean(dirA.Rate)-np.mean(dirB.Rate))/np.mean(field.Rate)
+                            diff = abs(np.nanmean(dirA.Rate)-np.nanmean(dirB.Rate))/np.nanmean(field.Rate)
                             biases.append(bias)
                             diffs.append(diff)
                             speeds.append(meanspeed)

@@ -40,14 +40,14 @@ def convert_toggles_to_string(toggles):
 
 toggle_list = [
     {
-    'repeating_type':'R',
-    'region_type':'I',
-    'region_location':'I'
-                        },
-    {
-    'repeating_type':'SF',
+    'repeating_type':'All',
     'region_type':'A',
     'region_location':'P'
+                        },
+    {
+    'repeating_type':'All',
+    'region_type':'I',
+    'region_location':'I'
                         },
    
     ]
