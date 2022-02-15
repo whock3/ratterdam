@@ -4,7 +4,7 @@ Created on Wed Jul 17 14:27:49 2019
 
 @author: whockei1
 
-Script to generate (most of) an experimental session record sheet
+Script to generate an experimental session record sheet
 
 Configuration, log file, and events nev files are used.
 Info on TTs, CSCs, refs, and events are printed in sections
@@ -29,7 +29,7 @@ from sys import argv
 import os, datetime, numpy as np
 
 #script, data_directory = argv
-data_directory  =  "E:\\Ratterdam\\R781\\R781BRD2"
+data_directory  =  "E:\\Ratterdam\\R781\\R781_RatterdamOpen_D3\\"
 
 
 def readNEV(datafile):

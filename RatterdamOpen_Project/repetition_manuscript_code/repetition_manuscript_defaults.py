@@ -8,11 +8,13 @@ Default parameters for repetition manuscript paper
 These mostly relate to plotting params, like tick sizes and so forth
 """
 
-ylabelsize = 60
-xlabelsize = 60
-ticksize = 40
+ylabelsize = 50
+xlabelsize = 50
+ticksize = 45
 spine_width = 4
 
+
+titlesize = 52
 
 legend_size = 44
 legend_marker_size = 30

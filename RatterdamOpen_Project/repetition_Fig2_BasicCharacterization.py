@@ -141,11 +141,11 @@ for rat in superpop.keys():
         for unit in superpop[rat][day]['units'].values():
             if unit.repeating == True:
                 for field in unit.fields:
-                    repPeaks.append(max(field[:,1]))
+                    repPeaks.append(np.nanmax(field[:,1]))
             elif unit.repeating == False:
                 #bc not all multifielded cells are repeating
                 for field in unit.fields:
-                    nonrepPeaks.append(max(field[:,1]))
+                    nonrepPeaks.append(np.nanmax(field[:,1]))
                     
 repPeaks = np.asarray(repPeaks)
 nonrepPeaks = np.asarray(nonrepPeaks)

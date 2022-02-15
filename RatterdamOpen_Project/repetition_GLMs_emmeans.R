@@ -16,10 +16,15 @@ library(splines)
 library(car)
 
 # 211210 has 30% field overlap threshold and slightly looser traversal thresholds 
-alleypath <- "E:\\Ratterdam\\R_data_repetition\\211220_AlleySuperpopDirVisitFiltered.csv"
+alleypath <- "E:\\Ratterdam\\R_data_repetition\\20220215-140515_superPopAlleyBehaviorResponse_1.5vfilt_PosInFieldNormedFR.csv"
 
 
 alleydf <- read.csv(alleypath,header=TRUE)
+
+
+alleydf <- alleydf[is.finite(alleydf$Rate),]
+alleydf <- alleydf[alleydf$Traversal=="True",]
+alleydf <- alleydf[alleydf$Reward=="False",]
 
 
 alleydf$PrevDir <- as.factor(alleydf$PrevDir)
@@ -48,6 +53,9 @@ current_responsive <- c()
 next_responsive <- c()
 previous_responsive <- c()
 
+vif_thresh = 5
+
+
 for(o in c('V','H')){
   oriendf <- subset(alleydf, Orientation==o)
   
@@ -56,7 +64,10 @@ for(o in c('V','H')){
     
     field <- subset(oriendf, FieldID == fid)
     try({
-    m <- glm(Rate + 1 ~ CurrDir + PrevDir + NextDir,family='Gamma',data=field)
+    m <- glm(Rate + 1 ~ CurrDir + PrevDir + NextDir + ns(StartTimes,3),
+             family='Gamma',
+             data=field)
+    
     al <- alias(m)
     if(!("Complete" %in% names(al))){
     
@@ -64,12 +75,12 @@ for(o in c('V','H')){
     
     #sometimes vif() returns a single value for each var,
     # sometimes 2 values (gvif and gvif^(1/(2*df)))
-    if(length(v)==9){
+    if(length(v)==12){
       cvif <- v['CurrDir',3]
       pvif <- v['PrevDir',3]
       nvif <- v['NextDir',3]
     }
-    else if(length(v)==3){
+    else if(length(v)==4){
       cvif <- v['CurrDir']
       pvif <- v['PrevDir']
       nvif <- v['NextDir']
@@ -78,7 +89,7 @@ for(o in c('V','H')){
     total_models_run <- total_models_run + 1
     
     #Previous Direction
-    if(pvif < 2){
+    if(pvif < vif_thresh){
       total_previous <- total_previous + 1
       em_m <- emmeans(m,"PrevDir")
       pwc <- summary(pairs(em_m))
@@ -89,7 +100,7 @@ for(o in c('V','H')){
     }
     
     #Current Direction
-    if(cvif < 2){
+    if(cvif < vif_thresh){
     total_current <- total_current + 1
     em_m <- emmeans(m,"CurrDir")
     pwc <- summary(pairs(em_m))
@@ -102,7 +113,7 @@ for(o in c('V','H')){
     
 
     #Next Direction
-    if(nvif < 2){
+    if(nvif < vif_thresh){
     total_next <- total_next + 1
     em_m <- emmeans(m,"NextDir")
     pwc = summary(pairs(em_m))
@@ -116,9 +127,14 @@ for(o in c('V','H')){
     
     }
     
-    },silent=FALSE)
+    },silent=TRUE)
     
   }
   
 }
+
+print(length(current_responsive)/total_current)
+print(length(previous_responsive)/total_previous)
+print(length(next_responsive)/total_next)
+
 

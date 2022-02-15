@@ -15,10 +15,6 @@ import matplotlib.path as path
 from placeFieldBorders import reorderBorder
 
 
-######################
-# Velocity Filtering #
-######################
-
 def velocity_filtering(position, thresh = Def.velocity_filter_thresh, winsz=50):
     gradts, gradx, grady = np.gradient(position[:,0]), np.gradient(position[:,1]), np.gradient(position[:,2])
     gradx = [np.mean(gradx[0+i:winsz+i]) for i in range(len(gradx))]
@@ -37,10 +33,6 @@ def velocity_filtering(position, thresh = Def.velocity_filter_thresh, winsz=50):
     
     return vf_pos
 
-
-###########################
-# Check minimum activity  #
-###########################
     
 def checkMiniumUnitActivity(unit, alleyVisits, threshold=50):
     """
@@ -147,3 +139,45 @@ def filterFields(unit):
     unit.perimeters = perims
     unit.fields = fields
     return unit
+
+
+def normalizeTrajectory(unit, tsStart, tsEnd, contour, alley, border):
+    """
+
+    Returns
+    -------
+    None.
+
+    """
+    
+    spk_traj = unit.spikes[(unit.spikes[:,0]>tsStart)&(unit.spikes[:,0]<= tsEnd)]
+    behav_traj = unit.position[(unit.position[:,0]>tsStart)&(unit.position[:,0]<= tsEnd)]
+    
+    spk_traj = spk_traj[contour.contains_points(spk_traj[:,1:])]
+    behav_traj = behav_traj[contour.contains_points(behav_traj[:,1:])]
+    
+    spk_sess = unit.spikes[contour.contains_points(unit.spikes[:,1:])]
+    behav_sess = unit.position[contour.contains_points(unit.position[:,1:])]
+    
+
+    verticals = [str(i) for i in [2,3,5,7,16,14,11,9]]
+    horizontals = [str(i) for i in [0,4,6,1,12,8,15,13,10]]
+    if alley in horizontals:
+        xbins = np.linspace(border[0][0],border[0][1],num=15+1)
+        ybins = np.linspace(border[1][0],border[1][1],num=8+1)
+    elif alley in verticals:
+        xbins = np.linspace(border[0][0],border[0][1],num=8+1)
+        ybins = np.linspace(border[1][0],border[1][1],num=15+1)
+    
+    behav_traj_hist = np.histogram2d(behav_traj[:,2],behav_traj[:,1],bins=[ybins,xbins])
+    spk_traj_hist = np.histogram2d(spk_traj[:,2],spk_traj[:,1],bins=[ybins,xbins])
+    
+    behav_sess_hist = np.histogram2d(behav_sess[:,2],behav_sess[:,1],bins=[ybins,xbins])
+    spk_sess_hist = np.histogram2d(spk_sess[:,2],spk_sess[:,1],bins=[ybins,xbins])
+    
+    
+    sessrm = (spk_sess_hist[0]/behav_sess_hist[0])*30 # adjust FPS to get Hz 
+    trajrm = (spk_traj_hist[0]/behav_traj_hist[0])*30 
+    
+    return np.nanmean(trajrm/sessrm)
+    

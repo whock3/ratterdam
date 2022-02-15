@@ -117,7 +117,7 @@ for celldata in fdirIntsAlley:
     for ax in fig.axes[1:]:
         ax.set_ylim([0,ymax])
     
-    plt.savefig(savepath+f"{rat}{day}_{clustName}_{celldata[1]}"+"AlleyFieldDirAnovas.png",dpi=300)    
+    plt.savefig(savepath+f"{rat}{day}_{clustName}_{celldata[1]}"+"AlleyFieldDirAnovas.pdf",dpi=300)    
     plt.close()
 #%%  Intersections
 datapath = "E:\\Ratterdam\\R_data_repetition\\211220_AlleySuperpopDirVisitFiltered.csv"

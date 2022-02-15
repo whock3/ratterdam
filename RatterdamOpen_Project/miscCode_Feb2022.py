@@ -204,3 +204,34 @@ plt.suptitle(f"{rat}{day} Relationship between Number of Unique Paths and Direct
           fontsize=32)
 
 
+
+#%% 2-11-22 Looking into why there is a bimodal distribution in fields' peak firing rate (panel from fig 1)
+import numpy as np, matplotlib.pyplot as plt, pandas as pd
+import utility_fx as util 
+# don't filter by passes, we're not making any comparisons or looking at directionality
+alleydatapath = "E:\\Ratterdam\\R_data_repetition\\20220120-135920_superPopAlleyBehaviorResponse_1.5vfilt.csv"
+alleydf = pd.read_csv(alleydatapath)
+
+df = alleydf
+#df = alleydf[alleydf.Repeating==False]
+peakrates = []
+for fid, field in df.groupby("FieldID"):
+    peakrates.append(np.nanmax(field.Rate))
+    
+nHzPerBin = 1 # histogram bins should contain how many hertz, e.g. 2Hz increment per bin
+histMax = np.max(peakrates)
+b=np.linspace(0,histMax,int(np.ceil(histMax/nHzPerBin)))# hist bins
+
+fig, ax = plt.subplots(figsize=(20,15))
+ax.hist(peakrates,facecolor='blue',bins=b,alpha=0.7)
+
+
+
+#%% 2-11-22 Speed and behavior analysis that will be folded into figure 1 
+import ratterdam_RepetitionCoreFx as RepCore
+import utility_fx as util 
+rat, day = 'R781', 'D3'
+datapath = f"E:\\Ratterdam\{rat}\\{rat}_RatterdamOpen_{day}\\"
+clustList,_ = util.getClustList(datapath)
+unit = RepCore.loadRepeatingUnit(rat, day, clustList[0]) # grab any unit 
+pos = unit.position

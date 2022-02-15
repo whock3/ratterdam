@@ -35,6 +35,7 @@ import repeatingPC as repPC
 import copy
 import more_itertools
 from matplotlib import path
+import ratterdam_DataFiltering as Filt 
 
 def drawRegion(ax, bounds,color):
     """
@@ -142,6 +143,20 @@ for rat, day in zip(['R765','R781','R781','R808','R808','R859','R859','R886','R8
                                                           inside_point_thresh=2)
                         
                         if filtOutcome == True:
+                            
+                            
+                            # 2-15-22 code change: using normed rate rather than firing rate
+                            # Before, used # spikes in interval divided by length of time interval to get units Hz
+                            # Now getting firing rate normalized by where in the field the trajectory went
+                            # First compute 2d ratemaps for trajectory and session. Then normalize traj by sess rm. 
+                            # return the nanmean of this 2d rm
+                            normedRate = Filt.normalizeTrajectory(unit, 
+                                                                  ts_start, 
+                                                                  ts_end, 
+                                                                  contour, 
+                                                                  turn['Alley+'], 
+                                                                  ratborders.alleyInterBounds[turn['Alley+']])
+                            
                             rats.append(rat)
                             days.append(day)
                             turnNums.append(tnum)
@@ -177,7 +192,7 @@ for rat, day in zip(['R765','R781','R781','R808','R808','R859','R859','R886','R8
                                 location.append('I')
                             
                             # get spikes on alley (using the ts as endpoints) and filter by field perim to get spikes in field
-                            rates.append(contour.contains_points(unit.spikes[(unit.spikes[:,0]>ts_start)&(unit.spikes[:,0]<= ts_end),1:]).shape[0]/((ts_end-ts_start)/1e6))
+                            rates.append(normedRate)
                             cellnames.append(f"{clustName}")
                             fieldnums.append(fnum)
                             cellIDs.append(cellcounter)
@@ -241,5 +256,5 @@ for var in ['PrevDir','CurrDir','NextDir','ProspEgo','RetroEgo']:
     
 
 stamp = util.genTimestamp()
-filename = f"{stamp}_superPopAlleyBehaviorResponse_{Def.velocity_filter_thresh}vfilt.csv"
+filename = f"{stamp}_superPopAlleyBehaviorResponse_{Def.velocity_filter_thresh}vfilt_PosInFieldNormedFR.csv"
 df.to_csv(f"E:\\Ratterdam\\R_data_repetition\\{filename}", header=True, index=False)
