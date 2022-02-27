@@ -41,64 +41,61 @@ from matplotlib.patches import Rectangle
 from matplotlib import path
 import copy
 import traceback
+import pickle 
 
-# region sets for 7-19-21 decoding
-# region_sets = {'RS1':[1,3,5,14,11,8],
-#                'RS2':[4,13],
-#                'RS3':[2,0,16,15,10,9,7,6],
-#                'RS4':['F','G'],
-#                'RS5':['A','D','I','L'],
-#                'RS6':['B','C','J','K']
-#                }
-
-#region sets for 7-20-21 decoding
-# region_sets = {'RS1':[3,5,14,11],
-#                 'RS2':[1,8],---------------------
-#                 'RS3':[2,0,16,15,10,9,7,6,4,13],
-#                 'RS4':[12]
-#                 }
-
-#region sets for 7-21-21 decoding
 region_sets = {
                 'RS6':[0,4,6,15,13,10,1,12,8],
-                'RS7':[2,16,3,14,5,11,7,9],
-                'RS8':[1,3,14,12,5,11,8]
+                'RS7':[2,16,3,14,5,11,7,9]            
                 }
 
-alldata = []
+alldata = {}
 
 timestamp = util.genTimestamp()
 codedict = {'1':'N','2':'E','3':'S','4':'W','0':'X'}
 
+with open("E:\\Ratterdam\\R_data_repetition\\22-02-18_superPopulationRepetition.pickle","rb") as f:
+    superpop = pickle.load(f)  
 
-for rat,day in zip(['R781', 'R781', 'R808', 'R808', 'R859', 'R859', 'R886', 'R886', 'R765'],['D3', 'D4', 'D6', 'D7', 'D1', 'D2', 'D1', 'D2','RFD5']):
+rat_list = ['R765',
+            'R765',
+            'R781', 
+            'R781', 
+            'R808', 
+            'R808', 
+            'R859', 
+            'R859', 
+            'R886', 
+            'R886']
+
+day_list = ['RFD5',
+            'DFD4',
+            'D3', 
+            'D4',
+            'D6',
+            'D7',
+            'D1',
+            'D2',
+            'D1',
+            'D2']
+
+for rat,day in zip(rat_list,day_list):
+    
+    rewards = RepCore.readinRewards(rat, day)
+
+    
+    if rat not in alldata:
+        alldata[rat] = {}
+    alldata[rat][day] = {}
    
     print(f"Beginning decoding {rat} {day}...")
     try:
         ratborders = nab.loadAlleyBounds(rat, day)
-        savepath = "E:\\Ratterdam\\repetition_decoding\\21-09-14_decoding\\"
+        savepath = "E:\\Ratterdam\\repetition_decoding\\22-02-25_decoding\\"
         datapath = f'E:\\Ratterdam\\{rat}\\{rat}_RatterdamOpen_{day}\\'
         
-        population, turns = RepCore.loadRecordingSessionData(rat, day)
-        
-        # Filter to remove turn-around trajectories. These cause same label
-        # to map onto different behaviors
-        ballisticTurnIdx = []
-        for i in range(1,turns.shape[0]-1):
-            row = turns.iloc[i]
-            inter = row['Inter']
-            
-            #logic checking turn arounds: code 3 for ego means within the turn he turned around. e.g. 13-j-13. ignore it.
-            # for turn arounds that span two turns (most of them), think of it like the turn around consists of a turn in
-            # and then a turn back out. each 'leg' of the turnaround has an entry associated w it in the turns db
-            # so as we iter over the db we check 1 ahead and 1 behind to make sure were not part of a turn around currently.
-            # caveat is you lose a 'straight-through' leg if its part of a turn around (.e.g the leg out he traverses through
-            # an alley) and this could theoretically be used in directionality decoding
-            if row['Ego'] != '3' and turns.iloc[i+1].Inter != inter and turns.iloc[i-1].Inter != inter:
-                ballisticTurnIdx.append(i)
-                
-        refturns = copy.deepcopy(turns)
-        turns = turns.iloc[ballisticTurnIdx]
+        population = superpop[rat][day]['units']
+        turns = superpop[rat][day]['turns']
+        refturns = superpop[rat][day]['refturns']
         
         #%% Create data arrays
         #Here's the logic. If you want the acivity from when the animal was on a given
@@ -128,41 +125,56 @@ for rat,day in zip(['R781', 'R781', 'R808', 'R808', 'R859', 'R859', 'R886', 'R88
             cD = turn['Allo+']
             pD = turn['Allo-']
             nD = turn_np1['Allo+']
-            currentAlley.append(turn['Alley+']) # use this later to get visits to regions in a certain set 
             
             # time interval below, based on alley+ of each turn, is how it's previously been done
             # for egocentric decoding, however, it becomes retrospective coding
             # start, stop = float(turn['Ts entry']), float(turn_np1['Ts exit'])
             
-            start, stop = float(turn_nm1['Ts entry']), float(turn['Ts exit'])
+            start, stop =  float(turn['Ts entry']), float(refturns.iloc[t+1]['Ts exit'])
+            
+            #added 2-25-22 to check if there's a reward and not include the trial if so 
+            isReward = np.where(np.asarray([(start < i < stop) for i in rewards])==True)[0]
+            
+            if isReward.shape[0]>0:
+                pass
+            else:
+                
+                    # cD= turn['Ego'] # currentDir value this turn
+                # pD = turn_nm1['Ego'] # previous ''
+                # nD = turn_np1['Ego'] # next ''
+                cD = turn['Allo+']
+                pD = turn['Allo-']
+                nD = turn_np1['Allo+']
+                currentAlley.append(turn['Alley+']) # use this later to get visits to regions in a certain set 
+            
 
-            duration = (stop-start)/1e6
+                duration = (stop-start)/1e6
+                
+                popvector = []
+                for unitname, unit in population.items():
+                    #basic stuff, get the firing rate (# spikes / time on alley ) for each unit and append
+                        spike_count = unit.spikes[(unit.spikes[:,0]>start)&(unit.spikes[:,0]<=stop)].shape[0]
+                        rate = spike_count / duration
+                        popvector.append(rate)
             
-            popvector = []
-            for unitname, unit in population.items():
-                #basic stuff, get the firing rate (# spikes / time on alley ) for each unit and append
-                    spike_count = unit.spikes[(unit.spikes[:,0]>start)&(unit.spikes[:,0]<=stop)].shape[0]
-                    rate = spike_count / duration
-                    popvector.append(rate)
-        
-            popvector = np.asarray(popvector)
-            X = np.vstack((X, popvector))
-            currentDir.append(cD)
-            previousDir.append(pD)
-            nextDir.append(nD)
-            traj.append(f"{pD}{cD}{nD}")
-            turnsIn.append(f"{pD}{cD}")
-            
-            # this if statement is here because if the next turn, whose allo+
-            # would be the next turn direction, is not in ballistic turn idx
-            # then the turn featured a turn around and we don't want to conflate
-            # the next heading from a ballistic turn with the next heading where the animal
-            # turned around
-            if t+1 in ballisticTurnIdx:            
-                turnsOut.append(f"{cD}{nD}")
-            egoTurn.append(turn['Ego'])
-            
-            
+                popvector = np.asarray(popvector)
+                X = np.vstack((X, popvector))
+                currentDir.append(cD)
+                previousDir.append(pD)
+                nextDir.append(nD)
+                traj.append(f"{pD}{cD}{nD}")
+                turnsIn.append(f"{pD}{cD}")
+                
+                # this if statement is here because if the next turn, whose allo+
+                # would be the next turn direction, is not in ballistic turn idx
+                # then the turn featured a turn around and we don't want to conflate
+                # the next heading from a ballistic turn with the next heading where the animal
+                # turned around
+                if t+1 in turns.index:            
+                    turnsOut.append(f"{cD}{nD}")
+                egoTurn.append(turn['Ego'])
+                
+                
         currentDir = np.asarray(currentDir)
         nextDir = np.asarray(nextDir)
         previousDir = np.asarray(previousDir)
@@ -171,14 +183,16 @@ for rat,day in zip(['R781', 'R781', 'R808', 'R808', 'R859', 'R859', 'R886', 'R88
         turnsIn = np.asarray(turnsIn)
         turnsOut = np.asarray(turnsOut)
         egoTurn = np.asarray(egoTurn)
-            
+        
         
         #%% Run random forest
         
-        for regionsetlabel, regionset in [('RS8',region_sets['RS8'])]:
+        for regionsetlabel, regionset in [['RS6',region_sets['RS6']],['RS7',region_sets['RS7']]]:
 
 
-            targets, targetlabels = [egoTurn],['EgocentricTurn']
+            targets, targetlabels = [currentDir],['CurrentDirection']
+            
+            alldata[rat][day][regionsetlabel] = {}
            
                 
             for target, targetlabel in zip(targets, targetlabels):
@@ -207,7 +221,9 @@ for rat,day in zip(['R781', 'R781', 'R808', 'R808', 'R859', 'R859', 'R886', 'R88
                         clf.fit(Xsubset,Yshuff)
                         shuffoobs.append(clf.oob_score_)
                         
-                    alldata.append((rat, day, targetlabel, regionsetlabel, realoobs, shuffoobs))
+                    alldata[rat][day][regionsetlabel]['targets'] = [targetlabel,regionset]
+                    alldata[rat][day][regionsetlabel]['oobs'] = {'Real':realoobs, 'Shuffle':shuffoobs}
+                    
                     plt.figure(figsize=(8,6))
                     shuff95 = round(np.percentile(shuffoobs,95),2)
                     realmean = round(np.mean(realoobs),2)

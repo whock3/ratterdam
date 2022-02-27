@@ -15,20 +15,21 @@ from matplotlib import pyplot as plt
 from scipy.stats import binom_test
 import repetition_manuscript_defaults as MDef
 from matplotlib.ticker import MaxNLocator
+import pandas as pd 
 
 plt.ion()
 
 #Load dict containing all recording day datasets
 # structure is rat > day > unit
 # unit is a Unit() class 
-with open("E:\\Ratterdam\\R_data_repetition\\21-10-19_superPopulationRepetition.pickle","rb") as f:
+with open("E:\\Ratterdam\\R_data_repetition\\22-02-18_superPopulationRepetition.pickle","rb") as f:
     superpop = pickle.load(f)   
     
-    
+alleydf = pd.read_csv("E:\\Ratterdam\\R_data_repetition\\220222_AlleySuperpopDirVisitFiltered.csv")
 #%% Panel A is a track schematic, no python code used here
 
 #%% Panel B is set of ratemaps showing repetition. no python code used here
-# (ratemaps already saved w data, just load and format them)
+# (ratemaps already saved in each rat's folder in [rat]\ratterdam_plots\[day]\overviewplots\, just load and format them)
 
 #%% Panel C - proportion of cells within each recording day defined as repeating
 # Reminder that repetition is any (pyramidal) neuron with >=2 fields in a common
@@ -136,83 +137,109 @@ ax.set_xlabel("Repetition Orientation Bias",fontsize=MDef.xlabelsize)
 ax.yaxis.set_major_locator(MaxNLocator(integer=True))
 
 
+#%% Panel F - number horizontal vs vertical fields
+from collections import Counter
+from scipy.stats import chisquare
+oriens = []
+for fid, field in alleydf.groupby("FieldID"):
+    for orien, ofield in field.groupby("Orientation"):
+        oriens.append(orien)
+oriens = np.asarray(oriens)
+c = Counter(oriens)
+print(c)
+print(chisquare([c['V'],c['H']]))
+
+
+#%% Not a panel - number of fields which overlap multiple alleys
+# this doesn't take into account fields which extend from an alley into an intersection
+# which is almost certainly more common but maybe less what we mean by 'being in multiple regions'
+# since theyre adjacent and a field may be normal sized but situated inbetween an alley-inter bound
+from collections import Counter
+
+numalleys = []
+for fid, field in alleydf.groupby("FieldID"):
+    numalleys.append(np.unique(field.Alleys).shape[0])
+
+c = Counter(numalleys)
+for i in c.keys():
+    print(f"{i} fragments occured  {c[i]} times, {round(c[i]/sum(c.values()),3)*100} % of cases")
 #%% Correlating orientation bias with directionality
 # This should not go here in fig 1, but putting in here until I figure out
 # where I want to put it. 
-import pandas as pd, pickle
+# import pandas as pd, pickle
 
-with open("E:\\Ratterdam\\R_data_repetition\\21-10-19_superPopulationRepetition.pickle","rb") as f:
-    superpop = pickle.load(f)  
+# with open("E:\\Ratterdam\\R_data_repetition\\21-10-19_superPopulationRepetition.pickle","rb") as f:
+#     superpop = pickle.load(f)  
 
-datapath  = "E:\\Ratterdam\\R_data_repetition\\211220_AlleySuperpopDirVisitFiltered.csv"
-df = pd.read_csv(datapath)
+# datapath  = "E:\\Ratterdam\\R_data_repetition\\211220_AlleySuperpopDirVisitFiltered.csv"
+# df = pd.read_csv(datapath)
 
-#define V,H alleys
-verticals = [2,3,5,7,16,14,11,9]
-horizontals = [0,4,6,1,12,8,15,13,10]
+# #define V,H alleys
+# verticals = [2,3,5,7,16,14,11,9]
+# horizontals = [0,4,6,1,12,8,15,13,10]
 
-orientationBias = []
-meanDiffs = []
+# orientationBias = []
+# meanDiffs = []
 
-for rat in superpop.keys():
-    for day in superpop[rat].keys():
+# for rat in superpop.keys():
+#     for day in superpop[rat].keys():
         
-        rdf = df[(df.Rat==rat)&(df.Day==day)]
-        for unit in superpop[rat][day]['units'].values():
-            if len(unit.fields)>1:
-                unitbias = []
-                for foverlap in unit.overlaps:
-                    for regionoverlap in foverlap:
-                        if regionoverlap in verticals:
-                            unitbias.append(1)
-                        elif regionoverlap in horizontals:
-                            unitbias.append(-1)
+#         rdf = df[(df.Rat==rat)&(df.Day==day)]
+#         for unit in superpop[rat][day]['units'].values():
+#             if len(unit.fields)>1:
+#                 unitbias = []
+#                 for foverlap in unit.overlaps:
+#                     for regionoverlap in foverlap:
+#                         if regionoverlap in verticals:
+#                             unitbias.append(1)
+#                         elif regionoverlap in horizontals:
+#                             unitbias.append(-1)
                 
-                # I think this is a crude alley check (as overlaps with inters will lead to empty unitbias list)
-                if len(unitbias)>0:
-                    orientationBias.append(sum(unitbias)/len(unitbias))
-                    celldf = rdf[rdf.CellName==unit.name]
-                    meanDiff = []
-                    for orien in ['V','H']:
-                        odf = celldf[celldf.Orientation==orien]
-                        for fname, fgroup in odf.groupby("FieldID"):
-                            dirs = np.unique(fgroup.CurrDir)
+#                 # I think this is a crude alley check (as overlaps with inters will lead to empty unitbias list)
+#                 if len(unitbias)>0:
+#                     orientationBias.append(sum(unitbias)/len(unitbias))
+#                     celldf = rdf[rdf.CellName==unit.name]
+#                     meanDiff = []
+#                     for orien in ['V','H']:
+#                         odf = celldf[celldf.Orientation==orien]
+#                         for fname, fgroup in odf.groupby("FieldID"):
+#                             dirs = np.unique(fgroup.CurrDir)
                     
-                            dirA = fgroup[fgroup.CurrDir==dirs[0]]
-                            dirB = fgroup[fgroup.CurrDir==dirs[1]]
-                            try:
-                                meanDiff.append(abs(dirA.Rate.mean()-dirB.Rate.mean()))
-                            except:
-                                meanDiff.append(0)
-                    meanDiffs.append(meanDiff)
+#                             dirA = fgroup[fgroup.CurrDir==dirs[0]]
+#                             dirB = fgroup[fgroup.CurrDir==dirs[1]]
+#                             try:
+#                                 meanDiff.append(abs(dirA.Rate.mean()-dirB.Rate.mean()))
+#                             except:
+#                                 meanDiff.append(0)
+#                     meanDiffs.append(meanDiff)
                     
 
-fig, ax = plt.subplots(figsize=(20,15))
-ax = fig.axes[0]
-ax.hist(orientationBias,bins=np.linspace(-1,1,num=10),
-        facecolor='grey',
-        edgecolor='black',
-        linewidth=2)
-ax.set_xticks([-1,0,1])
-ax.set_xticklabels(["-1 (H)", "0", "+1 (V)"])
-ax.spines['top'].set_visible(False)
-ax.spines['right'].set_visible(False)
-ax.tick_params(axis='both', labelsize=MDef.ticksize)
-ax.set_ylabel("Neuron Frequency", fontsize=MDef.ylabelsize)
-ax.set_xlabel("Repetition Orientation Bias",fontsize=MDef.xlabelsize)
-ax.yaxis.set_major_locator(MaxNLocator(integer=True))
+# fig, ax = plt.subplots(figsize=(20,15))
+# ax = fig.axes[0]
+# ax.hist(orientationBias,bins=np.linspace(-1,1,num=10),
+#         facecolor='grey',
+#         edgecolor='black',
+#         linewidth=2)
+# ax.set_xticks([-1,0,1])
+# ax.set_xticklabels(["-1 (H)", "0", "+1 (V)"])
+# ax.spines['top'].set_visible(False)
+# ax.spines['right'].set_visible(False)
+# ax.tick_params(axis='both', labelsize=MDef.ticksize)
+# ax.set_ylabel("Neuron Frequency", fontsize=MDef.ylabelsize)
+# ax.set_xlabel("Repetition Orientation Bias",fontsize=MDef.xlabelsize)
+# ax.yaxis.set_major_locator(MaxNLocator(integer=True))
 
 
-  # py history of sufficient-I-think (SIT) code to visualize correlation      
-for i,ob in enumerate(orientationBias):
-    for md in meanDiffs[i]:
-        plt.scatter(abs(ob),md,color='k',alpha=0.7)
+#   # py history of sufficient-I-think (SIT) code to visualize correlation      
+# for i,ob in enumerate(orientationBias):
+#     for md in meanDiffs[i]:
+#         plt.scatter(abs(ob),md,color='k',alpha=0.7)
         
         
-oriendict = {i:[] for i in np.unique([abs(i) for i in orientationBias])}
-for i,ob in enumerate(orientationBias):
-    for md in meanDiffs[i]:
-        oriendict[abs(ob)].append(md)
+# oriendict = {i:[] for i in np.unique([abs(i) for i in orientationBias])}
+# for i,ob in enumerate(orientationBias):
+#     for md in meanDiffs[i]:
+#         oriendict[abs(ob)].append(md)
     
-for i,v in oriendict.items():
-    plt.violinplot([v],positions=[i])
+# for i,v in oriendict.items():
+#     plt.violinplot([v],positions=[i])

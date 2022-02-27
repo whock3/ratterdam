@@ -45,6 +45,7 @@ import bisect
 import pandas as pd
 from matplotlib.patches import Rectangle
 from matplotlib import path
+import copy
 
 #%% Load data
 #Load one unit, bc we are just looking at class label biases and any interaction
@@ -63,13 +64,57 @@ savepath = "E:\\Ratterdam\\repetition_decoding\\21-09-07_decoding\\"
 
 naive_perfs_datasets = {}
 
-for rat,day in zip(['R781', 'R781', 'R808', 'R808', 'R859', 'R859', 'R886', 'R886', 'R765'],['D3', 'D4', 'D6', 'D7', 'D1', 'D2', 'D1', 'D2','RFD5']):
+rat_list = ['R765',
+            'R765',
+            'R781', 
+            'R781', 
+            'R808', 
+            'R808', 
+            'R859', 
+            'R859', 
+            'R886', 
+            'R886']
+
+day_list = ['RFD5',
+            'DFD4',
+            'D3', 
+            'D4',
+            'D6',
+            'D7',
+            'D1',
+            'D2',
+            'D1',
+            'D2']
+
+for rat,day in zip(rat_list,day_list):
     
+    rewards = RepCore.readinRewards(rat, day)
+
     naive_perfs_datasets[f"{rat}{day}"] = {'RS6':None, 'RS7':None}
     ratborders = nab.loadAlleyBounds(rat, day)
     datapath = f'E:\Ratterdam\\{rat}\\{rat}_RatterdamOpen_{day}\\'    
     
     turns, unit = RepCore.loadTurns(rat, day)
+    
+    ballisticTurnIdx = []
+    for t, turn in turns.iterrows():
+        
+        if t < turns.shape[0]-1:
+        
+        
+            inter = turn['Inter']
+            ts_start, ts_end = float(turn['Ts entry']), float(turns.iloc[t+1]['Ts exit'])
+            
+            isReward = np.where(np.asarray([(ts_start < i < ts_end) for i in rewards])==True)[0]
+            
+            # edit 10/2 removing check that last turn's inter wasnt the same,
+            # i.e if alley- had a turnaround. since we are looking at things
+            # in terms of alley+, only remove a turn if thats where a turnaround was
+            if turn['Ego'] != '3' and turns.iloc[t+1].Inter != inter and isReward.shape[0]==0:
+                ballisticTurnIdx.append(t)
+    
+    refturns = copy.deepcopy(turns) # keep a copy without filtering.
+    turns = turns.iloc[np.asarray(ballisticTurnIdx)]
     
     #%% Set up classifier 
     

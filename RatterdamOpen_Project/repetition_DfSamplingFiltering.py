@@ -11,8 +11,10 @@ to each visit (each alley comprising field gets its own entry.)
 """
 import pandas as pd, numpy as np
 
-def filterUnitDirSampling(uOriented, direction, passThresh=3):
+def __filterUnitDirSampling(uOriented, direction, passThresh):
     """
+    DEPRECATED 2/18/22
+    
     Take pd df corresponding to one unit
     It has been filtered into V or H passes already
     Here: ID fields and directions within with enough sampling
@@ -24,6 +26,11 @@ def filterUnitDirSampling(uOriented, direction, passThresh=3):
     Returns
     -------
     Df with fields and directions with enough sampling
+    
+    
+    DEPRECATED 2/18/22 - code logic is too convoluted and may not be giving proper results
+    Do everything in filterAlleyDatasets in more direct way looping over field ids
+    instead of cells and checking fields to be included 
 
     """
     directions = [['N','S'] if direction=='V' else ['E', 'W']][0]
@@ -44,30 +51,36 @@ def filterUnitDirSampling(uOriented, direction, passThresh=3):
     return uValid
 
 
-def filterAlleyDatasets(df,filterFx,filterR=True,filterT=True):
+def filterAlleyDatasets(df,passThresh=2,filterR=True,filterT=True):
     """
     FOr alleys 
     Take pd df for whole dataset (rats + days)
-    Apply filterFx to each cell within it 
     And return new df with filtered units
     
     filterR - remove alley traversals that were rewarded
     filterT - remove turnarounds in alleys
+    passThresh - min number passes in each direction (of current direction) needed
     """
-    newDf = []
     
     if filterT:
         df = df[df.Traversal==True]
     if filterR:
         df = df[df.Reward==False]
-    
-    for cellid in df['CellID'].unique():
-        u = df[df['CellID']==cellid]
-        for d in ['V','H']:
-            uOriented = u[u['Orientation']==d]
-            filtdf = filterUnitDirSampling(uOriented,d)
-            if filtdf is not None:
-                newDf.append(filtdf)
+        
+    newDf = []
+    for fid, field in df.groupby("FieldID"):
+        for orien, ofield in field.groupby("Orientation"):
+            dirs = np.unique(ofield.CurrDir)
+            if len(dirs)>2:
+                print(f"{fid} {orien} has too many current direction types")
+            elif len(dirs) == 1:
+                pass
+            else:
+                dA = ofield[ofield.CurrDir==dirs[0]].shape[0]
+                dB = ofield[ofield.CurrDir==dirs[1]].shape[0]
+                if dA >= passThresh and dB >= passThresh:
+                    newDf.append(ofield)
     newDf = pd.concat(newDf)
+                
     return newDf
  

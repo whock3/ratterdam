@@ -16,8 +16,8 @@ library(splines)
 library(car)
 
 # 211210 has 30% field overlap threshold and slightly looser traversal thresholds 
-alleypath <- "E:\\Ratterdam\\R_data_repetition\\20220215-140515_superPopAlleyBehaviorResponse_1.5vfilt_PosInFieldNormedFR.csv"
-
+#alleypath <- "E:\\Ratterdam\\R_data_repetition\\20220215-140515_superPopAlleyBehaviorResponse_1.5vfilt_PosInFieldNormedFR.csv"
+allleypath <- "E:\\Ratterdam\\R_data_repetition\\220222_AlleySuperpopDirVisitFiltered.csv"
 
 alleydf <- read.csv(alleypath,header=TRUE)
 
@@ -55,6 +55,7 @@ previous_responsive <- c()
 
 vif_thresh = 5
 
+repOrNot <- c()
 
 for(o in c('V','H')){
   oriendf <- subset(alleydf, Orientation==o)
@@ -63,10 +64,22 @@ for(o in c('V','H')){
     print(fid)
     
     field <- subset(oriendf, FieldID == fid)
-    try({
-    m <- glm(Rate + 1 ~ CurrDir + PrevDir + NextDir + ns(StartTimes,3),
-             family='Gamma',
-             data=field)
+    
+    dirs <- unique(field$CurrDir)
+    
+    for(dir in dirs){
+      dfield <- field[field$CurrDir==dir,]
+      try({
+      m <- glm(Rate + 1 ~ PrevDir + NextDir + ns(StartTimes,3),
+               family='Gamma',
+               data=dfield)
+      
+    
+    
+    # m <- glm(Rate + 1 ~ CurrDir + PrevDir + NextDir + ns(StartTimes,3),
+    #          family='Gamma',
+    #          data=field)
+    
     
     al <- alias(m)
     if(!("Complete" %in% names(al))){
@@ -87,7 +100,7 @@ for(o in c('V','H')){
     }
     
     total_models_run <- total_models_run + 1
-    
+
     #Previous Direction
     if(pvif < vif_thresh){
       total_previous <- total_previous + 1
@@ -99,16 +112,16 @@ for(o in c('V','H')){
       }
     }
     
-    #Current Direction
-    if(cvif < vif_thresh){
-    total_current <- total_current + 1
-    em_m <- emmeans(m,"CurrDir")
-    pwc <- summary(pairs(em_m))
-    sig <- pwc[1][pwc[6]<alpha]
-    if(length(sig)>=1){
-      current_responsive <- c(current_responsive, fid)
-    }
-    }
+    # #Current Direction
+    # if(cvif < vif_thresh){
+    # total_current <- total_current + 1
+    # em_m <- emmeans(m,"CurrDir")
+    # pwc <- summary(pairs(em_m))
+    # sig <- pwc[1][pwc[6]<alpha]
+    # if(length(sig)>=1){
+    #   current_responsive <- c(current_responsive, fid)
+    # }
+    # }
 
     
 
@@ -128,13 +141,52 @@ for(o in c('V','H')){
     }
     
     },silent=TRUE)
+      
+    }
     
   }
   
 }
 
-print(length(current_responsive)/total_current)
+#print(length(current_responsive)/total_current)
 print(length(previous_responsive)/total_previous)
 print(length(next_responsive)/total_next)
+
+
+
+
+##### Break down by repeating or non
+# 
+# total_rep <- c()
+# total_nonrep <- c()
+# 
+# for(cid in unique(alleydf$CellID)){
+#   
+#   if(unique(alleydf[alleydf$CellID==cid,'Repeating'])=="True"){
+#     total_rep <- c(total_rep, cid)
+#   }
+#   else if(unique(alleydf[alleydf$CellID==cid,'Repeating'])=="False"){
+#     total_nonrep <- c(total_nonrep, cid)
+#   }
+# }
+# 
+# repResponsive <- c()
+# nonrepResponsive <- c()
+# 
+# for(fid in current_responsive){
+#   repStatus <- unique(alleydf[alleydf$FieldID==fid,"Repeating"])
+#   if(repStatus=="True"){
+#     repResponsive <- c(repResponsive, fid)
+#   }
+#   else if(repStatus == "False"){
+#     nonrepResponsive <- c(nonrepResponsive, fid)
+#     
+#   }
+#   
+# }
+# 
+# print(length(repResponsive)/length(total_rep))
+# print(length(nonrepResponsive)/length(total_nonrep))
+    
 
 

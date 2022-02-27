@@ -279,6 +279,8 @@ class Unit():
         self.visits = []
         self.perimeters = []
         for i,pf in enumerate(self.repUnit.PF[:]):
+            # uncomment below ("if True:") to allow all fields detected by alg through. This is very hacky but this is done infrequently. 
+            #if True:
             if i in self.includedFields or str(i) in self.redrawnFields.keys():
                 if str(i) in self.redrawnFields.keys():
                     border = self.redrawnFields[str(i)]
@@ -642,7 +644,7 @@ def loadTurns(rat, day):
     """
     ratborders = nab.loadAlleyBounds(rat, day)
     datapath = f'E:\Ratterdam\\{rat}\\{rat}_RatterdamOpen_{day}\\'
-    clustList, _ = util.getClustList(datapath)
+    clustList, _ = util.getClustList(datapath,quals=False)
     unit = loadRepeatingUnit(rat,day, clustList[0], smoothing=1)   
 
                                 

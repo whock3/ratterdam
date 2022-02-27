@@ -67,7 +67,7 @@ def drawTrack(ax=None):
 with open("E:\\Ratterdam\\R_data_repetition\\superPopulationRepetition.pickle","rb") as f:
     superpop = pickle.load(f)      
         
-for rat, day in zip(['R781','R781','R808','R808','R859','R859','R886','R886'],['D3','D4','D6','D7','D1','D2','D1','D2']):
+for rat, day in zip(['R765'],['RFD5']):
     df = f'E:\\Ratterdam\\{rat}\\{rat}_RatterdamOpen_{day}\\'
     savepath = f"E:\\Ratterdam\\raw_data_for_JK\\{rat}{day}_trajectories\\"
     

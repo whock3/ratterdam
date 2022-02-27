@@ -15,7 +15,12 @@ import matplotlib.path as path
 from placeFieldBorders import reorderBorder
 
 
-def velocity_filtering(position, thresh = Def.velocity_filter_thresh, winsz=50):
+def computeSpeed(position, winsz=50):
+    """
+    Compute 1D speed over time, smoothed
+    winsz - window size for rolling average. Units are data samples.
+    Returns - 1d vector of speeds at each time point
+    """
     gradts, gradx, grady = np.gradient(position[:,0]), np.gradient(position[:,1]), np.gradient(position[:,2])
     gradx = [np.mean(gradx[0+i:winsz+i]) for i in range(len(gradx))]
     grady = [np.mean(grady[0+i:winsz+i]) for i in range(len(grady))]
@@ -28,7 +33,11 @@ def velocity_filtering(position, thresh = Def.velocity_filter_thresh, winsz=50):
     
     sv = [np.mean(v[0+i:winsz+i]) for i in range(len(v))]
     sv = np.asarray(sv)
-    
+    return sv
+
+
+def velocity_filtering(position, thresh = Def.velocity_filter_thresh, winsz=50):
+    sv = computeSpeed(position, winsz=winsz)
     vf_pos = position[sv > thresh]
     
     return vf_pos
@@ -163,8 +172,8 @@ def normalizeTrajectory(unit, tsStart, tsEnd, contour, alley, border):
     verticals = [str(i) for i in [2,3,5,7,16,14,11,9]]
     horizontals = [str(i) for i in [0,4,6,1,12,8,15,13,10]]
     if alley in horizontals:
-        xbins = np.linspace(border[0][0],border[0][1],num=15+1)
-        ybins = np.linspace(border[1][0],border[1][1],num=8+1)
+        xbins = np.linspace(border[0][0],border[0][1],num=15+1) # 0.91 cm bins
+        ybins = np.linspace(border[1][0],border[1][1],num=8+1) # 0.91 cm bins 
     elif alley in verticals:
         xbins = np.linspace(border[0][0],border[0][1],num=8+1)
         ybins = np.linspace(border[1][0],border[1][1],num=15+1)

@@ -26,9 +26,10 @@ import matplotlib as mpl
 from scipy.stats import sem
 import repetition_manuscript_defaults as MDef
 from importlib import reload
+import itertools
 
 
-alleydatapath = "E:\\Ratterdam\\R_data_repetition\\211220_AlleySuperpopDirVisitFiltered.csv"
+alleydatapath = "E:\\Ratterdam\\R_data_repetition\\220222_AlleySuperpopDirVisitFiltered.csv"
 alleydf = pd.read_csv(alleydatapath)
 
 
@@ -64,6 +65,7 @@ x = []
 y = []
 sigs = []
 prods = []
+all_diffs = []
 
 for cellid, cell in alleydf.groupby("CellID"):
     for oname, ocell in cell.groupby("Orientation"):
@@ -81,6 +83,8 @@ for cellid, cell in alleydf.groupby("CellID"):
             for fid, field in ocell.groupby("FieldID"):
             
                 dirs = sorted(np.unique(field.CurrDir)) # sort alphabetically to keep signs consistent below 
+                if len(dirs) > 2:
+                    print(f"dir error {fid} {oname}")
                 dirA = field[field.CurrDir==dirs[0]]
                 dirB = field[field.CurrDir==dirs[1]]
                 
@@ -92,19 +96,22 @@ for cellid, cell in alleydf.groupby("CellID"):
                     diff = 0
                 
                 signed_diffs.append(diff)
+                all_diffs.append(diff)
                 
-            # get pairwise products
-            for i in range(len(signed_diffs)):
-                for j in range(len(signed_diffs)):
-                    if i != j:
-                        x.append(signed_diffs[i])
-                        y.append(signed_diffs[j])
-                        
-                        prods.append(signed_diffs[i]*signed_diffs[j])
+            # get pairwise comparisons and products
+            combs = itertools.combinations(signed_diffs,2)
+            for pair in combs:
+                i,j = pair
+                    
+                x.append(i)
+                y.append(j)
+                
+                prods.append(i*j)
                         
 #%% Plot scatter signed dir A vs B
 
 from scipy.stats import linregress
+import matplotlib.patches as patches
 
 reload(MDef)
 
@@ -112,13 +119,16 @@ colors = ['grey' if s==False else 'red' for s in sigs]
 
 
 fig, ax = plt.subplots()
-ax.scatter(x,y, s=120,c='grey',edgecolor='k',linewidth=1)
+ax.scatter(x,y, s=400,c='grey',edgecolor='k',linewidth=1)
 ax.set_ylabel("Signed Normalized\n Directionality Field A", fontsize=MDef.ylabelsize)
 ax.set_xlabel("Signed Normalized\n Directionality Field B", fontsize=MDef.xlabelsize)
 ax.set_title("Pairwise Directionality Comparison of Aligned Repeating Fields \nwithin each Repeating Neuron",
              fontsize=MDef.titlesize)
-ax.tick_params(axis='both', which='major', labelsize=MDef.ticksize)
+
 xlim, ylim = ax.get_xlim(), ax.get_ylim()
+
+
+ax.tick_params(axis='both', which='major', labelsize=MDef.ticksize)
 ax.hlines(0, xlim[0], xlim[1], linestyle='--',color='k',linewidth=2)
 ax.vlines(0, ylim[0], ylim[1], linestyle='--',color='k',linewidth=2)
 ax.spines['right'].set_visible(False)
@@ -130,23 +140,74 @@ ax.spines['bottom'].set_linewidth(MDef.spine_width)
 olsfit = linregress(x,y)
 xfit = np.linspace(xlim[0], xlim[1],100)
 yfit = [(olsfit.slope*i)+olsfit.intercept for i in xfit]
-ax.plot(xfit,yfit,color='navy',linewidth=3)
-ax.fill_between(xfit,yfit-olsfit.stderr,yfit+olsfit.stderr,color='cornflowerblue',alpha=0.7)
-plt.text(2,2.5,f"$R^2$ = {round(ols.rvalue**2,3)}",fontsize=32) # this position is hardcoded, if data changes a lot need to move
+ax.plot(xfit,yfit,color='black',linewidth=3)
+ax.fill_between(xfit,yfit-olsfit.stderr,yfit+olsfit.stderr,color='grey',alpha=0.7)
+plt.text(2,2.5,f"$R^2$ = {round(olsfit.rvalue**2,3)}",fontsize=32) # this position is hardcoded, if data changes a lot need to move
+
+xlim, ylim = ax.get_xlim(), ax.get_ylim()
+
+alpha = 0.3
+
+widths = [xlim[1]-xlim[0],
+     xlim[0],
+     xlim[0],
+     xlim[1]-xlim[0]
+     ]
+
+heights = [ylim[1]-ylim[0],
+     ylim[1]-ylim[0],
+     ylim[0],
+     ylim[0]  
+     ]
+
+colors = ['red','blue','red','blue']
+     
+     
+for w,h,c in zip(widths, heights, colors):    
+    rect = patches.Rectangle((0,0),w,h,
+                             facecolor=c,
+                             alpha=alpha,
+                             zorder=0
+                            )
+
+    ax.add_patch(rect)
+
 #%%
 
 # plot product 
 fig, ax = plt.subplots()
 #ax.scatter(prods,range(len(prods)),s=80,c='grey',edgecolor='black',linewidth=2)
 ax.hist(prods,bins=50,color='grey',edgecolor='k',linewidth=3)
-ylim = ax.get_ylim()
+xlim, ylim = ax.get_xlim(), ax.get_ylim()
 ax.vlines(0, ylim[0], ylim[1], linestyle='--',color='k',linewidth=5)
 ax.set_ylabel("Frequency", fontsize=MDef.ylabelsize)
 ax.set_xlabel("Directionality Product", fontsize=MDef.xlabelsize)
 ax.set_title("Product of Signed Directionality of Aligned Repeating Fields \nwithin each Repeating Neuron",
              fontsize=MDef.titlesize)
+
+alpha = 0.3
+
 ax.tick_params(axis='both', which='major', labelsize=MDef.ticksize)
 ax.spines['right'].set_visible(False)
 ax.spines['top'].set_visible(False)
 ax.spines['left'].set_linewidth(MDef.spine_width)
 ax.spines['bottom'].set_linewidth(MDef.spine_width)
+
+
+xlim, ylim = ax.get_xlim(), ax.get_ylim()
+widths = [xlim[0],
+          xlim[1]-xlim[0]]
+  
+heights = [ylim[1],
+           ylim[1]]  
+
+colors = ['blue','red']
+        
+for w,h,c in zip(widths, heights, colors):    
+    rect = patches.Rectangle((0,0),w,h,
+                             facecolor=c,
+                             alpha=alpha,
+                             zorder=0
+                            )
+
+    ax.add_patch(rect)

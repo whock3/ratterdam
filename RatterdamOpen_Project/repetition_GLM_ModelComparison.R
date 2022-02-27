@@ -27,8 +27,9 @@ library(splines)
 
 
 # 211210 has 30% field overlap threshold and slightly looser traversal thresholds 
-alleypath <- "E:\\Ratterdam\\R_data_repetition\\211220_AlleySuperpopDirVisitFiltered.csv"
+# alleypath <- "E:\\Ratterdam\\R_data_repetition\\211220_AlleySuperpopDirVisitFiltered.csv"
 
+alleypath <- "E:\\Ratterdam\\R_data_repetition\\220218_AlleySuperpopDirVisitFiltered.csv"
 
 
 
@@ -41,6 +42,7 @@ alleydf$RetroEgo <- as.factor(alleydf$RetroEgo)
 alleydf$ProspEgo <- as.factor(alleydf$ProspEgo)
 alleydf$Repeating <- as.factor(alleydf$Repeating)
 alleydf$Traversal <- as.factor(alleydf$Traversal)
+alleydf$Reward <- as.factor(alleydf$Reward)
 alleydf$CellID <- as.factor(alleydf$CellID)
 alleydf$FieldNum <- as.factor(alleydf$FieldNum)
 alleydf$FieldID <- as.factor(alleydf$FieldID)
@@ -138,9 +140,9 @@ if(shuffle==FALSE){
           # m5 <- glm(Rate+1 ~ PrevDir + CurrDir + NextDir + ns(StartTimes,startTimeKnots), family='Gamma',data=field)
           
           m1 <- glm(Rate+1 ~ ns(StartTimes,startTimeKnots), family='Gamma', data=field)
-          m2 <- glm(Rate+1 ~ NextDir + ns(StartTimes,startTimeKnots), family = 'Gamma', data=field)
+          m2 <- glm(Rate+1 ~ CurrDir + ns(StartTimes,startTimeKnots), family = 'Gamma', data=field)
           m3 <- glm(Rate+1 ~ NextDir + CurrDir + ns(StartTimes,startTimeKnots), family='Gamma',data=field)
-          m4 <- glm(Rate+1 ~ NextDir + PrevDir + ns(StartTimes,startTimeKnots), family='Gamma',data=field)
+          m4 <- glm(Rate+1 ~ CurrDir + PrevDir + ns(StartTimes,startTimeKnots), family='Gamma',data=field)
           m5 <- glm(Rate+1 ~ PrevDir + CurrDir + NextDir + ns(StartTimes,startTimeKnots), family='Gamma',data=field)
           
           m1_rmse <- c(m1_rmse, sqrt(mean((field$Rate-m1$fitted.values)^2)))
@@ -196,7 +198,7 @@ if(shuffle==FALSE){
           
           
           # Case checks for nonrepeating fields
-          else if((unique(field$Repeating)=='False')&(nfields==1)){
+          else if((unique(field$Repeating)=='False')){
             actualRunNonrep <- actualRunNonrep + 1
             repOrNot <- c(repOrNot, FALSE)
               if((lrFullA[2,"Pr(>Chisq)"]<(0.05/bfAdj))&(lrFullB[2,"Pr(>Chisq)"]<(0.05/bfAdj))){
@@ -218,7 +220,7 @@ if(shuffle==FALSE){
           }
           
           
-        },silent=TRUE) 
+        },silent=FALSE) 
       }
     }
     

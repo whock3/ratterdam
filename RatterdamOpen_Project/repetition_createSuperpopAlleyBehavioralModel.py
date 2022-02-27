@@ -37,6 +37,17 @@ import more_itertools
 from matplotlib import path
 import ratterdam_DataFiltering as Filt 
 
+
+
+##### Normalize Rate Toggle Here #############################################
+# Set to true if you want to normalize each pass through a field by the
+# session-averaged ratemap. This corrects for sampling biases thru field 
+# in some conditions vs others 
+##############################################################################
+normalizeRate = True
+##############################################################################
+
+
 def drawRegion(ax, bounds,color):
     """
     Bounds are the corners of a region on the track
@@ -78,10 +89,18 @@ trackperimeter = [str(i) for i in [0,4,6,7,9,10,13,15,16,2]]
 trackinterior = [str(i) for i in [1,3,14,12,5,11, 8]]
 
 
+rat_list = ['R765','R765','R781','R781','R808','R808','R859','R859','R886','R886']
+day_list = ['RFD5','DFD4','D3','D4','D6','D7','D1','D2','D1','D2']
 
-for rat, day in zip(['R765','R781','R781','R808','R808','R859','R859','R886','R886'], ['RFD5','D3','D4','D6','D7','D1','D2','D1','D2']):
+
+for rat, day in zip(rat_list, day_list):
     df = f'E:\\Ratterdam\\{rat}\\{rat}_RatterdamOpen_{day}\\'
     population, turns = RepCore.loadRecordingSessionData(rat, day)
+    
+    # Code 0 means an error and a discontinuity in behavioral tracking
+    # this happens infrequently enough that it's not a huge problem
+    # causes are typically loss of camera tracking briefly. 
+    turns = turns[turns.Ego!='0']
     
     superpopAlleyDf = []
     
@@ -124,6 +143,9 @@ for rat, day in zip(['R765','R781','R781','R808','R808','R859','R859','R886','R8
             # R model will just use the IDs which will be unique for each cell and field.
             # but I still want the real name and field num there for inspection purposes
             for tnum, turn in refturns.iterrows():
+                # first condition checks we arent at end. 
+                # Second checks for discontinuities in tracking progression through alleys
+                # commented second check out: and turn['Alley+'] == refturns.iloc[tnum+1]['Alley-'] 
                 if tnum < refturns.shape[0]-1:
                 
                     # Because turn definition is staggered as it moves across track,
@@ -150,13 +172,16 @@ for rat, day in zip(['R765','R781','R781','R808','R808','R859','R859','R886','R8
                             # Now getting firing rate normalized by where in the field the trajectory went
                             # First compute 2d ratemaps for trajectory and session. Then normalize traj by sess rm. 
                             # return the nanmean of this 2d rm
-                            normedRate = Filt.normalizeTrajectory(unit, 
+                            
+                            if normalizeRate == True:
+                                rate = Filt.normalizeTrajectory(unit, 
                                                                   ts_start, 
                                                                   ts_end, 
                                                                   contour, 
                                                                   turn['Alley+'], 
                                                                   ratborders.alleyInterBounds[turn['Alley+']])
-                            
+                            else:
+                                rate =  contour.contains_points(unit.spikes[(unit.spikes[:,0]>ts_start)&(unit.spikes[:,0]<= ts_end),1:]).shape[0]/((ts_end-ts_start)/1e6)
                             rats.append(rat)
                             days.append(day)
                             turnNums.append(tnum)
@@ -175,7 +200,6 @@ for rat, day in zip(['R765','R781','R781','R808','R808','R859','R859','R886','R8
                             retrospectiveEgo.append(egocodedict[turn['Ego']])
                             repeating.append(repeat) # label if cell is repeating so we can group by repeating status later in R
                             startTimes.append(ts_start)
-                            
                             if tnum in ballisticTurnIdx:
                                 traversal.append(True)
                             else:
@@ -192,7 +216,7 @@ for rat, day in zip(['R765','R781','R781','R808','R808','R859','R859','R886','R8
                                 location.append('I')
                             
                             # get spikes on alley (using the ts as endpoints) and filter by field perim to get spikes in field
-                            rates.append(normedRate)
+                            rates.append(rate)
                             cellnames.append(f"{clustName}")
                             fieldnums.append(fnum)
                             cellIDs.append(cellcounter)
@@ -249,6 +273,7 @@ columns=["Rat",
          "Reward",
          "Rate"])
 
+df.replace([np.inf,-np.inf],np.nan,inplace=True)
 df.dropna(inplace=True)
 # drop rows with missing data, coded as a '0' in the turn df 
 for var in ['PrevDir','CurrDir','NextDir','ProspEgo','RetroEgo']:
@@ -256,5 +281,5 @@ for var in ['PrevDir','CurrDir','NextDir','ProspEgo','RetroEgo']:
     
 
 stamp = util.genTimestamp()
-filename = f"{stamp}_superPopAlleyBehaviorResponse_{Def.velocity_filter_thresh}vfilt_PosInFieldNormedFR.csv"
+filename = f"{stamp}_superPopAlleyBehaviorResponse_{Def.velocity_filter_thresh}vfilt_FieldNormed{normalizeRate}.csv"
 df.to_csv(f"E:\\Ratterdam\\R_data_repetition\\{filename}", header=True, index=False)

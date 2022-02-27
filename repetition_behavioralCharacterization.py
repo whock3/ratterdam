@@ -10,25 +10,24 @@ to put in the "basic characterization" figure (Fig 1) in repetition manuscript
 
 
 """
-
 import numpy as np
 import utility_fx as util
 from matplotlib import pyplot as plt
 import ratterdam_Defaults as Def
 import ratterdam_RepetitionCoreFx as RepCore
-import pandas as pd
+import pandas as pdo
 import ratterdam_DataFiltering as Filt 
 import utility_fx as util 
 import newAlleyBounds as nab
 
-
-rat, day  = 'R859', 'D2'
+rat, day  = 'R765', 'DFD4'
 turns, unit = RepCore.loadTurns(rat,day)
-
-
+turns = turns[turns.Ego!='0']
 
 ratborders = nab.loadAlleyBounds(rat, day)
 rewards = RepCore.readinRewards(rat, day)
+
+
 
 
 verticals = [str(i) for i in [2,3,5,7,16,14,11,9]]

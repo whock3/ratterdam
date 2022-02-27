@@ -19,8 +19,10 @@ R886D1V = np.asarray([87+25, 132+30, 218+25, 262+25, 352+25, 402+25, 490+15, 533
 R886D1H = np.asarray([83+10, 137+10, 210+10, 270+10, 350+10, 402+10])
 R886D2V = np.asarray([87, 132, 218, 262, 352, 402, 490, 533]) #d2
 R886D2H = np.asarray([83, 137, 210, 270, 350, 402]) #d2
-R765V = np.array([97, 150, 240, 287, 383, 425, 515, 557])
-R765H = np.array([75, 123, 211, 270, 350, 410])
+R765RFD5V = np.array([97, 150, 240, 287, 383, 425, 515, 557])
+R765RFD5H = np.array([75, 123, 211, 270, 350, 410])
+R765DFD4V = np.array([97, 150, 240, 287, 383, 425, 515, 557])
+R765DFD4H = np.array([75, 133, 211, 270, 350, 410])
 
 
 def loadAlleyBounds(rat, day):
@@ -44,8 +46,12 @@ def loadAlleyBounds(rat, day):
         v1, v2, v3, v4, v5, v6, v7, v8 = R781V
         h1, h2, h3, h4, h5, h6 = R781H
     elif rat == 'R765':
-        v1, v2, v3, v4, v5, v6, v7, v8 = R765V
-        h1, h2, h3, h4, h5, h6 = R765H
+        if day == 'RFD5':
+            v1, v2, v3, v4, v5, v6, v7, v8 = R765RFD5V
+            h1, h2, h3, h4, h5, h6 = R765RFD5H
+        elif day == 'DFD4':
+            v1, v2, v3, v4, v5, v6, v7, v8 = R765DFD4V
+            h1, h2, h3, h4, h5, h6 = R765DFD4H
     elif rat == 'R808':
         v1, v2, v3, v4, v5, v6, v7, v8 = R808V
         h1, h2, h3, h4, h5, h6 = R808H
