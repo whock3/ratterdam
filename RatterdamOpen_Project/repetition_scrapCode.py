@@ -206,7 +206,6 @@ for t in range(start, start+nturns):
     behav = unit.position[(unit.position[:,0]>float(ts_start))&(unit.position[:,0]<=float(ts_end))]
     behav = behav[(behav[:,1]>0)&(behav[:,2]>0)]
     spikes = unit.spikes[(unit.spikes[:,0]>float(ts_start))&(unit.spikes[:,0]<=float(ts_end))]
-
     
     if turn.name in ballisticTurnRows:
         bgcolor = 'lightcoral'

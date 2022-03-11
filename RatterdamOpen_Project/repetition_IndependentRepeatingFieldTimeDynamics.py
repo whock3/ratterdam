@@ -26,6 +26,7 @@ import itertools
 from scipy.stats.stats import pearsonr
 from scipy.interpolate import PchipInterpolator as pchip
 from matplotlib import patches
+from scipy.signal import correlate 
 
 
 
@@ -68,6 +69,11 @@ for rat, rdf in alleydf.groupby("Rat"):
                     for pair in combs:
                         i,j = pair
                         tsA,tsB = field_timeseries[i], field_timeseries[j]
+                        
+                        c = correlate(tsA, tsB, mode="full", method="auto")
+                        max_ind = np.argmax(np.abs(c))
+                        shift = max_ind - (len(tsA)-1)
+                        
                         corr = pearsonr(tsA,tsB)[0]
                         fieldTimeCorrs.append(corr)
                         
@@ -97,15 +103,16 @@ for w,h,c in zip(widths, heights, colors):
 
     ax.add_patch(rect)
     
-ax.set_ylabel("Frequency", fontsize=30)
-ax.set_xlabel("Pearson Correlation Between Interpolated Time Series", fontsize=30)
+ax.set_ylabel("Frequency", fontsize=40)
+ax.set_xlabel("Pearson Correlation Between Interpolated Time Series", fontsize=40)
 
-alpha = 0.3
 
-ax.tick_params(axis='both', which='major', labelsize=30, length=10)
+ax.tick_params(axis='both', which='major', labelsize=40, length=10)
 ax.spines['right'].set_visible(False)
 ax.spines['top'].set_visible(False)
 ax.spines['left'].set_linewidth(2)
 ax.spines['bottom'].set_linewidth(2)
+
+
                         
 

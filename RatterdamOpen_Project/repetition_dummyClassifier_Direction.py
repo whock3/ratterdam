@@ -29,7 +29,7 @@ from sklearn.metrics import classification_report, precision_score, recall_score
 
 import numpy as np
 import utility_fx as util
-import os
+import os, json 
 import matplotlib.gridspec as gridspec
 from matplotlib import pyplot as plt
 import ratterdam_Defaults as Def
@@ -60,7 +60,7 @@ region_sets = {'RS6':[0,4,6,15,13,10,1,12,8],
                 }
 
 codedict = {'1':'N','2':'E','3':'S','4':'W','0':'X'}
-savepath = "E:\\Ratterdam\\repetition_decoding\\21-09-07_decoding\\"
+savepath = "E:\\Ratterdam\\repetition_decoding\\22-03-09_decoding\\"
 
 naive_perfs_datasets = {}
 
@@ -163,7 +163,9 @@ for rat,day in zip(rat_list,day_list):
         naive_perfs_datasets[f"{rat}{day}"][rslabel] = naive_perf 
         
     
-        
+       
+with open(savepath+"naiveClassifierData.json", "w") as f:
+    json.dump(naive_perfs_datasets, f)
         
         
         

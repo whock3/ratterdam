@@ -140,7 +140,7 @@ def unitVelocityFilter(ts, position, clust):
         return filtTs
     
     
-def filterVisit(dista,distb,traj,perim,length_thresh=0.4,dist_thresh=0.10,dist_point_thresh=3,inside_point_thresh=3):
+def filterVisit(dista,distb,traj,perim,length_thresh=0.01,dist_thresh=0.05,dist_point_thresh=2,inside_point_thresh=2):
     """
     Parameters
     ----------
@@ -164,7 +164,13 @@ def filterVisit(dista,distb,traj,perim,length_thresh=0.4,dist_thresh=0.10,dist_p
     dist_point_thresh : int, optional
         How many points must be dist_thresh away. The default is 3.
     inside_point_thresh : int, optional
-        What # of points must be inside field. The default is 
+        What # of points must be inside field. The default is 3
+        
+        2022-03-09: KEEP THIS. since we are normalizing each pass by the 
+        overallratemap, the other params related to how far "deep" in the 
+        field you go are arguably not needed. However, this one is ESSENTIAL.
+        Because there are passes that go through alley but do not go thru field
+        and we obviously need to exclude those. 
     
     Returns
     -------
@@ -198,7 +204,7 @@ def filterVisit(dista,distb,traj,perim,length_thresh=0.4,dist_thresh=0.10,dist_p
         
         mind = [min(np.linalg.norm(i[1:]-perim,axis=1)) for i in trajin]
         minDist = min(dist_thresh*dista, dist_thresh*distb)
-        for k, g in groupby((mind>minDist)):
+        for k, g in groupby((mind>=minDist)):
             if k == True:
                 g = list(g)
                 if len(g) >= dist_point_thresh:

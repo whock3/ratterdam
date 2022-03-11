@@ -36,6 +36,7 @@ import copy
 import more_itertools
 from matplotlib import path
 import ratterdam_DataFiltering as Filt 
+import pickle 
 
 
 
@@ -93,17 +94,26 @@ rat_list = ['R765','R765','R781','R781','R808','R808','R859','R859','R886','R886
 day_list = ['RFD5','DFD4','D3','D4','D6','D7','D1','D2','D1','D2']
 
 
+# 2022-03-09 loading cells from the saved superpop pickle rather than generate
+# from raw data. I don't think I have changed anything like field bounds since
+# 2/18/22 so it should be fine. NB we regenerate turns from refturns which is 
+# okay since I forgot when I removed the previous intersection check it may have been
+# after this superpop pickle was made. 
+# with open("E:\\Ratterdam\\R_data_repetition\\22-02-18_superPopulationRepetition.pickle","rb") as f:
+#     superpop = pickle.load(f)
+
 for rat, day in zip(rat_list, day_list):
     df = f'E:\\Ratterdam\\{rat}\\{rat}_RatterdamOpen_{day}\\'
+    
+    # population = superpop[rat][day]['units']
+    # turns = superpop[rat][day]['refturns']
     population, turns = RepCore.loadRecordingSessionData(rat, day)
     
     # Code 0 means an error and a discontinuity in behavioral tracking
     # this happens infrequently enough that it's not a huge problem
     # causes are typically loss of camera tracking briefly. 
     turns = turns[turns.Ego!='0']
-    
-    superpopAlleyDf = []
-    
+        
     ratborders = nab.loadAlleyBounds(rat, day)
     rewards = RepCore.readinRewards(rat, day)
 
@@ -159,11 +169,11 @@ for rat, day in zip(rat_list, day_list):
                         behav = behav[(behav[:,1]>0)&(behav[:,2]>0)]
                         
                         filtOutcome = RepCore.filterVisit(dista,distb,behav,perim,
-                                                          length_thresh=0.2,
-                                                          dist_thresh=0.1,
+                                                          length_thresh=0.01,
+                                                          dist_thresh=0.05,
                                                           dist_point_thresh=2,
                                                           inside_point_thresh=2)
-                        
+                     
                         if filtOutcome == True:
                             
                             
@@ -273,6 +283,7 @@ columns=["Rat",
          "Reward",
          "Rate"])
 
+#we have infs because the normalized FRs can be inf 
 df.replace([np.inf,-np.inf],np.nan,inplace=True)
 df.dropna(inplace=True)
 # drop rows with missing data, coded as a '0' in the turn df 

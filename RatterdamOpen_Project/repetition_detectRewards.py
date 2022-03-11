@@ -22,7 +22,7 @@ import newAlleyBounds as nab
 from scipy.signal import butter, lfilter 
 
 
-proxThresh = 75 # proximity threshold in camera frame coord units within which
+proxThresh = 50 # proximity threshold in camera frame coord units within which
                 # the animal might be receiving a reward 
  
 
@@ -142,3 +142,56 @@ for c in cdists:
     
 ax2 = ax.twinx()
 ax2.plot(highpass_csc[:,0], highpass_csc[:,1],color='r')
+
+
+
+#%% 2022-03-08
+# Look at number of times rat slowed down. Apply proximity threshold to alley center
+# to get rid of scanning and such. Compare this for R781 to other rats to get a 
+# rough sense how many fewer rewards this rat may have gotten. Point is to estimate
+# what percent of these we may be recovering through all reward detection methods 
+# (video scoring, TTL data)
+
+    
+rat, day = 'R781', 'D4'
+turns, unit = RepCore.loadTurns(rat, day)
+ratborders = nab.loadAlleyBounds(rat, day)
+aib = ratborders.alleyInterBounds
+rewards = RepCore.readinRewards(rat, day)
+
+proxThresh = 50 # proximity threshold in camera frame coord units within which
+                # the animal might be receiving a reward 
+
+# Filter positions by proximity to alley center
+centers = []
+for i in range(17):
+    b = aib[str(i)]
+    x,y = (b[0][0]+b[0][1])/2, (b[1][0]+b[1][1])/2
+    centers.append([x,y])
+    
+cdists = []
+for c in centers:
+    cdists.append(np.linalg.norm(c-unit.position[:,1:],axis=1))
+    
+filtpos = np.empty((0,3))
+for c in cdists:
+    proxidx  = np.where(c < proxThresh)[0]
+    proxsamples = unit.position[proxidx,:]
+    filtpos = np.vstack((filtpos, proxsamples))
+    
+filtpos = filtpos[np.argsort(filtpos[:,0])] # sort, because going thru alleys gets hacksaw pattern
+dups= np.where(np.diff(filtpos[:,0])==0)[0]+1 # find duplicate entries, there are overlaps
+filtpos = np.delete(filtpos,dups,axis=0) # delte them 
+filtspeed = Filt.computeSpeed(filtpos)
+
+
+slowThresh = 5 # speed threshold below which rat is said to have "stopped"
+numSlowdowns = sum(np.diff(filtspeed<slowThresh))/2 # threshold gives bool array of whether
+                                                    # sample was above thresh. Period below thresh
+                                                    # will then have two samples, start and stop
+sessionDuration = (unit.position[-1,0]-unit.position[0,0])/1e6
+stopFreq = 1/(numSlowdowns/sessionDuration) # in seconds. One stop every x seconds. 
+print(rat,day,stopFreq,len(rewards))
+plt.plot(filtpos[:,0],filtspeed)
+plt.hlines(slowThresh,unit.position[0,0], unit.position[-1,0],linestyle='--',color='k')
+plt.title(f"{rat} {day} speed of position within {proxThresh} pts of alley centers")
