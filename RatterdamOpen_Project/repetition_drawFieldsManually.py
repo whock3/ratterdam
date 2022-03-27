@@ -20,12 +20,14 @@ import utility_fx as util
 from matplotlib import path
 import williamDefaults as wmDef
 import os, json
+import ratterdam_Defaults as Def
 
+Def.includeAllDetectedFields = False  
 
-rat = 'R765'
-day = 'DFD4'
+rat = 'R886'
+day = 'D2'
 df = f'E:\\Ratterdam\\{rat}\\{rat}_RatterdamOpen_{day}\\'
-clustname = "TT1\\cl-maze1.2"
+clustname = "TT12\\cl-maze1.1"
 
 cmap = util.makeCustomColormap()
 
@@ -74,7 +76,7 @@ class FieldDrawer():
     
     def drawFields(self):
     
-        self.fig, self.ax = plt.subplots(figsize=(8,6))
+        self.fig, self.ax = plt.subplots(figsize=(14,10))
         self.ax.imshow(self.unit.repUnit.rateMap2D, origin='lower', aspect='auto', interpolation='None', 
                       cmap=cmap, vmax=np.nanpercentile(self.unit.repUnit.rateMap2D, 98),
                extent=[wmDef.xedges[0], wmDef.xedges[-1], wmDef.yedges[0], wmDef.yedges[-1]])
@@ -114,3 +116,5 @@ class FieldDrawer():
 #         plt.plot(c[:,0], c[:,1], c='k',linewidth=2)
     
     
+fd = FieldDrawer(df, unit)
+fd.drawFields()

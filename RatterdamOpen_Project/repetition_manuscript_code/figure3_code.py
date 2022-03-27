@@ -17,7 +17,7 @@ import ratterdam_Defaults as Def
 import repetition_manuscript_defaults as MDef
 
 
-datapath  = "E:\\Ratterdam\\R_data_repetition\\220222_AlleySuperpopDirVisitFiltered.csv"
+datapath  = "E:\\Ratterdam\\R_data_repetition\\2022-03-23_AlleySuperpopDirVisitFiltered.csv"
 df = pd.read_csv(datapath)
 
 #%% Figure 4A - Violins of Repeating vs Non-repeating directionality (abs mean diff)
@@ -66,7 +66,7 @@ ax.tick_params(axis='both', which='major', labelsize=MDef.ticksize)
 
 #%% Figure 4B - GLM LRT CD, rep vs nonrep 
 
-cdmodel = pd.read_csv("E:\\Ratterdam\\repetition_manuscript\\Figure2\\22-02-22_CDmodel.csv")
+cdmodel = pd.read_csv("E:\\Ratterdam\\repetition_manuscript\\Figure2\\2022-03-23_CDmodel.csv")
 
 fig, ax = plt.subplots()
 ax.plot(cdmodel.m1_rmse[(cdmodel.repOrNot==0)&(cdmodel.sigP==1)],cdmodel.m2_rmse[(cdmodel.repOrNot==0)&(cdmodel.sigP==1)],

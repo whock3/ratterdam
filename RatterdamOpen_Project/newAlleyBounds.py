@@ -15,6 +15,9 @@ R859V = np.array([22, 32, 49, 61, 78, 88, 104, 113])*4.72
 R859H = np.array([18, 28, 46, 56, 74, 84])*4.72
 
 # created by WH
+
+# R886 has different alley boundary coordinates because camera got bumped slightly
+# between the days. 
 R886D1V = np.asarray([87+25, 132+30, 218+25, 262+25, 352+25, 402+25, 490+15, 533+15])
 R886D1H = np.asarray([83+10, 137+10, 210+10, 270+10, 350+10, 402+10])
 R886D2V = np.asarray([87, 132, 218, 262, 352, 402, 490, 533]) #d2

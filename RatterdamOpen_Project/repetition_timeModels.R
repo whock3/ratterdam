@@ -1,6 +1,10 @@
 # Repetition Models
 # WH Oct 24 2021
+# 2022-03-23 revamping this script for repetition manuscript
+# Running models to test whether there's any effect of time
+# without commenting here on what that time signal looks like 
 # Time interaction models 
+
 
 library(lme4)
 library(ggplot2)
@@ -12,7 +16,7 @@ library(ggpubr)
 library(splines)
 
 # Load data and recode factors
-alleypath <- "E:\\Ratterdam\\R_data_repetition\\211206_AlleySuperpopDirVisitFiltered.csv"
+alleypath <- "E:\\Ratterdam\\R_data_repetition\\2022-03-23_AlleySuperpopDirVisitFiltered.csv"
 alleydf <- read.csv(alleypath,header=TRUE)
 
 alleydf$PrevDir <- as.factor(alleydf$PrevDir)
@@ -51,6 +55,8 @@ alpha  = 0.05/3
 
 rmse <- c()
 
+rmse_base <- c()
+rmse_alt <- c()
 
 set.seed(123)
 for(o in c("V","H")){
@@ -61,8 +67,8 @@ for(o in c("V","H")){
       run <- run + 1
       
       field <- subset(oriendf, FieldID==fid)
-      basemod <- glm(Rate + 1 ~ 1,family='Gamma',data=field)
-      mod <- glm(Rate + 1 ~ ns(StartTimes,3),family='Gamma',data=field)
+      basemod <- glm(Rate + 1 ~ CurrDir,family='Gamma',data=field)
+      mod <- glm(Rate + 1 ~ CurrDir + ns(StartTimes,3),family='Gamma',data=field)
       s<-summary(mod)
       anysig <- FALSE
       
@@ -73,10 +79,6 @@ for(o in c("V","H")){
         nnonreps <- nnonreps + 1
       }
       
-      rmse <- c(rmse, 
-                sqrt(mean((field$Rate-mod$fitted.values)^2))-
-                  sqrt(mean((field$Rate-basemod$fitted.values)^2)))
-
       s <- summary(mod)
       
       p1 <- s$coefficients["ns(StartTimes, 3)1","Pr(>|t|)"]
@@ -102,6 +104,10 @@ for(o in c("V","H")){
       else if(unique(field$Repeating)=="False"){
         repOrNot <- c(repOrNot, FALSE)
       }
+      
+      rmse_base <- c(rmse_base, sqrt(mean((field$Rate-basemod$fitted.values)^2)))
+      rmse_alt <- c(rmse_alt, sqrt(mean((field$Rate-mod$fitted.values)^2)))
+      
       
       
       

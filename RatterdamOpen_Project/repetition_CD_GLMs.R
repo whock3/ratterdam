@@ -17,7 +17,7 @@ library(ggpubr)
 library(splines)
 
 
-alleypath <- "E:\\Ratterdam\\R_data_repetition\\220222_AlleySuperpopDirVisitFiltered.csv"
+alleypath <- "E:\\Ratterdam\\R_data_repetition\\2022-03-23_AlleySuperpopDirVisitFiltered.csv"
 
 alleydf <- read.csv(alleypath,header=TRUE)
 

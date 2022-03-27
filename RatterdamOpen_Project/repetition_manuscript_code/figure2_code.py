@@ -21,7 +21,7 @@ import repetition_manuscript_defaults as MDef
 import ratterdam_Defaults as Def
 
 # most recent version using raw FR (without R765 DFD4): 211220_*
-datapath  = "E:\\Ratterdam\\R_data_repetition\\220222_AlleySuperpopDirVisitFiltered.csv"
+datapath  = "E:\\Ratterdam\\R_data_repetition\\2022-03-23_AlleySuperpopDirVisitFiltered.csv"
 df = pd.read_csv(datapath)
 
 #%% Figure 3A - directional ratemaps. Taken from saved files, no py code used here
@@ -108,7 +108,7 @@ lgnd.get_frame().set_linewidth(MDef.legend_frame_width)
 
 # this 211216 model did not have its own script, I saved the CD part of a script
 # that looked at all directions. 
-cdmodel = pd.read_csv("E:\\Ratterdam\\repetition_manuscript\\Figure2\\22-02-22_CDmodel.csv")
+cdmodel = pd.read_csv("E:\\Ratterdam\\repetition_manuscript\\Figure2\\2022-03-23_CDmodel.csv")
 
 fig, ax = plt.subplots()
 ax.plot(cdmodel.m1_rmse[cdmodel.sigP==0],cdmodel.m2_rmse[cdmodel.sigP==0],
@@ -138,10 +138,10 @@ lgnd.get_frame().set_linewidth(MDef.legend_frame_width)
 
 #%% Fig 3E - Example classifier run. Example dataset: 22-02-21. R765 DFD4 RS6
 
-with open("E:\\Ratterdam\\repetition_decoding\\22-02-25_decoding\\rf_data.json", "r") as f:
+with open("E:\\Ratterdam\\repetition_decoding\\2022-03-23_decoding\\rf_data.json", "r") as f:
     rf_data = json.load(f)
 
-with open("E:\\Ratterdam\\repetition_decoding\\22-02-25_decoding\\naiveClassifierData.json", "r") as f:
+with open("E:\\Ratterdam\\repetition_decoding\\2022-03-23_decoding\\naiveClassifierData.json", "r") as f:
     naive_data = json.load(f)
     
 real = rf_data['R765']['DFD4']['RS6']['oobs']['Real']
@@ -220,7 +220,7 @@ ax.scatter(range(len(real)), real,
            edgecolor='k',
            linewidth=0.5,
            label="Real OOB Score")
-# below is the midpoint between the 5th and 95th percentiles. Has no scientific use here, just need it for plotting errorbars
+# below is the midpoint between the 5th and 95th percentiles. Has no scientific meaning, just need it for plotting errorbars
 oobmids = np.asarray([(a+b)/2 for a,b in zip(oobpct5, oobpct95)])
 naivemids = np.asarray([(a+b)/2 for a,b in zip(naivepct5, naivepct95)])
 ax.errorbar(range(len(oobpct5)),oobmids,yerr=np.asarray([oobmids-oobpct5,oobpct95-oobmids]),
@@ -321,14 +321,13 @@ lgnd.get_frame().set_linewidth(MDef.legend_frame_width)
 #%% H - non-current direction (obviously this figure is getting packed and we will decide later how to unpack. lay it out first)
 
 # manually coding numbers from 2-22 run.using allleypath <- "E:\\Ratterdam\\R_data_repetition\\220222_AlleySuperpopDirVisitFiltered.csv"
+# total_current = 154
+# total_previous = 167
+# total_next = 163
 
-total_current = 154
-total_previous = 167
-total_next = 163
-
-current_responsive = 34
-previous_responsive = 19
-next_responsive = 24
+# current_responsive = 34
+# previous_responsive = 19
+# next_responsive = 24
 
 # binom_test(34,154,0.05,'greater')
 # Out[31]: 2.3543593135393474e-13
@@ -338,6 +337,28 @@ next_responsive = 24
 
 # binom_test(24,163,0.05,'greater')
 # Out[33]: 2.2510912699473393e-06
+
+
+#manually coding using 3/23/2022 run input data to R: "E:\\Ratterdam\\R_data_repetition\\2022-03-23_AlleySuperpopDirVisitFiltered.csv"
+# running in repetition_GLMs_emmeans.R
+
+total_current = 187
+total_previous = 201
+total_next = 196
+
+current_responsive = 35
+previous_responsive = 29
+next_responsive = 35
+
+# binom_test(35,187,0.05,'greater')
+# Out[53]: 1.623724084461713e-11
+
+# binom_test(29,201,0.05,'greater')
+# Out[54]: 3.280619616686018e-07
+
+# binom_test(35,196,0.05,'greater')
+# Out[55]: 6.368816825872413e-11
+
 
 fig, ax = plt.subplots()
 

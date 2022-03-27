@@ -16,6 +16,7 @@ hist of product of the pairwise signed differences
 import numpy as np, matplotlib.pyplot as plt, statsmodels.api as sm, pandas as pd
 from statsmodels.formula.api import ols
 import utility_fx as util
+import itertools
 import ratterdam_RepetitionCoreFx as RepCore
 import williamDefaults as wmDef 
 import ratterdam_Defaults as Def
@@ -25,7 +26,7 @@ import repetition_manuscript_defaults as MDef
 from importlib import reload
 
 
-alleydatapath = "E:\\Ratterdam\\R_data_repetition\\220222_AlleySuperpopDirVisitFiltered.csv"
+alleydatapath = "E:\\Ratterdam\\R_data_repetition\\2022-03-23_AlleySuperpopDirVisitFiltered.csv"
 alleydf = pd.read_csv(alleydatapath)
 
 
@@ -129,7 +130,7 @@ def fd_anova(ocell):
     return pint
     
 #%% Run anovas 
-datapath = "E:\\Ratterdam\\R_data_repetition\\220222_AlleySuperpopDirVisitFiltered.csv"
+datapath = "E:\\Ratterdam\\R_data_repetition\\2022-03-23_AlleySuperpopDirVisitFiltered.csv"
 df = pd.read_csv(datapath)
 totalAnovas = 0
 passThresh = 2

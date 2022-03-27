@@ -17,7 +17,7 @@ library(car)
 
 # 211210 has 30% field overlap threshold and slightly looser traversal thresholds 
 #alleypath <- "E:\\Ratterdam\\R_data_repetition\\20220215-140515_superPopAlleyBehaviorResponse_1.5vfilt_PosInFieldNormedFR.csv"
-allleypath <- "E:\\Ratterdam\\R_data_repetition\\220222_AlleySuperpopDirVisitFiltered.csv"
+alleypath <- "E:\\Ratterdam\\R_data_repetition\\2022-03-23_AlleySuperpopDirVisitFiltered.csv"
 
 alleydf <- read.csv(alleypath,header=TRUE)
 
@@ -53,6 +53,8 @@ current_responsive <- c()
 next_responsive <- c()
 previous_responsive <- c()
 
+# heres a page that lists refs for different choices of threshold
+# https://quantifyinghealth.com/vif-threshold
 vif_thresh = 5
 
 repOrNot <- c()
@@ -67,18 +69,18 @@ for(o in c('V','H')){
     
     dirs <- unique(field$CurrDir)
     
-    for(dir in dirs){
-      dfield <- field[field$CurrDir==dir,]
-      try({
-      m <- glm(Rate + 1 ~ PrevDir + NextDir + ns(StartTimes,3),
-               family='Gamma',
-               data=dfield)
+    # for(dir in dirs){
+    #   dfield <- field[field$CurrDir==dir,]
+    #   try({
+      # m <- glm(Rate + 1 ~ PrevDir + NextDir + ns(StartTimes,3),
+      #          family='Gamma',
+      #          data=dfield)
       
+    try({
     
-    
-    # m <- glm(Rate + 1 ~ CurrDir + PrevDir + NextDir + ns(StartTimes,3),
-    #          family='Gamma',
-    #          data=field)
+    m <- glm(Rate + 1 ~ CurrDir + PrevDir + NextDir + ns(StartTimes,3),
+             family='Gamma',
+             data=field)
     
     
     al <- alias(m)
@@ -112,16 +114,16 @@ for(o in c('V','H')){
       }
     }
     
-    # #Current Direction
-    # if(cvif < vif_thresh){
-    # total_current <- total_current + 1
-    # em_m <- emmeans(m,"CurrDir")
-    # pwc <- summary(pairs(em_m))
-    # sig <- pwc[1][pwc[6]<alpha]
-    # if(length(sig)>=1){
-    #   current_responsive <- c(current_responsive, fid)
-    # }
-    # }
+    #Current Direction
+    if(cvif < vif_thresh){
+    total_current <- total_current + 1
+    em_m <- emmeans(m,"CurrDir")
+    pwc <- summary(pairs(em_m))
+    sig <- pwc[1][pwc[6]<alpha]
+    if(length(sig)>=1){
+      current_responsive <- c(current_responsive, fid)
+    }
+    }
 
     
 
@@ -144,12 +146,22 @@ for(o in c('V','H')){
       
     }
     
-  }
+  
   
 }
+print("Current")
+print(length(current_responsive))
+print(total_current)
+print(length(current_responsive)/total_current)
 
-#print(length(current_responsive)/total_current)
+print("Previous")
+print(length(previous_responsive))
+print(total_previous)
 print(length(previous_responsive)/total_previous)
+
+print("Next")
+print(length(next_responsive))
+print(total_next)
 print(length(next_responsive)/total_next)
 
 

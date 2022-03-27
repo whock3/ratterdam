@@ -61,12 +61,21 @@ def loadRepeatingUnit(rat, day, clustName, smoothing=2, vthresh=Def.velocity_fil
     
     position = Filt.velocity_filtering(position, vthresh)
     
+    
+    
+    # 2022-03-23: commenting out this fix as I realize I also fixed it in
+    # the alleybounds code by shifting things over. If you fix it twice it's now
+    #offset too much in the other direction so commenting this out as the fix in
+    # newalleybounds is slightly more accurate as there are separate coordinates
+    # for each vertical and horizontal line that make the alleybounds, this is based
+    # on behavior. 
+    #  -- (old fix and comments below) --- 
     # On R886 D1 the track or camera got moved wrt where it was on D2 
     # which was the day used to make the standard track bound coords. -20 x fixes it
-    day = df.split('\\')[-2] # last element is ''
-    if day.split("_")[0] == 'R886' and day.split("_")[2] == 'D1':
-        print("Readjusting position for R886 D1")
-        position[:,1] = position[:,1] - 20
+    # day = df.split('\\')[-2] # last element is ''
+    # if day.split("_")[0] == 'R886' and day.split("_")[2] == 'D1':
+    #     print("Readjusting position for R886 D1")
+    #     position[:,1] = position[:,1] - 20
     
     clust = np.asarray(util.read_clust(df+clustName))
     clust = Filt.unitVelocityFilter(ts, position, clust)
@@ -285,9 +294,20 @@ class Unit():
         self.visits = []
         self.perimeters = []
         for i,pf in enumerate(self.repUnit.PF[:]):
-            # uncomment below ("if True:") to allow all fields detected by alg through. This is very hacky but this is done infrequently. 
-            #if True:
-            if i in self.includedFields or str(i) in self.redrawnFields.keys():
+             #uncomment below ("if True:") to allow all fields detected by alg through. This is very hacky but this is done infrequently. 
+            
+            # 2022-03-11 adding toggle for whether we are filtering what fields to use or using all that
+            # algorithm comes up with.
+            if Def.includeAllDetectedFields == True:
+                includeFieldToggle = True
+            else:
+                if i in self.includedFields or str(i) in self.redrawnFields.keys():
+                    includeFieldToggle = True
+                else:
+                    includeFieldToggle = False 
+                
+            if includeFieldToggle:    
+                
                 if str(i) in self.redrawnFields.keys():
                     border = self.redrawnFields[str(i)]
                 else:           

@@ -53,30 +53,33 @@ alldata = {}
 timestamp = util.genTimestamp()
 codedict = {'1':'N','2':'E','3':'S','4':'W','0':'X'}
 
-with open("E:\\Ratterdam\\R_data_repetition\\22-02-18_superPopulationRepetition.pickle","rb") as f:
+with open("E:\\Ratterdam\\R_data_repetition\\20220323-125452_superPopulationRepetition.pickle","rb") as f:
     superpop = pickle.load(f)  
 
-rat_list = ['R765',
-            'R765',
-            'R781', 
-            'R781', 
-            'R808', 
-            'R808', 
-            'R859', 
-            'R859', 
-            'R886', 
-            'R886']
+# rat_list = ['R765',
+#             'R765',
+#             'R781', 
+#             'R781', 
+#             'R808', 
+#             'R808', 
+#             'R859', 
+#             'R859', 
+#             'R886', 
+#             'R886']
 
-day_list = ['RFD5',
-            'DFD4',
-            'D3', 
-            'D4',
-            'D6',
-            'D7',
-            'D1',
-            'D2',
-            'D1',
-            'D2']
+# day_list = ['RFD5',
+#             'DFD4',
+#             'D3', 
+#             'D4',
+#             'D6',
+#             'D7',
+#             'D1',
+#             'D2',
+#             'D1',
+#             'D2']
+
+rat_list = ['R886']
+day_list = ['D1']
 
 for rat,day in zip(rat_list,day_list):
     
@@ -90,7 +93,7 @@ for rat,day in zip(rat_list,day_list):
     print(f"Beginning decoding {rat} {day}...")
     try:
         ratborders = nab.loadAlleyBounds(rat, day)
-        savepath = "E:\\Ratterdam\\repetition_decoding\\22-02-25_decoding\\"
+        savepath = "E:\\Ratterdam\\repetition_decoding\\2022-03-23_decoding\\"
         datapath = f'E:\\Ratterdam\\{rat}\\{rat}_RatterdamOpen_{day}\\'
         
         population = superpop[rat][day]['units']
@@ -108,72 +111,73 @@ for rat,day in zip(rat_list,day_list):
         X = np.empty((0, len(population)))
         
         for t, turn in turns.iterrows():
+            if t< turns.shape[0]-1:
             
-            turn_nm1 = refturns.iloc[t-1]         
-            turn_np1 = refturns.iloc[t+1]
-            
-            # ballisticTurns removes turn-around turns. But since trajectory
-            # labels depend on the n-1, n+1 turns, the turns adjacent to the removed
-            # turns must also be ignored, at an unfortunate loss of data
-            
-            # if turn['Alley+'] == turn_np1['Alley-']:
-            #     pass
-                    
-            # cD= turn['Ego'] # currentDir value this turn
-            # pD = turn_nm1['Ego'] # previous ''
-            # nD = turn_np1['Ego'] # next ''
-            cD = turn['Allo+']
-            pD = turn['Allo-']
-            nD = turn_np1['Allo+']
-            
-            # time interval below, based on alley+ of each turn, is how it's previously been done
-            # for egocentric decoding, however, it becomes retrospective coding
-            # start, stop = float(turn['Ts entry']), float(turn_np1['Ts exit'])
-            
-            start, stop =  float(turn['Ts entry']), float(refturns.iloc[t+1]['Ts exit'])
-            
-            #added 2-25-22 to check if there's a reward and not include the trial if so 
-            isReward = np.where(np.asarray([(start < i < stop) for i in rewards])==True)[0]
-            
-            if isReward.shape[0]>0:
-                pass
-            else:
+                turn_nm1 = refturns.iloc[t-1]         
+                #turn_np1 = refturns.iloc[t+1]
                 
-                    # cD= turn['Ego'] # currentDir value this turn
+                # ballisticTurns removes turn-around turns. But since trajectory
+                # labels depend on the n-1, n+1 turns, the turns adjacent to the removed
+                # turns must also be ignored, at an unfortunate loss of data
+                
+                # if turn['Alley+'] == turn_np1['Alley-']:
+                #     pass
+                        
+                # cD= turn['Ego'] # currentDir value this turn
                 # pD = turn_nm1['Ego'] # previous ''
                 # nD = turn_np1['Ego'] # next ''
                 cD = turn['Allo+']
                 pD = turn['Allo-']
-                nD = turn_np1['Allo+']
-                currentAlley.append(turn['Alley+']) # use this later to get visits to regions in a certain set 
-            
-
-                duration = (stop-start)/1e6
+                #nD = turn_np1['Allo+']
                 
-                popvector = []
-                for unitname, unit in population.items():
-                    #basic stuff, get the firing rate (# spikes / time on alley ) for each unit and append
-                        spike_count = unit.spikes[(unit.spikes[:,0]>start)&(unit.spikes[:,0]<=stop)].shape[0]
-                        rate = spike_count / duration
-                        popvector.append(rate)
-            
-                popvector = np.asarray(popvector)
-                X = np.vstack((X, popvector))
-                currentDir.append(cD)
-                previousDir.append(pD)
-                nextDir.append(nD)
-                traj.append(f"{pD}{cD}{nD}")
-                turnsIn.append(f"{pD}{cD}")
+                # time interval below, based on alley+ of each turn, is how it's previously been done
+                # for egocentric decoding, however, it becomes retrospective coding
+                # start, stop = float(turn['Ts entry']), float(turn_np1['Ts exit'])
                 
-                # this if statement is here because if the next turn, whose allo+
-                # would be the next turn direction, is not in ballistic turn idx
-                # then the turn featured a turn around and we don't want to conflate
-                # the next heading from a ballistic turn with the next heading where the animal
-                # turned around
-                if t+1 in turns.index:            
-                    turnsOut.append(f"{cD}{nD}")
-                egoTurn.append(turn['Ego'])
+                start, stop =  float(turn['Ts entry']), float(refturns.iloc[t+1]['Ts exit'])
                 
+                #added 2-25-22 to check if there's a reward and not include the trial if so 
+                isReward = np.where(np.asarray([(start < i < stop) for i in rewards])==True)[0]
+                
+                if isReward.shape[0]>0:
+                    pass
+                else:
+                    
+                        # cD= turn['Ego'] # currentDir value this turn
+                    # pD = turn_nm1['Ego'] # previous ''
+                    # nD = turn_np1['Ego'] # next ''
+                    cD = turn['Allo+']
+                    pD = turn['Allo-']
+                    #nD = turn_np1['Allo+']
+                    currentAlley.append(turn['Alley+']) # use this later to get visits to regions in a certain set 
+                
+    
+                    duration = (stop-start)/1e6
+                    
+                    popvector = []
+                    for unitname, unit in population.items():
+                        #basic stuff, get the firing rate (# spikes / time on alley ) for each unit and append
+                            spike_count = unit.spikes[(unit.spikes[:,0]>start)&(unit.spikes[:,0]<=stop)].shape[0]
+                            rate = spike_count / duration
+                            popvector.append(rate)
+                
+                    popvector = np.asarray(popvector)
+                    X = np.vstack((X, popvector))
+                    currentDir.append(cD)
+                    previousDir.append(pD)
+                    #nextDir.append(nD)
+                    #traj.append(f"{pD}{cD}{nD}")
+                    turnsIn.append(f"{pD}{cD}")
+                    
+                    # this if statement is here because if the next turn, whose allo+
+                    # would be the next turn direction, is not in ballistic turn idx
+                    # then the turn featured a turn around and we don't want to conflate
+                    # the next heading from a ballistic turn with the next heading where the animal
+                    # turned around
+                    #if t+1 in turns.index:            
+                    #    turnsOut.append(f"{cD}{nD}")
+                    egoTurn.append(turn['Ego'])
+                    
                 
         currentDir = np.asarray(currentDir)
         nextDir = np.asarray(nextDir)

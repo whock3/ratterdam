@@ -268,3 +268,11 @@ ticksize = 52
 ylabelsize = 64
 xlabelsize = 64
 
+
+# 2022-03-11 toggle for creating Unit() class objects for each neuron
+# Choose whether all fields the watershed-based algorithm comes up with (toggle is True)
+# or whether we filter based on my manual curation (fieldInclusionList file in each recording day directory
+# and the manuallyRedrawnField folders) (toggle is False)
+
+includeAllDetectedFields = False
+

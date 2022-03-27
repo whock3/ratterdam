@@ -22,10 +22,10 @@ plt.ion()
 #Load dict containing all recording day datasets
 # structure is rat > day > unit
 # unit is a Unit() class 
-with open("E:\\Ratterdam\\R_data_repetition\\22-02-18_superPopulationRepetition.pickle","rb") as f:
+with open("E:\\Ratterdam\\R_data_repetition\\20220323-125452_superPopulationRepetition.pickle","rb") as f:
     superpop = pickle.load(f)   
     
-alleydf = pd.read_csv("E:\\Ratterdam\\R_data_repetition\\220222_AlleySuperpopDirVisitFiltered.csv")
+alleydf = pd.read_csv("E:\\Ratterdam\\R_data_repetition\\2022-03-23_AlleySuperpopDirVisitFiltered.csv")
 #%% Panel A is a track schematic, no python code used here
 
 #%% Panel B is set of ratemaps showing repetition. no python code used here

@@ -60,31 +60,34 @@ region_sets = {'RS6':[0,4,6,15,13,10,1,12,8],
                 }
 
 codedict = {'1':'N','2':'E','3':'S','4':'W','0':'X'}
-savepath = "E:\\Ratterdam\\repetition_decoding\\22-03-09_decoding\\"
+savepath = "E:\\Ratterdam\\repetition_decoding\\2022-03-23_decoding\\"
 
 naive_perfs_datasets = {}
 
-rat_list = ['R765',
-            'R765',
-            'R781', 
-            'R781', 
-            'R808', 
-            'R808', 
-            'R859', 
-            'R859', 
-            'R886', 
-            'R886']
+# rat_list = ['R765',
+#             'R765',
+#             'R781', 
+#             'R781', 
+#             'R808', 
+#             'R808', 
+#             'R859', 
+#             'R859', 
+#             'R886', 
+#             'R886']
 
-day_list = ['RFD5',
-            'DFD4',
-            'D3', 
-            'D4',
-            'D6',
-            'D7',
-            'D1',
-            'D2',
-            'D1',
-            'D2']
+# day_list = ['RFD5',
+#             'DFD4',
+#             'D3', 
+#             'D4',
+#             'D6',
+#             'D7',
+#             'D1',
+#             'D2',
+#             'D1',
+#             'D2']
+
+rat_list = ['R886']
+day_list = ['D1']
 
 for rat,day in zip(rat_list,day_list):
     
