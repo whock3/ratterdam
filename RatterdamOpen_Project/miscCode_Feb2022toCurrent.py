@@ -9,6 +9,7 @@ import ratterdam_RepetitionCoreFx as RepCore
 import newAlleyBounds as nab 
 import pickle 
 import copy 
+import ratterdam_Defaults as Def 
 
 alleydatapath = "E:\\Ratterdam\\R_data_repetition\\20220120-135920_superPopAlleyBehaviorResponse_1.5vfilt.csv"
 alleydf = pd.read_csv(alleydatapath)
@@ -320,7 +321,12 @@ r781d4_candidateRewards = np.asarray([3145509831365,
 
 
 #%% Making new superpop code 
-
+import pandas as pd, matplotlib.pyplot as plt, numpy as np
+import ratterdam_RepetitionCoreFx as RepCore
+import newAlleyBounds as nab 
+import pickle 
+import copy 
+import utility_fx as util 
 superpopulation = {}
 
 rat_list = ['R765',
@@ -358,7 +364,9 @@ for rat, day in zip(rat_list, day_list):
     # Code 0 means an error and a discontinuity in behavioral tracking
     # this happens infrequently enough that it's not a huge problem
     # causes are typically loss of camera tracking briefly. 
-    turns = turns[turns.Ego!='0']
+    
+    #4/4/22 cant do this here, it introduces discontinuities in the df 
+    #turns = turns[turns.Ego!='0']
 
     codedict = {'1':'N','2':'E','3':'S','4':'W','0':'X'}
     
@@ -370,7 +378,7 @@ for rat, day in zip(rat_list, day_list):
        # edit 10/2 removing check that last turn's inter wasnt the same,
        # i.e if alley- had a turnaround. since we are looking at things
        # in terms of alley+, only remove a turn if thats where a turnaround was
-       if row['Ego'] != '3' and turns.iloc[i+1].Inter != inter:
+       if row['Ego'] not in ['0','3'] and turns.iloc[i+1].Inter != inter:
            ballisticTurnIdx.append(i)
     
     refturns = copy.deepcopy(turns) # keep a copy without filtering.
@@ -384,3 +392,130 @@ tstamp = util.genTimestamp()
 
 with open(f"E:\\Ratterdam\\R_data_repetition\\{tstamp}_superPopulationRepetition.pickle", "wb") as f:
     pickle.dump(superpopulation, f)
+    
+    
+    
+#%% Plots showing sampling of alleys and intersections for each rat, day
+# this is for the supplement of the repetition data paper 
+
+prevdirlevels = ["N","E","S","W","X"]
+nextdirlevels = ["N","E","S","W","X"]
+currdirlevels = ["N","E","S","W","X"]
+prospegolevels = ["S","R","B","L"]
+retroegolevels = ["S","R","B","L"]
+
+savepath = 'E:\\Ratterdam\\repetition_manuscript\\Supplementary_Figures\\behavioral_sampling\\'
+
+
+rat_list = ['R765',
+            'R765',
+            'R781', 
+            'R781', 
+            'R808', 
+            'R808', 
+            'R859', 
+            'R859', 
+            'R886', 
+            'R886']
+
+day_list = ['RFD5',
+            'DFD4',
+            'D3', 
+            'D4',
+            'D6',
+            'D7',
+            'D1',
+            'D2',
+            'D1',
+            'D2']
+
+plt.rcParams.update({'axes.titlesize': 'large',
+                     'axes.labelsize':'large'
+                     
+                     })
+
+for rat, day in zip(rat_list, day_list):
+    
+    turns, unit = RepCore.loadTurns(rat, day)
+    
+    # Distribution of visits to alleys and intersections
+    fig, axes  = plt.subplots(3,1, figsize=(20,22))
+    turns['Alley+'].value_counts().plot(kind='bar', 
+                                        ax = fig.axes[0]
+                                        )
+    
+        
+    turns['Inter'].value_counts().plot(kind='bar', 
+                                        ax = fig.axes[1]
+                                        )
+    
+    fig.axes[0].set_title('Distribution of Visits to Alleys', fontsize=25)
+    fig.axes[1].set_title('Distribution of Visits to Intersections', fontsize=25)
+    
+    fig.axes[1].set_ylabel("Frequency",fontsize=30)
+
+        
+    #ethograms (of behaviors at alleys, operationally defined as previous-current-next turn)
+    currentDirection, nextDirection, previousDirection = [], [], []
+    
+    #assumes turns is unfiltered and everything is contiguous
+    for i,turn in turns.iterrows():
+        if i < turns.shape[0]-1:
+            currentDirection.append(Def.allocodedict[turn['Allo+']])
+            previousDirection.append(Def.allocodedict[turn['Allo-']])
+            nextDirection.append(Def.allocodedict[turns.iloc[i+1]['Allo+']])
+        
+    ethogram_df = pd.DataFrame(data={'CurrDir':currentDirection,
+                                     'PrevDir':previousDirection,
+                                     'NextDir':nextDirection
+                                     }
+                               )
+        
+        
+    
+    designSpace = {}
+    for lastdir in prevdirlevels:
+        for currdir in currdirlevels:
+            for nextdir in nextdirlevels:
+                designSpace[f'{lastdir}{currdir}{nextdir}'] = 0
+                        
+    
+    for tnum, traversal in ethogram_df.iterrows():
+        designSpace[f"{traversal['PrevDir']}{traversal['CurrDir']}{traversal['NextDir']}"] += 1
+        
+    
+    validDesignSpace = {}
+          
+    for k,v in designSpace.items():
+        if v >= 1:
+            validDesignSpace[k] = v
+            
+    ethos = np.asarray(list([i for i in validDesignSpace.keys()]))
+    counts = np.asarray(list([i for i in validDesignSpace.values()]))
+    
+    ethos_sorted = ethos[np.argsort(counts)][::-1]
+    counts_sorted = counts[np.argsort(counts)][::-1]
+    
+    ax = fig.axes[2]
+    ax.bar(range(len(counts_sorted)), counts_sorted, width=0.45)
+    ax.set_xticks(ticks=range(len(counts_sorted)))
+    ax.set_xticklabels(labels=ethos_sorted,rotation=90, fontsize=22)
+    
+    ax.set_title("Alley Ethogram ",fontsize=26)
+    # for i,(label,c) in enumerate(zip(ethos_sorted, counts_sorted)):
+    #     ax.text(i-0.2,v+1.5,s=label,fontsize=24)
+  
+    ax.tick_params(axis='both', which='major', labelsize=18)
+
+        
+    for ax in fig.axes:
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.tick_params(axis='both', which='major', labelsize=20)
+    
+    plt.suptitle(f"{rat} {day}", fontsize=32)
+    plt.subplots_adjust(hspace=0.3)
+    plt.savefig(savepath+f"{rat}{day}_behavioralSampling.pdf")
+    plt.close()
+
+    

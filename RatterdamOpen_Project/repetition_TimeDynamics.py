@@ -25,7 +25,7 @@ filtDf = DfFilt.filterAlleyDatasets(df, passThresh=1)
 
 #%% Panel B - GLM results from R. repetition_timeModels.R
 
-glmData = pd.read_csv("E:\\Ratterdam\\repetition_manuscript\\Figure6\\2022-03-23_timeGLMResults.csv")
+glmData = pd.read_csv("E:\\Ratterdam\\repetition_manuscript\\Figure6\\22-04-06_timeGLMResults.csv")
 
 fig, ax = plt.subplots()
 

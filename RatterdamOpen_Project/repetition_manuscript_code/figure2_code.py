@@ -21,8 +21,9 @@ import repetition_manuscript_defaults as MDef
 import ratterdam_Defaults as Def
 
 # most recent version using raw FR (without R765 DFD4): 211220_*
-datapath  = "E:\\Ratterdam\\R_data_repetition\\2022-03-23_AlleySuperpopDirVisitFiltered.csv"
-df = pd.read_csv(datapath)
+
+df = pd.read_csv("E:\\Ratterdam\\R_data_repetition\\2022-04-05_AlleySuperpopDirVisitFiltered.csv")
+
 
 #%% Figure 3A - directional ratemaps. Taken from saved files, no py code used here
 
@@ -41,8 +42,9 @@ for orien in ['V','H']:
             pvals.append(mannwhitneyu(dirA.Rate, dirB.Rate).pvalue)
             meanDiff.append(abs(dirA.Rate.mean()-dirB.Rate.mean()))
         except:
-            pvals.append(1)
-            meanDiff.append(0)
+            # pvals.append(1)
+            # meanDiff.append(0)
+            pass
             
             
 
@@ -74,6 +76,12 @@ lgnd = plt.legend(prop={'size':MDef.legend_size})
 for lhand in lgnd.legendHandles:
     lhand._legmarker.set_markersize(MDef.legend_marker_size)
 lgnd.get_frame().set_linewidth(MDef.legend_frame_width)
+
+#%% Stats for M-W test 
+from scipy.stats import binom_test
+print(f"Total number field segments: {len(pvals)}")
+print(f"M-W directional fields: {np.where(pvals<0.05)[0].shape[0]}")
+print(binom_test(np.where(pvals<0.05)[0].shape[0],len(pvals),0.05,'greater'))
 
 #%% Fig 3C - distribution of 3B visualized as overlaid histograms
 # Need to run 3B code first, as this is another way of visualizing that
@@ -108,7 +116,7 @@ lgnd.get_frame().set_linewidth(MDef.legend_frame_width)
 
 # this 211216 model did not have its own script, I saved the CD part of a script
 # that looked at all directions. 
-cdmodel = pd.read_csv("E:\\Ratterdam\\repetition_manuscript\\Figure2\\2022-03-23_CDmodel.csv")
+cdmodel = pd.read_csv("E:\\Ratterdam\\repetition_manuscript\\Figure2\\220406_CDmodel.csv")
 
 fig, ax = plt.subplots()
 ax.plot(cdmodel.m1_rmse[cdmodel.sigP==0],cdmodel.m2_rmse[cdmodel.sigP==0],
@@ -138,10 +146,10 @@ lgnd.get_frame().set_linewidth(MDef.legend_frame_width)
 
 #%% Fig 3E - Example classifier run. Example dataset: 22-02-21. R765 DFD4 RS6
 
-with open("E:\\Ratterdam\\repetition_decoding\\2022-03-23_decoding\\rf_data.json", "r") as f:
+with open("E:\\Ratterdam\\repetition_decoding\\2022-04-11_decoding\\rfdata.json", "r") as f:
     rf_data = json.load(f)
 
-with open("E:\\Ratterdam\\repetition_decoding\\2022-03-23_decoding\\naiveClassifierData.json", "r") as f:
+with open("E:\\Ratterdam\\repetition_decoding\\2022-04-11_decoding\\naiveClassifierData.json", "r") as f:
     naive_data = json.load(f)
     
 real = rf_data['R765']['DFD4']['RS6']['oobs']['Real']
@@ -168,8 +176,6 @@ lgnd.get_frame().set_linewidth(MDef.legend_frame_width)
 
 
 #%% Fig 3F - RF performance across datasets
-
-#Using 22-02-21 (finishing overnight 22-02-22) decoding run. 
 
 # graph format was line graph (or shaded linear regions). But this evokes a 
 # temporal trend so using unconnected points / error bars. 2-11-22
@@ -257,11 +263,11 @@ plt.subplots_adjust(bottom=0.3)
 # Distributions of directionality when FR is normalized by RM dont look too different
 # from each other (those MW test says are directional, vs non). Presumably the 
 # effect lies in the tightness/variability of the tuning?
-# Here: compute average of sem(dirA) and sem(dirB)
 
 pvals = []
 meanDiff = []
 meanVar = []
+meanFanos = []
 for orien in ['V','H']:
     odf = df[df.Orientation==orien]
     for fname, fgroup in odf.groupby("FieldID"):
@@ -270,23 +276,28 @@ for orien in ['V','H']:
         dirA = fgroup[fgroup.CurrDir==dirs[0]]
         dirB = fgroup[fgroup.CurrDir==dirs[1]]
         try:
-            pvals.append(mannwhitneyu(dirA.Rate, dirB.Rate).pvalue)
+            pvals.extend([mannwhitneyu(dirA.Rate, dirB.Rate).pvalue]*2)
             meanDiff.append(abs(dirA.Rate.mean()-dirB.Rate.mean()))
             meanVar.append(np.nanmean([dirA.Rate.sem(),dirB.Rate.sem()]))
+            
+            fanoA = np.var(dirA.Rate)/np.nanmean(dirA.Rate)
+            fanoB = np.var(dirB.Rate)/np.nanmean(dirB.Rate)
+            meanFanos.extend([fanoA,fanoB])
         except:
             pass
             # pvals.append(1)
             # meanDiff.append(0)
             # meanVar.append(999)
             
-bins = np.linspace(0,max(meanVar),50)   
+bins = np.linspace(0,np.nanpercentile(meanFanos,90),50)   
 
 meanDiff = np.asarray(meanDiff)
 pvals = np.asarray(pvals)
 meanVar = np.asarray(meanVar)
+meanFanos = np.asarray(meanFanos)
 fig, _ax = plt.subplots()
 ax = fig.axes[0]
-ax.hist(meanVar[pvals>=0.05],
+ax.hist(meanFanos[pvals>=0.05],
         bins=bins,
         color='grey',
         edgecolor='black',
@@ -295,7 +306,7 @@ ax.hist(meanVar[pvals>=0.05],
         stacked=True,
         alpha=0.7,
         label='Non-directional')
-ax.hist(meanVar[pvals<0.05],
+ax.hist(meanFanos[pvals<0.05],
         bins=bins,
         color='r',
         edgecolor='darkred',
@@ -310,8 +321,8 @@ ax.spines['top'].set_visible(False)
 ax.spines['right'].set_visible(False)
 ax.spines['left'].set_linewidth(MDef.spine_width)
 ax.spines['bottom'].set_linewidth(MDef.spine_width)
-ax.set_ylabel("Normalized Mean SEM Density",fontsize=MDef.ylabelsize)
-ax.set_xlabel("Field Number",fontsize=Def.xlabelsize)
+ax.set_ylabel("Normed Frequency",fontsize=MDef.ylabelsize)
+ax.set_xlabel("Fano Factor",fontsize=Def.xlabelsize)
 lgnd = plt.legend(prop={'size':MDef.legend_size})
 for lhand in lgnd.legendHandles:
     lhand._legmarker.set_markersize(MDef.legend_marker_size)
@@ -342,22 +353,15 @@ lgnd.get_frame().set_linewidth(MDef.legend_frame_width)
 #manually coding using 3/23/2022 run input data to R: "E:\\Ratterdam\\R_data_repetition\\2022-03-23_AlleySuperpopDirVisitFiltered.csv"
 # running in repetition_GLMs_emmeans.R
 
-total_current = 187
-total_previous = 201
-total_next = 196
+total_current = 127
+total_previous = 160
+total_next = 151
 
-current_responsive = 35
-previous_responsive = 29
-next_responsive = 35
+current_responsive = 32
+previous_responsive = 27
+next_responsive = 20
 
-# binom_test(35,187,0.05,'greater')
-# Out[53]: 1.623724084461713e-11
 
-# binom_test(29,201,0.05,'greater')
-# Out[54]: 3.280619616686018e-07
-
-# binom_test(35,196,0.05,'greater')
-# Out[55]: 6.368816825872413e-11
 
 
 fig, ax = plt.subplots()

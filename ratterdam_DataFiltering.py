@@ -162,11 +162,25 @@ def normalizeTrajectory(unit, tsStart, tsEnd, contour, alley, border):
     spk_traj = unit.spikes[(unit.spikes[:,0]>tsStart)&(unit.spikes[:,0]<= tsEnd)]
     behav_traj = unit.position[(unit.position[:,0]>tsStart)&(unit.position[:,0]<= tsEnd)]
     
-    spk_traj = spk_traj[contour.contains_points(spk_traj[:,1:])]
-    behav_traj = behav_traj[contour.contains_points(behav_traj[:,1:])]
+    # 4/11/22 - for RF, we want to normalize samples by overall firing rate
+    # since we are not looking by field, instead using all neurons, need to tweak this.
+    # so if we are passing a place field border (contour) then two things happen
+    # one, we filter the trajectory spikes/behavior to be within field and 2)
+    # we filter the session data to also be in field. Because alley bounds and
+    # field bounds are obviously not the same thing. However, if we are not passing
+    # a border and contour == None, then we just want to normalize by the cells activity
+    # in the whole alley and therefore we just pass all spikes/pos samples. 
+    if contour is not None:
     
-    spk_sess = unit.spikes[contour.contains_points(unit.spikes[:,1:])]
-    behav_sess = unit.position[contour.contains_points(unit.position[:,1:])]
+        spk_traj = spk_traj[contour.contains_points(spk_traj[:,1:])]
+        behav_traj = behav_traj[contour.contains_points(behav_traj[:,1:])]
+    
+        spk_sess = unit.spikes[contour.contains_points(unit.spikes[:,1:])]
+        behav_sess = unit.position[contour.contains_points(unit.position[:,1:])]
+    
+    else:
+        spk_sess = unit.spikes
+        behav_sess = unit.position
     
 
     verticals = [str(i) for i in [2,3,5,7,16,14,11,9]]
@@ -188,5 +202,11 @@ def normalizeTrajectory(unit, tsStart, tsEnd, contour, alley, border):
     sessrm = (spk_sess_hist[0]/behav_sess_hist[0])*30 # adjust FPS to get Hz 
     trajrm = (spk_traj_hist[0]/behav_traj_hist[0])*30 
     
-    return np.nanmean(trajrm/sessrm)
+    nr = np.nanmean(trajrm/sessrm)
+    if nr == np.nan:
+        nr = 0
+    elif nr == np.inf:
+        nr = 0
+    
+    return nr
     

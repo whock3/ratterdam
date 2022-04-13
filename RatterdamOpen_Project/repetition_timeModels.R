@@ -16,7 +16,7 @@ library(ggpubr)
 library(splines)
 
 # Load data and recode factors
-alleypath <- "E:\\Ratterdam\\R_data_repetition\\2022-03-23_AlleySuperpopDirVisitFiltered.csv"
+alleypath <- "E:\\Ratterdam\\R_data_repetition\\2022-04-05_AlleySuperpopDirVisitFiltered.csv"
 alleydf <- read.csv(alleypath,header=TRUE)
 
 alleydf$PrevDir <- as.factor(alleydf$PrevDir)
@@ -32,13 +32,10 @@ alleydf$FieldID <- as.factor(alleydf$FieldID)
 alleydf$Alleys <- as.factor(alleydf$Alleys)
 
 
-alleydf = alleydf[alleydf$Traversal=='True',]
-
-
 ###
 ### Time
 ###
-savepath <- 'E:\\Ratterdam\\temp\\TimeCD_Model\\'
+savepath <- 'E:\\Ratterdam\\repetition_manuscript\\Figure6\\'
 
 sigs <- c()
 sigreps <- c()

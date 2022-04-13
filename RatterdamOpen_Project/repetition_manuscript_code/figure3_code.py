@@ -17,7 +17,7 @@ import ratterdam_Defaults as Def
 import repetition_manuscript_defaults as MDef
 
 
-datapath  = "E:\\Ratterdam\\R_data_repetition\\2022-03-23_AlleySuperpopDirVisitFiltered.csv"
+datapath  = "E:\\Ratterdam\\R_data_repetition\\2022-04-05_AlleySuperpopDirVisitFiltered.csv"
 df = pd.read_csv(datapath)
 
 #%% Figure 4A - Violins of Repeating vs Non-repeating directionality (abs mean diff)
@@ -66,7 +66,7 @@ ax.tick_params(axis='both', which='major', labelsize=MDef.ticksize)
 
 #%% Figure 4B - GLM LRT CD, rep vs nonrep 
 
-cdmodel = pd.read_csv("E:\\Ratterdam\\repetition_manuscript\\Figure2\\2022-03-23_CDmodel.csv")
+cdmodel = pd.read_csv("E:\\Ratterdam\\repetition_manuscript\\Figure2\\220406_CDmodel.csv")
 
 fig, ax = plt.subplots()
 ax.plot(cdmodel.m1_rmse[(cdmodel.repOrNot==0)&(cdmodel.sigP==1)],cdmodel.m2_rmse[(cdmodel.repOrNot==0)&(cdmodel.sigP==1)],
@@ -111,6 +111,18 @@ for lhand in lgnd.legendHandles:
     lhand._legmarker.set_markersize(MDef.legend_marker_size)
 lgnd.get_frame().set_linewidth(MDef.legend_frame_width)
 
+#%% chi sq on proportions
+nonrep_sig = cdmodel[(cdmodel.repOrNot==0)&(cdmodel.sigP==1)].shape[0]
+nonrep_num = cdmodel[(cdmodel.repOrNot==0)].shape[0]
+
+rep_sig = cdmodel[(cdmodel.repOrNot==1)&(cdmodel.sigP==1)].shape[0]
+rep_num = cdmodel[(cdmodel.repOrNot==1)].shape[0]
+
+print(f"Repeating: {rep_sig} / {rep_num}")
+print(f"Nonrepeating: {nonrep_sig} / {nonrep_num}")
+
+from scipy.stats import chi2_contingency
+print(chi2_contingency([[nonrep_sig, nonrep_num],[rep_sig, rep_num]]))
 
 #%% Quantifying difference in model improvements
 

@@ -17,14 +17,14 @@ library(car)
 
 # 211210 has 30% field overlap threshold and slightly looser traversal thresholds 
 #alleypath <- "E:\\Ratterdam\\R_data_repetition\\20220215-140515_superPopAlleyBehaviorResponse_1.5vfilt_PosInFieldNormedFR.csv"
-alleypath <- "E:\\Ratterdam\\R_data_repetition\\2022-03-23_AlleySuperpopDirVisitFiltered.csv"
+alleypath <- "E:\\Ratterdam\\R_data_repetition\\2022-04-05_AlleySuperpopDirVisitFiltered.csv"
 
 alleydf <- read.csv(alleypath,header=TRUE)
 
 
 alleydf <- alleydf[is.finite(alleydf$Rate),]
-alleydf <- alleydf[alleydf$Traversal=="True",]
-alleydf <- alleydf[alleydf$Reward=="False",]
+alleydf <- alleydf[alleydf$Traversal=="TRUE",]
+alleydf <- alleydf[alleydf$Reward=="FALSE",]
 
 
 alleydf$PrevDir <- as.factor(alleydf$PrevDir)
@@ -55,7 +55,7 @@ previous_responsive <- c()
 
 # heres a page that lists refs for different choices of threshold
 # https://quantifyinghealth.com/vif-threshold
-vif_thresh = 5
+vif_thresh = 60
 
 repOrNot <- c()
 

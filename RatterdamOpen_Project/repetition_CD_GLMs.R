@@ -17,7 +17,7 @@ library(ggpubr)
 library(splines)
 
 
-alleypath <- "E:\\Ratterdam\\R_data_repetition\\2022-03-23_AlleySuperpopDirVisitFiltered.csv"
+alleypath <- "E:\\Ratterdam\\R_data_repetition\\2022-04-05_AlleySuperpopDirVisitFiltered.csv"
 
 alleydf <- read.csv(alleypath,header=TRUE)
 
@@ -41,6 +41,8 @@ m2_rmse <- c()
 m1_aic <- c()
 m2_aic <- c()
 
+failed_units <- c()
+
 lrCurr_pvals <- c() # keep all pvalues from lrtest(base, base+cd) regardless
 # if thats the best model because want to plot rmse colored
 # by whether cd was helpful for fig 3 sfn2021. fig 5 then gets
@@ -59,7 +61,7 @@ for(o in c('V','H')){
     
     field <- subset(oriendf, FieldID == fid)
     
-    mrun <- try({
+    mrun <- tryCatch({
        
       m1 <- glm(Rate+1 ~ ns(StartTimes,startTimeKnots), family='Gamma', data=field)
       m2 <- glm(Rate+1 ~ CurrDir + ns(StartTimes,startTimeKnots), family = 'Gamma', data=field)
@@ -82,28 +84,60 @@ for(o in c('V','H')){
         sigP <- c(sigP, 0)
       }
       
-      if(unique(field$Repeating)=='True'){
+      if(unique(field$Repeating)=='TRUE'){
         
         repOrNot <- c(repOrNot,TRUE)
       }
-      else if(unique(field$Repeating)=='False'){
+      else if(unique(field$Repeating)=='FALSE'){
         repOrNot <- c(repOrNot, FALSE)
       }
 
       
       
-    },silent=FALSE) 
+    },
+    error=function(e){
+      failed_units <<- c(failed_units, c(fid, o))
+      
+    }
+    ,silent=FALSE) 
+    
+  
   }
 }
 
 
 
+# debugging 4/11/22 why glm analysis and MW test have different sample sizes
+# seems to be model complexity in GLM causes some fields to fail out of test
+
+# field = subset(alleydf, FieldID==47 & Orientation=='H')
+# 
+# plot(field$StartTimes, field$Rate)
+# m1 <- glm(Rate+1 ~ ns(StartTimes,3), family='Gamma', data=field)
+# m2 <- glm(Rate+1 ~ CurrDir, family = 'Gamma', data=field)
+# m3 <- glm(Rate+1 ~ CurrDir + ns(StartTimes,3), family = 'Gamma', data=field)
+# 
+# 
 
 
-
-
-
-
+# > failed_units
+# "14"  "V"   
+# "125" "V"   
+# "166" "V"   
+# "278" "V"   
+# "301" "V"   
+# "310" "V"   
+# "47"  "H"   
+# "122" "H"   
+# "140" "H"   
+# "143" "H"   
+# "154" "H"   
+# "169" "H"   
+# "286" "H"   
+# "321" "H"   
+# "323" "H"   
+# "347" "H"  
+ 
 
 
 

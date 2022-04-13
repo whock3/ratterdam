@@ -11,25 +11,57 @@ number of paths realized through each alley. Want to know if that shape is real.
 """
 
 import pandas as pd, matplotlib.pyplot as plt, numpy as np
+import utility_fx as util 
 
+rat_list = ['R765',
+            'R765',
+            'R781', 
+            'R781', 
+            'R808', 
+            'R808', 
+            'R859', 
+            'R859', 
+            'R886', 
+            'R886']
 
-for r,d in zip(['R781','R781','R808','R808','R859','R859'],['D3','D4','D6','D7','D1','D2']):
+day_list = ['RFD5',
+            'DFD4',
+            'D3', 
+            'D4',
+            'D6',
+            'D7',
+            'D1',
+            'D2',
+            'D1',
+            'D2']
+
+# rat_list = ['R781']
+# day_list = ['D3']
+
+alleydatapath = "E:\\Ratterdam\\R_data_repetition\\20220404-210901_superPopAlleyBehaviorResponse_1.5vfilt_FieldNormedTrue.csv"
+alleydf = pd.read_csv(alleydatapath)
+
+if 'Code' not in alleydf.columns:
+    codes = []
+    for r, row in alleydf.iterrows():
+       code = f'{row["PrevDir"]}{row["CurrDir"]}{row["NextDir"]}'
+       codes.append(code)
+    alleydf = alleydf.assign(Code=codes)
+
+for rat,day in zip(rat_list, day_list):
     
-    alleydatapath = "E:\\Ratterdam\\R_data_repetition\\20220120-135920_superPopAlleyBehaviorResponse_1.5vfilt.csv"
-    alleydf = pd.read_csv(alleydatapath)
-    
-    interdatapath = "E:\\Ratterdam\\R_data_repetition\\20220120-164311_superPopInterBehaviorResponse_1.5vfilt.csv"
-    interdf = pd.read_csv(interdatapath)
-    alleydf = alleydf[(alleydf.Rat==r)&(alleydf.Day==d)]
-    interdf = interdf[(interdf.Rat==r)&(interdf.Day==d)]
+    rdf = alleydf[(alleydf.Rat==rat)&(alleydf.Day==day)]
+ 
+    # interdatapath = "E:\\Ratterdam\\R_data_repetition\\20220120-164311_superPopInterBehaviorResponse_1.5vfilt.csv"
+    # interdf = pd.read_csv(interdatapath)
+    # alleydf = alleydf[(alleydf.Rat==r)&(alleydf.Day==d)]
+    # interdf = interdf[(interdf.Rat==r)&(interdf.Day==d)]
     
     #% Calculate empirical relationship between num paths and directionality
     
     # ntrajs = []
     # diffs = []
-    
-    
-    
+      
     # ###### No time windowing 
     
     # traj_sample_thresh = 0
@@ -68,7 +100,7 @@ for r,d in zip(['R781','R781','R808','R808','R859','R859'],['D3','D4','D6','D7',
     
     included_field_chunks = [] # list of tuples: [(fid,alley)]
     
-    alleydf.StartTimes = (alleydf.StartTimes - alleydf.StartTimes.min())/1e6 # s, ref'd to 1st sample
+    rdf.StartTimes = (rdf.StartTimes - rdf.StartTimes.min())/1e6 # s, ref'd to 1st sample
     
     window = 10*60
     offset = 2*60
@@ -78,7 +110,7 @@ for r,d in zip(['R781','R781','R808','R808','R859','R859'],['D3','D4','D6','D7',
     
     while not stop:
         a,b = begin, begin + window
-        if b < np.ceil(alleydf.StartTimes.max()):
+        if b < np.ceil(rdf.StartTimes.max()):
             wins.append((a,b))
             begin += offset
         else:
@@ -95,7 +127,7 @@ for r,d in zip(['R781','R781','R808','R808','R859','R859'],['D3','D4','D6','D7',
         directionality_win = []
         bias_win = []
         
-        windf = alleydf[(alleydf.StartTimes>win[0])&(alleydf.StartTimes<=win[1])]    
+        windf = rdf[(rdf.StartTimes>win[0])&(rdf.StartTimes<=win[1])]    
     
         # for aNum, alley in windf.groupby("Alleys"):
         #     pathcount = 0
@@ -160,17 +192,24 @@ for r,d in zip(['R781','R781','R808','R808','R859','R859'],['D3','D4','D6','D7',
         shuff_diffs_sample = []
         shuff_ntrajs_sample = [] # the number of samples of each value of the trajectory 
                           # num is the same, but associated with different fields
+                          
+        reference_indices = np.asarray(range(included_field_chunks.shape[0])) # size of field chunks remove from this i.e w/o replacement
         
         for nt in np.unique(ntrajs):
             nsamples = ntrajdict[nt]
-            idx = np.random.choice(range(included_field_chunks.shape[0]),nsamples,replace=True)
+            idx = np.random.choice(reference_indices,nsamples,replace=False)
+            
+            #there has to be a better way
+            for i in idx:
+                argi = np.where(reference_indices==i)
+                reference_indices = np.delete(reference_indices, argi)
             
             boot_fields = included_field_chunks[idx]
             
             for bf in boot_fields:
                 alley = bf[1]
                 fid = bf[0]
-                bootdf = alleydf[(alleydf.Alleys==alley)&(alleydf.FieldID==fid)]
+                bootdf = rdf[(rdf.Alleys==alley)&(rdf.FieldID==fid)]
                 #dont need to check if num dirs > 1 bc its only included if it does
                 dirs = np.unique(bootdf.CurrDir)
                 bootdiff = abs(bootdf[bootdf.CurrDir==dirs[0]].Rate.mean() - bootdf[bootdf.CurrDir==dirs[1]].Rate.mean())
@@ -198,7 +237,7 @@ for r,d in zip(['R781','R781','R808','R808','R859','R859'],['D3','D4','D6','D7',
     ax.tick_params(axis='both', which='major', labelsize=16)
     ax.set_ylabel("Quadratic Fit Value of Unsigned Firing Rate Directionality",fontsize=20)
     ax.set_xlabel("Number of Realized Paths", fontsize=20)
-    plt.title(f"{r}{d} Real fitted quadratic versus 1000 bootstrap samples \n \
+    plt.title(f"{rat}{day} Real fitted quadratic versus 1000 bootstrap samples \n \
               {window/60}min windows, {offset/60}min offset",fontsize=25)
     
     ax.spines['right'].set_visible(False)
@@ -206,5 +245,7 @@ for r,d in zip(['R781','R781','R808','R808','R859','R859'],['D3','D4','D6','D7',
     
     lgnd = plt.legend(prop={'size':25}) 
     
-    plt.savefig(f"E:\\Ratterdam\\temp\\PathTuningByLocation\\singleRecordingDays_NumPathsxDirectionality\\daybootstrap_timewindowing\\{r}{d}_bootstrapwindowed.png",dpi=300)
+    ts = util.genTimestamp()
+    
+    plt.savefig(f"E:\\Ratterdam\\temp\\PathTuningByLocation\\singleRecordingDays_NumPathsxDirectionality\\daybootstrap_timewindowing\\{ts}_{rat}{day}_bootstrapwindowed.png",dpi=300)
     plt.close()

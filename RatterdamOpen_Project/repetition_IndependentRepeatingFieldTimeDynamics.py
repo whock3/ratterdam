@@ -30,7 +30,7 @@ from scipy.signal import correlate
 
 
 
-alleydatapath = "E:\\Ratterdam\\R_data_repetition\\220222_AlleySuperpopDirVisitFiltered.csv"
+alleydatapath = "E:\\Ratterdam\\R_data_repetition\\2022-04-05_AlleySuperpopDirVisitFiltered.csv"
 alleydf = pd.read_csv(alleydatapath)
 
 fieldTimeCorrs = []

@@ -45,7 +45,7 @@ import pickle
 # session-averaged ratemap. This corrects for sampling biases thru field 
 # in some conditions vs others 
 ##############################################################################
-normalizeRate = True
+normalizeRate = False
 ##############################################################################
 
 
@@ -112,12 +112,17 @@ for rat, day in zip(rat_list, day_list):
     # Code 0 means an error and a discontinuity in behavioral tracking
     # this happens infrequently enough that it's not a huge problem
     # causes are typically loss of camera tracking briefly. 
-    turns = turns[turns.Ego!='0']
+    
+    # 4/4/22 this can't be done now because it introduces a discontinuity
+    # and we assume below everything is in order. 
+    
+    #turns = turns[turns.Ego!='0']
+    
+    
         
     ratborders = nab.loadAlleyBounds(rat, day)
     rewards = RepCore.readinRewards(rat, day)
 
-    codedict = {'1':'N','2':'E','3':'S','4':'W','0':'X'}
     
     # Remove turnarounds/pivots
     ballisticTurnIdx = []
@@ -127,7 +132,8 @@ for rat, day in zip(rat_list, day_list):
        # edit 10/2 removing check that last turn's inter wasnt the same,
        # i.e if alley- had a turnaround. since we are looking at things
        # in terms of alley+, only remove a turn if thats where a turnaround was
-       if row['Ego'] != '3' and turns.iloc[i+1].Inter != inter:
+       #4/4/22 added checking turns ego not equal 0. this corresponds to lost tracking 
+       if row.Ego not in ['0','3'] and turns.iloc[i+1].Inter != inter:
            ballisticTurnIdx.append(i)
     
     refturns = copy.deepcopy(turns) # keep a copy without filtering.

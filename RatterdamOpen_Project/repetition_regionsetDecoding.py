@@ -42,6 +42,7 @@ from matplotlib import path
 import copy
 import traceback
 import pickle 
+import ratterdam_DataFiltering as Filt 
 
 region_sets = {
                 'RS6':[0,4,6,15,13,10,1,12,8],
@@ -53,33 +54,33 @@ alldata = {}
 timestamp = util.genTimestamp()
 codedict = {'1':'N','2':'E','3':'S','4':'W','0':'X'}
 
-with open("E:\\Ratterdam\\R_data_repetition\\20220323-125452_superPopulationRepetition.pickle","rb") as f:
+with open("E:\\Ratterdam\\R_data_repetition\\20220405-124315_superPopulationRepetition.pickle","rb") as f:
     superpop = pickle.load(f)  
 
-# rat_list = ['R765',
-#             'R765',
-#             'R781', 
-#             'R781', 
-#             'R808', 
-#             'R808', 
-#             'R859', 
-#             'R859', 
-#             'R886', 
-#             'R886']
+rat_list = ['R765',
+            'R765',
+            'R781', 
+            'R781', 
+            'R808', 
+            'R808', 
+            'R859', 
+            'R859', 
+            'R886', 
+            'R886']
 
-# day_list = ['RFD5',
-#             'DFD4',
-#             'D3', 
-#             'D4',
-#             'D6',
-#             'D7',
-#             'D1',
-#             'D2',
-#             'D1',
-#             'D2']
+day_list = ['RFD5',
+            'DFD4',
+            'D3', 
+            'D4',
+            'D6',
+            'D7',
+            'D1',
+            'D2',
+            'D1',
+            'D2']
 
-rat_list = ['R886']
-day_list = ['D1']
+# rat_list = ['R886']
+# day_list = ['D1']
 
 for rat,day in zip(rat_list,day_list):
     
@@ -91,9 +92,9 @@ for rat,day in zip(rat_list,day_list):
     alldata[rat][day] = {}
    
     print(f"Beginning decoding {rat} {day}...")
-    try:
+    if True:
         ratborders = nab.loadAlleyBounds(rat, day)
-        savepath = "E:\\Ratterdam\\repetition_decoding\\2022-03-23_decoding\\"
+        savepath = "E:\\Ratterdam\\repetition_decoding\\2022-04-11_decoding\\"
         datapath = f'E:\\Ratterdam\\{rat}\\{rat}_RatterdamOpen_{day}\\'
         
         population = superpop[rat][day]['units']
@@ -139,11 +140,14 @@ for rat,day in zip(rat_list,day_list):
                 #added 2-25-22 to check if there's a reward and not include the trial if so 
                 isReward = np.where(np.asarray([(start < i < stop) for i in rewards])==True)[0]
                 
+                alley = turn['Alley+']
+                border = ratborders.alleyInterBounds[alley]
+                
                 if isReward.shape[0]>0:
                     pass
                 else:
                     
-                        # cD= turn['Ego'] # currentDir value this turn
+                    # cD= turn['Ego'] # currentDir value this turn
                     # pD = turn_nm1['Ego'] # previous ''
                     # nD = turn_np1['Ego'] # next ''
                     cD = turn['Allo+']
@@ -156,10 +160,17 @@ for rat,day in zip(rat_list,day_list):
                     
                     popvector = []
                     for unitname, unit in population.items():
+                        
+                        # 4/11/22: changing the feature variable to be normalized FR
+                        #instead of FR. Normalized by session behavior through alley (and occ corrected too)
+                        
                         #basic stuff, get the firing rate (# spikes / time on alley ) for each unit and append
-                            spike_count = unit.spikes[(unit.spikes[:,0]>start)&(unit.spikes[:,0]<=stop)].shape[0]
-                            rate = spike_count / duration
-                            popvector.append(rate)
+                        # spike_count = unit.spikes[(unit.spikes[:,0]>start)&(unit.spikes[:,0]<=stop)].shape[0]
+                        # rate = spike_count / duration
+                        
+                        normedRate = Filt.normalizeTrajectory(unit, start, stop, None, alley, border)
+                        
+                        popvector.append(normedRate)
                 
                     popvector = np.asarray(popvector)
                     X = np.vstack((X, popvector))
@@ -187,6 +198,7 @@ for rat,day in zip(rat_list,day_list):
         turnsIn = np.asarray(turnsIn)
         turnsOut = np.asarray(turnsOut)
         egoTurn = np.asarray(egoTurn)
+        X = np.nan_to_num(X) # added 4/11/22 bc normalizing can give nans/infs 
         
         
         #%% Run random forest
@@ -243,5 +255,5 @@ for rat,day in zip(rat_list,day_list):
                     print(f"{rat}{day} {targetlabel} had insufficient sampling for decoder")
             
         print(f"Finished decoding {rat} {day}")
-    except Exception:
-       print(traceback.format_exc())
+    # except Exception:
+    #    print(traceback.format_exc())

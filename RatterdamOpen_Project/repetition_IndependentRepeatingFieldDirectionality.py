@@ -30,7 +30,7 @@ import itertools
 from scipy.stats import linregress 
 
 
-alleydatapath = "E:\\Ratterdam\\R_data_repetition\\220222_AlleySuperpopDirVisitFiltered.csv"
+alleydatapath = "E:\\Ratterdam\\R_data_repetition\\2022-04-05_AlleySuperpopDirVisitFiltered.csv"
 alleydf = pd.read_csv(alleydatapath)
 
 
@@ -234,6 +234,8 @@ x = []
 y = []
 sigs = []
 prods = []
+field_arm_info = []
+
 
 for cellid, cell in alleydf.groupby("CellID"):
     for oname, ocell in cell.groupby("Orientation"):
@@ -244,6 +246,7 @@ for cellid, cell in alleydf.groupby("CellID"):
         
             signed_diffs = []
             alleys = []
+            fids = []
 
             for fid, field in ocell.groupby("FieldID"):
             
@@ -260,6 +263,7 @@ for cellid, cell in alleydf.groupby("CellID"):
                 
                 signed_diffs.append(diff)
                 alleys.append(np.unique(field.Alleys)[0])
+                fids.append(fid)
                 
             combs = itertools.combinations(range(len(signed_diffs)),2)
             
@@ -275,10 +279,14 @@ for cellid, cell in alleydf.groupby("CellID"):
                 for arm, armAlleys in orientation_structure.items():
                     if alleyB in armAlleys:
                         armB = arm
-                if armA == armB:
+                if armA != armB:
                     diffA, diffB = signed_diffs[i], signed_diffs[j]
                     x.append(diffA)
                     y.append(diffB)
+                    
+                    fidA, fidB = fids[i], fids[j]
+                    sign = np.sign(diffA*diffB)
+                    field_arm_info.append([getFieldInfoFromID(fidA,alleydf), getFieldInfoFromID(fidB, alleydf),sign])
                     
             
 #%% plot scatter for x,y. Same code as above, but up there it's all

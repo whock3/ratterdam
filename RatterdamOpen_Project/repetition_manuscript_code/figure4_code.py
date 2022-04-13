@@ -26,7 +26,7 @@ import repetition_manuscript_defaults as MDef
 from importlib import reload
 
 
-alleydatapath = "E:\\Ratterdam\\R_data_repetition\\2022-03-23_AlleySuperpopDirVisitFiltered.csv"
+alleydatapath = "E:\\Ratterdam\\R_data_repetition\\2022-04-05_AlleySuperpopDirVisitFiltered.csv"
 alleydf = pd.read_csv(alleydatapath)
 
 
@@ -130,7 +130,7 @@ def fd_anova(ocell):
     return pint
     
 #%% Run anovas 
-datapath = "E:\\Ratterdam\\R_data_repetition\\2022-03-23_AlleySuperpopDirVisitFiltered.csv"
+datapath = "E:\\Ratterdam\\R_data_repetition\\2022-04-05_AlleySuperpopDirVisitFiltered.csv"
 df = pd.read_csv(datapath)
 totalAnovas = 0
 passThresh = 2
