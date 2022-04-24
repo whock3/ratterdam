@@ -120,14 +120,16 @@ for rat,day in zip(rat_list, day_list):
     numpaths_time = []
     directionality_time = []
     bias_time = []
+    totalpaths_time = []
     
     for win in wins:
         
         numpaths_win = []
         directionality_win = []
         bias_win = []
-        
-        windf = rdf[(rdf.StartTimes>win[0])&(rdf.StartTimes<=win[1])]    
+        totalpaths_win = []
+
+        windf = rdf[(rdf.StartTimes>win[0])&(rdf.StartTimes<=win[1])]
     
         # for aNum, alley in windf.groupby("Alleys"):
         #     pathcount = 0
@@ -148,6 +150,7 @@ for rat,day in zip(rat_list, day_list):
                     for cname, code in ofield.groupby("Code"):
                         pathcount +=1
                     numpaths_win.append(pathcount)
+                    totalpaths_win.append(ofield.shape[0]) # this is total # filtered passes thru field. not overall # passes thru alley.
                     ndira = ofield[ofield.CurrDir==dirs[0]].shape[0]
                     ndirb = ofield[ofield.CurrDir==dirs[1]].shape[0]
                     bias_win.append(max(ndira,ndirb)/ofield.shape[0])
@@ -155,12 +158,15 @@ for rat,day in zip(rat_list, day_list):
                     
                 
         numpaths_time.append(numpaths_win)
+        totalpaths_time.append(totalpaths_win)
         directionality_time.append(directionality_win)
         bias_time.append(bias_win)
     
-    
+    # So the data above were calculated within time windows and now 
+    # we are pooling all that data together. 
     diffs  = np.asarray([i for j in directionality_time for i in j])
     ntrajs = np.asarray([i for j in numpaths_time for i in j])
+    totaltrajs = np.asarray([i for j in totalpaths_time for i in j])
     included_field_chunks = np.asarray(included_field_chunks)      
     
     #% Attempt based on fitting a quadratic to the data and bootstrapping to get many null curves
@@ -239,6 +245,7 @@ for rat,day in zip(rat_list, day_list):
     ax.set_xlabel("Number of Realized Paths", fontsize=20)
     plt.title(f"{rat}{day} Real fitted quadratic versus 1000 bootstrap samples \n \
               {window/60}min windows, {offset/60}min offset",fontsize=25)
+    
     
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)

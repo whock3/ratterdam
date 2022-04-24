@@ -76,7 +76,8 @@ for(o in c('V','H')){
       
       lrCurr_pvals <- c(lrCurr_pvals, lrCurr[2,"Pr(>Chisq)"])
       
-      if((lrCurr[2,"Pr(>Chisq)"] < 0.05)&(!is.nan(lrCurr[2,"Pr(>Chisq)"]))){
+      #dropping pvalue to 0.05/2 2022-04-14
+      if((lrCurr[2,"Pr(>Chisq)"] < 0.05/2)&(!is.nan(lrCurr[2,"Pr(>Chisq)"]))){
         
         sigP <- c(sigP, 1)
       }

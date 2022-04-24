@@ -113,11 +113,13 @@ def calculate_subgroup_directionality(alleydf, interdf, toggles):
         #field can spill over multiple alleys within perimeter or interior alleysets
         oriens = np.unique(field.Orientation)
         for o in oriens:
-            ofield = field[field.Orientation==o]
-            dirs = np.unique(ofield.CurrDir)
-            diff = abs(ofield[ofield.CurrDir==dirs[0]].Rate.mean()-ofield[ofield.CurrDir==dirs[1]].Rate.mean())
-            alleydiffs.append(diff)
-
+            try:
+                ofield = field[field.Orientation==o]
+                dirs = np.unique(ofield.CurrDir)
+                diff = abs(ofield[ofield.CurrDir==dirs[0]].Rate.mean()-ofield[ofield.CurrDir==dirs[1]].Rate.mean())
+                alleydiffs.append(diff)
+            except:
+                pass
         
         
     # Field Chunk Directionality for Intersections. If field overlaps multiple
@@ -157,7 +159,7 @@ def calculate_subgroup_directionality(alleydf, interdf, toggles):
                     mindirrate = meanDirDiffs[mindir]
                     
 
-                diff = maxdirrate = mindirrate
+                diff = maxdirrate - mindirrate
                 interdiffs.append(diff)
 
         

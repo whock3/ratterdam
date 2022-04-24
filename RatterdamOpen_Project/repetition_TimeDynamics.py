@@ -23,9 +23,11 @@ filtDf = DfFilt.filterAlleyDatasets(df, passThresh=1)
 #%% Panel A - example time signals
 # taken from raw data, no analysis to do here
 
-#%% Panel B - GLM results from R. repetition_timeModels.R
 
-glmData = pd.read_csv("E:\\Ratterdam\\repetition_manuscript\\Figure6\\22-04-06_timeGLMResults.csv")
+#%% Panel B 
+
+
+glmData = pd.read_csv("E:\\Ratterdam\\repetition_manuscript\\Figure6_TemporalDynamics\\2022-04-20_timeGLMResults.csv")
 
 fig, ax = plt.subplots()
 
@@ -54,6 +56,53 @@ for lhand in lgnd.legendHandles:
     lhand._legmarker.set_markersize(MDef.legend_marker_size)
 lgnd.get_frame().set_linewidth(MDef.legend_frame_width)
 
+
+#%%  GLM results from R. repetition_timeModels.R including rep vs non 
+
+glmData = pd.read_csv("E:\\Ratterdam\\repetition_manuscript\\Figure6_TemporalDynamics\\2022-04-20_timeGLMResults.csv")
+
+fig, ax = plt.subplots()
+ax.plot(glmData.rmse_base[(glmData.repOrNot==0)&(glmData.sigs==1)],glmData.rmse_alt[(glmData.repOrNot==0)&(glmData.sigs==1)],
+        marker='^',
+        markersize=20,
+        linestyle='',
+        color='navy',
+        alpha=0.6,
+        label='Non-repeating Significant')
+ax.plot(glmData.rmse_base[(glmData.repOrNot==1)&(glmData.sigs==1)],glmData.rmse_alt[(glmData.repOrNot==1)&(glmData.sigs==1)],
+        marker='^',
+        markersize=20,
+        linestyle='',
+        color='red',
+        alpha=0.6,
+        label='Repeating Significant')
+
+ax.plot(glmData.rmse_base[(glmData.repOrNot==0)&(glmData.sigs==0)],glmData.rmse_alt[(glmData.repOrNot==0)&(glmData.sigs==0)],
+        marker='o',
+        markersize=20,
+        linestyle='',
+        color='navy',
+        alpha=0.6,
+        label='Non-repeating Non-significant')
+ax.plot(glmData.rmse_base[(glmData.repOrNot==1)&(glmData.sigs==0)],glmData.rmse_alt[(glmData.repOrNot==1)&(glmData.sigs==0)],
+        marker='o',
+        markersize=20,
+        linestyle='',
+        color='red',
+        alpha=0.6,
+        label='Repeating Non-significant')
+
+ax.spines['top'].set_visible(False)
+ax.spines['right'].set_visible(False)
+ax.spines['left'].set_linewidth(MDef.spine_width)
+ax.spines['bottom'].set_linewidth(MDef.spine_width)
+ax.set_ylabel("Base Model \n+ Time RMSE",fontsize=MDef.ylabelsize)
+ax.set_xlabel("Base Model RMSE",fontsize=MDef.xlabelsize)
+ax.tick_params(axis='both', which='major', labelsize=MDef.ticksize)
+lgnd = plt.legend(prop={'size':MDef.legend_size})
+for lhand in lgnd.legendHandles:
+    lhand._legmarker.set_markersize(MDef.legend_marker_size)
+lgnd.get_frame().set_linewidth(MDef.legend_frame_width)
 
 
 #%% Decode time using k-NN using raw time, i.e. time in us from start, not IFD vectors

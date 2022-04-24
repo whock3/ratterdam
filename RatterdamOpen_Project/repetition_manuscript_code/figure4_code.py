@@ -310,3 +310,6 @@ for w,h,c in zip(widths, heights, colors):
                             )
 
     ax.add_patch(rect)
+    
+    
+    

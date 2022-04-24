@@ -12,7 +12,7 @@ Interface to filter data in different ways and compare the results
 import numpy as np, pandas as pd, matplotlib.pyplot as plt, copy
 import repetition_Directionality_RegionRepeatingBreakdown as RRB
 
-alleydatapath = "E:\\Ratterdam\\R_data_repetition\\211220_AlleySuperpopDirVisitFiltered.csv"
+alleydatapath = "E:\\Ratterdam\\R_data_repetition\\20220404-210901_superPopAlleyBehaviorResponse_1.5vfilt_FieldNormedTrue.csv"
 alleydf = pd.read_csv(alleydatapath)
 
 interdatapath = "E:\\Ratterdam\\R_data_repetition\\20220120-164311_superPopInterBehaviorResponse_1.5vfilt.csv"
@@ -40,14 +40,14 @@ def convert_toggles_to_string(toggles):
 
 toggle_list = [
     {
-    'repeating_type':'All',
+    'repeating_type':'R',
     'region_type':'A',
-    'region_location':'P'
+    'region_location':'All'
                         },
     {
-    'repeating_type':'All',
-    'region_type':'I',
-    'region_location':'I'
+    'repeating_type':'SF',
+    'region_type':'A',
+    'region_location':'All'
                         },
    
     ]

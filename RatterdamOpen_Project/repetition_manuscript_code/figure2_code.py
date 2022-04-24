@@ -46,19 +46,19 @@ for orien in ['V','H']:
             # meanDiff.append(0)
             pass
             
-            
+alpha = 0.05/2            
 
 meanDiff = np.asarray(meanDiff)
 pvals = np.asarray(pvals)
 fig, _ax = plt.subplots()
 ax = fig.axes[0]
-ax.plot(np.where(pvals>=0.05)[0],meanDiff[pvals>=0.05],
+ax.plot(np.where(pvals>=alpha)[0],meanDiff[pvals>=alpha],
         linestyle='',
         marker='.',
         color='k',
         markersize=30,
         label='Non-directional')
-ax.plot(np.where(pvals<0.05)[0],meanDiff[pvals<0.05],
+ax.plot(np.where(pvals<alpha)[0],meanDiff[pvals<alpha],
         linestyle='',
         marker='.',
         color='r',
@@ -81,7 +81,7 @@ lgnd.get_frame().set_linewidth(MDef.legend_frame_width)
 from scipy.stats import binom_test
 print(f"Total number field segments: {len(pvals)}")
 print(f"M-W directional fields: {np.where(pvals<0.05)[0].shape[0]}")
-print(binom_test(np.where(pvals<0.05)[0].shape[0],len(pvals),0.05,'greater'))
+print(binom_test(np.where(pvals<alpha)[0].shape[0],len(pvals),0.05,'greater'))
 
 #%% Fig 3C - distribution of 3B visualized as overlaid histograms
 # Need to run 3B code first, as this is another way of visualizing that
@@ -116,7 +116,7 @@ lgnd.get_frame().set_linewidth(MDef.legend_frame_width)
 
 # this 211216 model did not have its own script, I saved the CD part of a script
 # that looked at all directions. 
-cdmodel = pd.read_csv("E:\\Ratterdam\\repetition_manuscript\\Figure2\\220406_CDmodel.csv")
+cdmodel = pd.read_csv("E:\\Ratterdam\\repetition_manuscript\\Figure3_Directionality\\20220414_CDmodel.csv")
 
 fig, ax = plt.subplots()
 ax.plot(cdmodel.m1_rmse[cdmodel.sigP==0],cdmodel.m2_rmse[cdmodel.sigP==0],

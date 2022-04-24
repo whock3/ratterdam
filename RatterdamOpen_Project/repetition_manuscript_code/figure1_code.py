@@ -120,12 +120,13 @@ for rat in superpop.keys():
                 if len(unitbias)>0:
                     orientationBias.append(sum(unitbias)/len(unitbias))
                     
-
+# next cell has this graph plus the shuffle dist results on same plot 
 fig, ax = plt.subplots(figsize=(20,15))
 ax = fig.axes[0]
-ax.hist(orientationBias,bins=np.linspace(-1,1,num=10),
-        facecolor='grey',
+histout = ax.hist(orientationBias,bins=np.linspace(-1,1,num=10), # save bins for shuffling plot below 
+        facecolor='mediumturquoise',
         edgecolor='black',
+        label = "Orientation Bias Score",
         linewidth=2)
 ax.set_xticks([-1,0,1])
 ax.set_xticklabels(["-1 (H)", "0", "+1 (V)"])
@@ -135,7 +136,109 @@ ax.tick_params(axis='both', labelsize=MDef.ticksize)
 ax.set_ylabel("Neuron Frequency", fontsize=MDef.ylabelsize)
 ax.set_xlabel("Repetition Orientation Bias",fontsize=MDef.xlabelsize)
 ax.yaxis.set_major_locator(MaxNLocator(integer=True))
+lgnd = plt.legend(prop={'size':MDef.legend_size})
+lgnd.get_frame().set_linewidth(MDef.legend_frame_width)
 
+#%% Repetition Orientation bias - reassignment analysis
+# To quantify whether the trimodal distribution we observe is significant
+# we do a reassignment analysis where all fields are pooled together and labeled with orientation
+# then randomly reassigned to cells while preserving the # fields / cell in real life. Then recompute the percentiles
+import copy 
+
+nshuffs = 1000
+
+verticals = [2,3,5,7,16,14,11,9]
+horizontals = [0,4,6,1,12,8,15,13,10]
+
+all_fields = []
+cell_field_nums = []
+for rat in superpop.keys():
+    for day in superpop[rat].keys():
+        for unit in superpop[rat][day]['units'].values():
+            if len(unit.fields) > 1:
+                cellfieldcounter = 0
+                for foverlap in unit.overlaps:
+                    for regionoverlap in foverlap:
+                        if regionoverlap in verticals:
+                            all_fields.append(1)
+                            cellfieldcounter += 1
+                        elif regionoverlap in horizontals:
+                            all_fields.append(-1)
+                            cellfieldcounter += 1
+                      
+                if cellfieldcounter > 0:
+                    cell_field_nums.append(cellfieldcounter)
+                
+all_fields = np.asarray(all_fields)
+cell_field_nums = np.asarray(cell_field_nums)
+
+allShuffs= []
+
+for s in range(nshuffs):
+    if s%50==0:
+        print(s)
+  
+    field_indices = range(len(all_fields))
+    
+    shuffOrienBiases = []
+    
+    for Nfields in cell_field_nums:
+        
+        selected_fields_idx = np.random.choice(field_indices, Nfields, replace = False)
+        
+        selected_fields = all_fields[selected_fields_idx]
+        
+        sobias = sum(selected_fields)/len(selected_fields)
+        shuffOrienBiases.append(sobias)
+     
+        #there has to be a better way
+        for i in selected_fields_idx:
+            argi = np.where(field_indices==i)
+            field_indices = np.delete(field_indices, argi)
+                          
+    allShuffs.append(shuffOrienBiases)
+
+shuffhists = []
+for i in allShuffs:
+    shuffhists.append(np.histogram(i,bins=np.linspace(-1,1,10))[0])
+    
+
+fig, ax = plt.subplots(figsize=(20,15))
+ax = fig.axes[0]
+histout = ax.hist(orientationBias,bins=np.linspace(-1,1,num=10), # save bins for shuffling plot below 
+        facecolor='mediumturquoise',
+        edgecolor='black',
+        label = "Orientation Bias Score",
+        linewidth=2)
+
+sbarw = histout[-1][0].get_width() # want width of bars used for real orien bias dist 
+sbarx = []
+for i in range(len(histout[1])-1):
+    sbarx.append((histout[1][i] + histout[1][i+1])/2)
+    
+ax.set_xticks([-1,0,1])
+ax.set_xticklabels(["-1 (H)", "0", "+1 (V)"])
+ax.spines['top'].set_visible(False)
+ax.spines['right'].set_visible(False)
+ax.tick_params(axis='both', labelsize=MDef.ticksize)
+ax.set_ylabel("Neuron Frequency", fontsize=MDef.ylabelsize)
+ax.set_xlabel("Repetition Orientation Bias",fontsize=MDef.xlabelsize)
+ax.yaxis.set_major_locator(MaxNLocator(integer=True))
+lgnd = plt.legend(prop={'size':MDef.legend_size})
+lgnd.get_frame().set_linewidth(MDef.legend_frame_width)
+
+ax.bar(sbarx,np.percentile(shuffhists,95,axis=0),
+                                            width=sbarw,
+                                            align='center',
+                                            alpha=0.5,
+                                            facecolor='gray',
+                                            edgecolor='black',
+                                            linewidth=3,
+                                            linestyle='--',
+                                            label = "$95^{th}$ Percentile Shuffle",
+                                            zorder=99)
+lgnd = plt.legend(prop={'size':MDef.legend_size})
+lgnd.get_frame().set_linewidth(MDef.legend_frame_width)
 
 #%% Panel F - number horizontal vs vertical fields
 from collections import Counter

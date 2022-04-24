@@ -41,18 +41,20 @@ fig, _ax = plt.subplots()
 
 ax = fig.axes[0]
 repviolin = ax.violinplot(meanDiff[repeating==True],[1])
-repviolin['bodies'][0].set_facecolor('red')
-repviolin['bodies'][0].set_edgecolor('darkred')
-repviolin['bodies'][0].set_linewidth(2)
+repviolin['bodies'][0].set_facecolor('gray')
+repviolin['bodies'][0].set_edgecolor('black')
+repviolin['bodies'][0].set_linewidth(3)
+repviolin['bodies'][0].set_alpha(0.8)
 for el in ['cbars','cmaxes','cmins']:
-    repviolin[el].set_color('darkred')
+    repviolin[el].set_color('black')
     
 nonrepviolin = ax.violinplot(meanDiff[repeating==False],[2])
-nonrepviolin['bodies'][0].set_facecolor('dodgerblue')
-nonrepviolin['bodies'][0].set_edgecolor('navy')
-nonrepviolin['bodies'][0].set_linewidth(2)
+nonrepviolin['bodies'][0].set_facecolor('grey')
+nonrepviolin['bodies'][0].set_edgecolor('black')
+nonrepviolin['bodies'][0].set_linewidth(3)
+nonrepviolin['bodies'][0].set_alpha(0.8)
 for el in ['cbars','cmaxes','cmins']:
-    nonrepviolin[el].set_color('dodgerblue')
+    nonrepviolin[el].set_color('black')
 
 ax.set_xticks([1,2])
 ax.set_xticklabels(["Repeating Fields", "Non-repeating Fields"],fontsize=MDef.xlabelsize)
@@ -66,16 +68,20 @@ ax.tick_params(axis='both', which='major', labelsize=MDef.ticksize)
 
 #%% Figure 4B - GLM LRT CD, rep vs nonrep 
 
-cdmodel = pd.read_csv("E:\\Ratterdam\\repetition_manuscript\\Figure2\\220406_CDmodel.csv")
+cdmodel = pd.read_csv("E:\\Ratterdam\\repetition_manuscript\\Figure3_Directionality\\20220414_CDmodel.csv")
 
 fig, ax = plt.subplots()
+
+# nonrep sig 
 ax.plot(cdmodel.m1_rmse[(cdmodel.repOrNot==0)&(cdmodel.sigP==1)],cdmodel.m2_rmse[(cdmodel.repOrNot==0)&(cdmodel.sigP==1)],
-        marker='^',
+        marker='o',
         markersize=20,
         linestyle='',
-        color='navy',
+        color='red',
         alpha=0.6,
         label='Non-repeating Significant')
+
+# rep sig
 ax.plot(cdmodel.m1_rmse[(cdmodel.repOrNot==1)&(cdmodel.sigP==1)],cdmodel.m2_rmse[(cdmodel.repOrNot==1)&(cdmodel.sigP==1)],
         marker='^',
         markersize=20,
@@ -84,18 +90,21 @@ ax.plot(cdmodel.m1_rmse[(cdmodel.repOrNot==1)&(cdmodel.sigP==1)],cdmodel.m2_rmse
         alpha=0.6,
         label='Repeating Significant')
 
+# nonrep nonsig
 ax.plot(cdmodel.m1_rmse[(cdmodel.repOrNot==0)&(cdmodel.sigP==0)],cdmodel.m2_rmse[(cdmodel.repOrNot==0)&(cdmodel.sigP==0)],
         marker='o',
         markersize=20,
         linestyle='',
-        color='navy',
+        color='black',
         alpha=0.6,
         label='Non-repeating Non-significant')
+
+# rep nonsig
 ax.plot(cdmodel.m1_rmse[(cdmodel.repOrNot==1)&(cdmodel.sigP==0)],cdmodel.m2_rmse[(cdmodel.repOrNot==1)&(cdmodel.sigP==0)],
-        marker='o',
+        marker='^',
         markersize=20,
         linestyle='',
-        color='red',
+        color='black',
         alpha=0.6,
         label='Repeating Non-significant')
 

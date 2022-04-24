@@ -35,7 +35,7 @@ alleydf$Alleys <- as.factor(alleydf$Alleys)
 ###
 ### Time
 ###
-savepath <- 'E:\\Ratterdam\\repetition_manuscript\\Figure6\\'
+savepath <- 'E:\\Ratterdam\\repetition_manuscript\\Figure6_TemporalDynamics\\2022-04-20_timeGLMResults.csv'
 
 sigs <- c()
 sigreps <- c()
@@ -48,7 +48,7 @@ repOrNot <- c()
 sigs <- c()
 orientation <- c()
 
-alpha  = 0.05/3
+alpha  = 0.05/6 # 6 = 3 * 2. 3 for time knots, 2 for orientation filtering. 
 
 rmse <- c()
 
@@ -95,10 +95,10 @@ for(o in c("V","H")){
         sigs <- c(sigs, FALSE)
       }
       
-      if(unique(field$Repeating)=="True"){
+      if(unique(field$Repeating)==TRUE){
         repOrNot <- c(repOrNot, TRUE)
       }
-      else if(unique(field$Repeating)=="False"){
+      else if(unique(field$Repeating)==FALSE){
         repOrNot <- c(repOrNot, FALSE)
       }
       
