@@ -199,7 +199,7 @@ for rat,day in zip(rat_list, day_list):
         shuff_ntrajs_sample = [] # the number of samples of each value of the trajectory 
                           # num is the same, but associated with different fields
                           
-        reference_indices = np.asarray(range(included_field_chunks.shape[0])) # size of field chunks remove from this i.e w/o replacement
+        reference_indices = np.asarray(range(diffs.shape[0])) # size of field chunks remove from this i.e w/o replacement
         
         for nt in np.unique(ntrajs):
             nsamples = ntrajdict[nt]
@@ -210,16 +210,10 @@ for rat,day in zip(rat_list, day_list):
                 argi = np.where(reference_indices==i)
                 reference_indices = np.delete(reference_indices, argi)
             
-            boot_fields = included_field_chunks[idx]
+            boot_diffs = diffs[idx]
             
-            for bf in boot_fields:
-                alley = bf[1]
-                fid = bf[0]
-                bootdf = rdf[(rdf.Alleys==alley)&(rdf.FieldID==fid)]
-                #dont need to check if num dirs > 1 bc its only included if it does
-                dirs = np.unique(bootdf.CurrDir)
-                bootdiff = abs(bootdf[bootdf.CurrDir==dirs[0]].Rate.mean() - bootdf[bootdf.CurrDir==dirs[1]].Rate.mean())
-                shuff_diffs_sample.append(bootdiff)
+            for bf in boot_diffs:
+                shuff_diffs_sample.append(bf)
                 shuff_ntrajs_sample.append(nt)
                 
         z = np.polyfit(shuff_ntrajs_sample, shuff_diffs_sample,2)

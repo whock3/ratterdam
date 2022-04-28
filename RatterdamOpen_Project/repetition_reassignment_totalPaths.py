@@ -51,51 +51,7 @@ if 'Code' not in alleydf.columns:
 for rat,day in zip(rat_list, day_list):
     
     rdf = alleydf[(alleydf.Rat==rat)&(alleydf.Day==day)]
- 
-    # interdatapath = "E:\\Ratterdam\\R_data_repetition\\20220120-164311_superPopInterBehaviorResponse_1.5vfilt.csv"
-    # interdf = pd.read_csv(interdatapath)
-    # alleydf = alleydf[(alleydf.Rat==r)&(alleydf.Day==d)]
-    # interdf = interdf[(interdf.Rat==r)&(interdf.Day==d)]
-    
-    #% Calculate empirical relationship between num paths and directionality
-    
-    # ntrajs = []
-    # diffs = []
-      
-    # ###### No time windowing 
-    
-    # traj_sample_thresh = 0
-    # included_field_chunks = [] # list of tuples: [(fid,alley)]
-    
-    # for rname, rat in alleydf.groupby("Rat"):
-    #     for daynum, day in rat.groupby("Day"):
-    
-    #         for alleyNum, alley in day.groupby("Alleys"):
-                
-    #             alley_trajs = []
-                
-    #             for codename, code in alley.groupby("Code"):
-    #                 alley_trajs.append(code.shape[0])
-                    
-    #             #alley_trajs = [i for i in alley_trajs if i > traj_sample_thresh]
-                
-    #             alleyNumTrajs = len(alley_trajs)
-    #             alleySpreadTrajs = (max(alley_trajs)-min(alley_trajs))/len(alley_trajs)
-                
-    #             for fid, field in alley.groupby("FieldID"):
-                    
-    #                 dirs  = np.unique(field.CurrDir)
-                    
-    #                 if len(dirs)>1:
-    #                     included_field_chunks.append((np.unique(field.FieldID)[0], np.unique(field.Alleys)[0]))
-    #                     diff = abs(field[field.CurrDir==dirs[0]].Rate.mean() - field[field.CurrDir==dirs[1]].Rate.mean())          
-    #                     diffs.append(diff)
-    #                     ntrajs.append(alleyNumTrajs)
-    
-    # included_field_chunks = np.asarray(included_field_chunks)      
-    
-    
-    
+
     #### Time windowing 
     
     included_field_chunks = [] # list of tuples: [(fid,alley)]
@@ -172,7 +128,7 @@ for rat,day in zip(rat_list, day_list):
     #, the distribution of which can be compared to the empirical curve. 
     
     # first calculate # samples in each group
-    ntrajdict = {i:None for i in np.unique(ntrajs)}
+    ntrajdict = {i:None for i in np.unique(totaltrajs)}
     
     for nt in np.unique(ntrajs):
         
@@ -180,9 +136,9 @@ for rat,day in zip(rat_list, day_list):
         
     #% calculate real quadratic fit 
     npts = 50
-    z =np.polyfit(ntrajs, diffs, 2)
+    z =np.polyfit(totaltrajs, diffs, 2)
     f = np.poly1d(z)
-    xf = np.linspace(min(ntrajs),max(ntrajs),npts)
+    xf = np.linspace(min(totaltrajs),max(totaltrajs),npts)
     yreal = f(xf)
      
     #% run bootstrap. code it procedurely, wrap it up if it's something I pursue
@@ -198,9 +154,9 @@ for rat,day in zip(rat_list, day_list):
         shuff_ntrajs_sample = [] # the number of samples of each value of the trajectory 
                           # num is the same, but associated with different fields
                           
-        reference_indices = np.asarray(range(included_field_chunks.shape[0])) # size of field chunks remove from this i.e w/o replacement
+        reference_indices = np.asarray(range(totaltrajs.shape[0])) # size of field chunks remove from this i.e w/o replacement
         
-        for nt in np.unique(ntrajs):
+        for nt in np.unique(totaltrajs):
             nsamples = ntrajdict[nt]
             idx = np.random.choice(reference_indices,nsamples,replace=False)
             
@@ -209,16 +165,10 @@ for rat,day in zip(rat_list, day_list):
                 argi = np.where(reference_indices==i)
                 reference_indices = np.delete(reference_indices, argi)
             
-            boot_fields = included_field_chunks[idx]
+            boot_fields = diffs[idx]
             
             for bf in boot_fields:
-                alley = bf[1]
-                fid = bf[0]
-                bootdf = rdf[(rdf.Alleys==alley)&(rdf.FieldID==fid)]
-                #dont need to check if num dirs > 1 bc its only included if it does
-                dirs = np.unique(bootdf.CurrDir)
-                bootdiff = abs(bootdf[bootdf.CurrDir==dirs[0]].Rate.mean() - bootdf[bootdf.CurrDir==dirs[1]].Rate.mean())
-                shuff_diffs_sample.append(bootdiff)
+                shuff_diffs_sample.append(bf)
                 shuff_ntrajs_sample.append(nt)
                 
         z = np.polyfit(shuff_ntrajs_sample, shuff_diffs_sample,2)
