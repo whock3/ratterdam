@@ -36,6 +36,8 @@ alleydf = pd.read_csv(alleydatapath)
 fieldTimeCorrs = []
 x,y = [], []
 
+i = 0
+
 for rat, rdf in alleydf.groupby("Rat"):
     for day, ddf in rdf.groupby("Day"):
         for orien, oriendf in ddf.groupby("Orientation"):
@@ -62,8 +64,10 @@ for rat, rdf in alleydf.groupby("Rat"):
                         
                         field_timeseries.append(pcf_interp)
                         
-                        # plt.plot(startTimes,rates,linestyle='-',marker='^')
-                        # plt.plot(interp_ts,pcf_interp,linestyle='--')
+                        if i%5 == 0:
+                        
+                            plt.plot(startTimes,rates,linestyle='-',marker='^')
+                            plt.plot(interp_ts,pcf_interp,linestyle='--')
                         
                     combs = itertools.combinations(range(len(field_timeseries)),2)
                     for pair in combs:
@@ -76,6 +80,10 @@ for rat, rdf in alleydf.groupby("Rat"):
                         
                         corr = pearsonr(tsA,tsB)[0]
                         fieldTimeCorrs.append(corr)
+                        
+                        
+                    i +=1 
+                        
                         
 #%%                        
 fig, ax = plt.subplots()

@@ -399,10 +399,12 @@ olsAll = linregress(x,y)
 olsSame = linregress(x[arm_shareness==1], y[arm_shareness==1])
 olsDiff = linregress(x[arm_shareness==0], y[arm_shareness==0])
 
-#%% plot
+#%% plot all data one graph
 
 size=250
 fig, ax = plt.subplots()
+ax.set_aspect('equal')
+
 
 #ax.scatter(x,y, c='black',label='All Data')
 ax.scatter(x[arm_shareness==0], y[arm_shareness==0], color='cornflowerblue', edgecolor='navy', s=size)
@@ -424,7 +426,7 @@ xfit = np.linspace(xlim[0], xlim[1],100)
 for fit, linecolor, errcolor,label in zip([olsAll, olsSame, olsDiff], 
                                     ['black', 'red', 'blue'], 
                                     ['grey', 'lightcoral', 'cornflowerblue'],
-                                    ['All Data', 'Same Arm', 'Different Arm']):
+                                    ['All Data', 'Same Segment', 'Different Segment']):
 
     yfit = [(fit.slope*i)+fit.intercept for i in xfit]
     ax.plot(xfit,yfit,color=linecolor,linewidth=3)
@@ -467,6 +469,52 @@ lgnd = ax.legend(prop={'size':32})
 
 #     ax.add_patch(rect)
     
+
+#%% plot two graphs for same segment, different segment separately. 
+
+size=250
+tick_spacing = 0.5
+
+import matplotlib.ticker as ticker 
+
+for shareness, colors, label, fit in zip([0,1], 
+                                        [['cornflowerblue', 'navy'], ['lightcoral', 'firebrick']],
+                                        ['Different Segment', 'Same Segment'],
+                                        [olsDiff, olsSame]):
+    fig, ax = plt.subplots()
+    ax.set_aspect('equal')
+    
+    ax.scatter(x[arm_shareness==shareness], y[arm_shareness==shareness], color=colors[0], edgecolor=colors[1], s=size)
+    
+    ax.set_ylabel("Signed Normalized\n Directionality Field A", fontsize=MDef.ylabelsize)
+    ax.set_xlabel("Signed Normalized\n Directionality Field B", fontsize=MDef.xlabelsize)
+    
+    ax.set_ylim([-2.5,3])
+    ax.set_xlim([-3.5,4])
+    
+    xlim, ylim = ax.get_xlim(), ax.get_ylim()
+    xfit = np.linspace(xlim[0], xlim[1],100)
+
+    
+    yfit = [(fit.slope*i)+fit.intercept for i in xfit]
+    ax.plot(xfit,yfit,color=colors[1],linewidth=3)
+    ax.fill_between(xfit,yfit-fit.stderr,yfit+fit.stderr,color=colors[0],alpha=0.7,label=label)
+    
+    
+    ax.tick_params(axis='both', which='major', labelsize=MDef.ticksize)
+    ax.hlines(0, xlim[0], xlim[1], linestyle='--',color='k',linewidth=2)
+    ax.vlines(0, ylim[0], ylim[1], linestyle='--',color='k',linewidth=2)
+    ax.spines['right'].set_visible(False)
+    ax.spines['top'].set_visible(False)
+    ax.spines['left'].set_linewidth(MDef.spine_width)
+    ax.spines['bottom'].set_linewidth(MDef.spine_width)
+    ax.set_title(label,fontsize=40)
+    
+    xticks = np.arange(xlim[0], xlim[1], 0.5)
+    yticks = np.arange(ylim[0], ylim[1], 0.5)
+    
+    
+
 
 #%% Bootstrap estimate of the CIs of R2 for same arm and diff arm
 # this is in addition to/in lieu of shuffling test (wherein we downsample shuffles, but not original data which is bad)

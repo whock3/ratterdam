@@ -559,31 +559,47 @@ shuff_lines_diff = np.asarray(shuff_lines_diff)
 # shuffle regression lines 
 fig, ax = plt.subplots()
 
-ax.plot(xfit, real_yfit_same, color='green', label = 'Same arm')
-ax.plot(xfit, real_yfit_diff, color='orange', label = 'Different arm')
+ax.plot(xfit, real_yfit_same, 
+        color='red', 
+        linewidth=3,
+        label = 'Same segment'
+        )
+ax.plot(xfit, real_yfit_diff, 
+        color='navy', 
+        linewidth=3,
+        label = 'Different segment'
+        )
 ax.plot(xfit, yfit, color='black',linewidth=3,zorder=99, label = 'All data')
 
-ax.plot(xfit,np.percentile(shuff_lines_diff,97.5,axis=0),
-                            color='orange',
-                            linewidth=2,
-                            linestyle='--', 
-                            label = "Different arm $2.5^{th}$ / $97.5^{th}$ confidence band")
 
-ax.plot(xfit,np.percentile(shuff_lines_same,97.5,axis=0),
-                            color='green',
-                            linewidth=2,
-                            linestyle='--',
-                            label = 'Same arm $2.5^{th}$ / $97.5^{th}$ confidence band')
+diff_lower = np.percentile(shuff_lines_diff, 2.5,axis=0)
+diff_upper = np.percentile(shuff_lines_diff, 97.5,axis=0)
+same_lower = np.percentile(shuff_lines_same, 2.5,axis=0)
+same_upper = np.percentile(shuff_lines_same, 97.5,axis=0)
 
-ax.plot(xfit,np.percentile(shuff_lines_diff,2.5,axis=0),
-                            color='orange',
-                            linewidth=2,
-                            linestyle='--')
+ax.fill_between(xfit, diff_lower, diff_upper,
+                color='cornflowerblue',
+                alpha=0.6,
+                label="Different arm $2.5^{th}$ / $97.5^{th}$ confidence band")
+ax.plot(xfit,diff_lower,
+        color='navy',
+        linewidth=3)
+ax.plot(xfit,diff_upper,
+        color='navy',
+        linewidth=3
+        )
 
-ax.plot(xfit,np.percentile(shuff_lines_same,2.5,axis=0),
-                            color='green',
-                            linewidth=2,
-                            linestyle='--')
+ax.fill_between(xfit, same_lower, same_upper,
+                color='lightcoral',
+                alpha=0.6,
+                label = 'Same arm $2.5^{th}$ / $97.5^{th}$ confidence band')
+ax.plot(xfit,same_lower,
+        color='firebrick',
+        linewidth=3)
+ax.plot(xfit,same_upper,
+        color='navy', 
+        linewidth=3
+        )
 
 ax.tick_params(axis='both', which='major', labelsize=Def.ticksize)
 ax.spines['top'].set_visible(False)

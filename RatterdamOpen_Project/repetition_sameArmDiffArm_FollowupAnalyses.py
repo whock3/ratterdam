@@ -7,6 +7,7 @@ Created on Mon Apr 25 13:15:33 2022
 Followup analyses for the same arm / different arm analysis
 
 """
+#%% 
 
 import numpy as np, matplotlib.pyplot as plt, statsmodels.api as sm, pandas as pd
 from statsmodels.formula.api import ols
@@ -33,6 +34,7 @@ alleydf = pd.read_csv(alleydatapath)
 with open("E:\\Ratterdam\\R_data_repetition\\20220405-124315_superPopulationRepetition.pickle","rb") as f:
     superpop = pickle.load(f)   
 
+#%% 
 
 #%% 
 
@@ -202,6 +204,7 @@ for shareness in [0,1]:
     
 fig, ax = plt.subplots(1,2)
 
+
 mymin = min([min(i) for i in allcolors])
 mymax = max([max(i) for i in allcolors])
 
@@ -221,14 +224,16 @@ for i, (cax,label,xs,ys,col) in enumerate(zip(fig.axes,
                 norm=divnorm,
                 s=200,
                 edgecolor='k',
-                linewidth=2)
+                linewidth=0.5)
     
-    if i == 1:
+    # if i == 1:
 
-        fig.colorbar(sc, ax=cax)
+    #     fig.colorbar(sc, ax=cax)
     
-    cax.set_xlabel("Field A Sampling Bias",fontsize=25)
-    cax.set_ylabel("Field B Sampling Bias",fontsize=25)
+    cax.set_xlabel("Field A Sampling Bias",fontsize=35)
+    cax.set_ylabel("Field B Sampling Bias",fontsize=35)
+    cax.set_ylim([-1,1])
+    cax.set_xlim([-1,1])
     ymin, ymax = cax.get_ylim()
     xmin, xmax = cax.get_xlim()
     cax.hlines(0,xmin, xmax,color='k',linestyle='--')
@@ -236,9 +241,11 @@ for i, (cax,label,xs,ys,col) in enumerate(zip(fig.axes,
     cax.set_title(label,fontsize=30)
     cax.spines['top'].set_visible(False)
     cax.spines['right'].set_visible(False)
-    cax.spines['left'].set_linewidth(3)
-    cax.spines['bottom'].set_linewidth(3)
-    cax.tick_params(axis='both', which='major', labelsize=20)
+    cax.spines['left'].set_linewidth(1.5)
+    cax.spines['bottom'].set_linewidth(1.5)
+    cax.tick_params(axis='both', which='major', labelsize=35, length=8)
+    cax.set_aspect('equal')
+    
 
     
 plt.suptitle("Directional Sampling Bias For Repeating Field Pairs",fontsize=30)
