@@ -11,7 +11,7 @@ These mostly relate to plotting params, like tick sizes and so forth
 ylabelsize = 50
 xlabelsize = 50
 ticksize = 45
-spine_width = 4
+spine_width = 2
 
 
 titlesize = 52

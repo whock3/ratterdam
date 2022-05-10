@@ -15,7 +15,8 @@ from matplotlib import pyplot as plt
 from scipy.stats import binom_test
 import repetition_manuscript_defaults as MDef
 from matplotlib.ticker import MaxNLocator
-import pandas as pd 
+import pandas as pd
+from sklearn.datasets import make_multilabel_classification 
 
 plt.ion()
 
@@ -26,6 +27,7 @@ with open("E:\\Ratterdam\\R_data_repetition\\20220405-124315_superPopulationRepe
     superpop = pickle.load(f)   
     
 alleydf = pd.read_csv("E:\\Ratterdam\\R_data_repetition\\2022-04-05_AlleySuperpopDirVisitFiltered.csv")
+
 #%% Panel A is a track schematic, no python code used here
 
 #%% Panel B is set of ratemaps showing repetition. no python code used here
@@ -346,3 +348,138 @@ for i in c.keys():
     
 # for i,v in oriendict.items():
 #     plt.violinplot([v],positions=[i])
+
+
+#%% Quantifying repetition
+# Reassigning field orientation labels. But normalize score by (min,max)
+# field alignment based on number fields. E.g. n=3 fields the scores go from 2/3 to 3/3 
+# and that's mapped onto 0,1
+def calcPossibleAlignments(n):
+    """
+    For n = number of fields
+    calculate possible alignment values
+    Only considers unique types of patterns eg VVH is same as HHV
+    """
+    possible_oas = [(n-i)/n for i in range(int(np.floor(n/2))+1)]
+    return possible_oas
+
+def findOASRanking(alignment, n):
+    pOAS = calcPossibleAlignments(n)
+
+    #top of ratio gets you index in the ranked possible alignment scores
+    # bottom normalizes by how many steps there are
+    rOAS = (list(reversed(pOAS)).index(alignment)+1)/len(pOAS)
+    return rOAS
+
+#%%
+import copy 
+from collections import Counter
+
+nshuffs = 1000
+
+verticals = [2,3,5,7,16,14,11,9]
+horizontals = [0,4,6,1,12,8,15,13,10]
+
+all_fields = []
+cell_field_nums = []
+for rat in superpop.keys():
+    for day in superpop[rat].keys():
+        for unit in superpop[rat][day]['units'].values():
+            if len(unit.fields) > 1:
+                cellfieldcounter = 0
+                for foverlap in unit.overlaps:
+                    for regionoverlap in foverlap:
+                        if regionoverlap in verticals:
+                            all_fields.append(1)
+                            cellfieldcounter += 1
+                        elif regionoverlap in horizontals:
+                            all_fields.append(-1)
+                            cellfieldcounter += 1
+                      
+                if cellfieldcounter > 1:
+                    cell_field_nums.append(cellfieldcounter)
+                
+all_fields = np.asarray(all_fields)
+cell_field_nums = np.asarray(cell_field_nums)
+
+
+
+allShuffs= []
+
+for s in range(nshuffs):
+    if s%50==0:
+        print(s)
+  
+    field_indices = range(len(all_fields))
+    
+    shuffOrienBiases = []
+    
+    for Nfields in cell_field_nums:
+        
+        selected_fields_idx = np.random.choice(field_indices, Nfields, replace = False)
+        
+        selected_fields = all_fields[selected_fields_idx]
+        
+        sobias = max(Counter(selected_fields).values())/len(selected_fields)
+
+        srOAS = findOASRanking(sobias, Nfields)
+
+        shuffOrienBiases.append(srOAS)
+     
+        #there has to be a better way
+        for i in selected_fields_idx:
+            argi = np.where(field_indices==i)
+            field_indices = np.delete(field_indices, argi)
+                          
+    allShuffs.append(np.mean(shuffOrienBiases))
+
+
+# %% Calc real OAS using above method 
+oas_scores = []
+for rat in superpop.keys():
+    for day in superpop[rat].keys():
+        for unit in superpop[rat][day]['units'].values():
+            if len(unit.fields) > 1:
+                fields = []
+                for foverlap in unit.overlaps:
+                    for regionoverlap in foverlap:
+                        if regionoverlap in verticals:
+                            fields.append(1)
+                        elif regionoverlap in horizontals:
+                            fields.append(-1)
+                      
+                if len(fields) > 1:
+                    obias = max(Counter(fields).values())/len(fields)
+                    rOAS = findOASRanking(obias, len(fields))
+                    oas_scores.append(rOAS)
+# %% plotting 
+
+import repetition_manuscript_defaults as MDef
+
+fig, ax= plt.subplots()
+ax.hist(allShuffs, 
+                facecolor='grey',
+                edgecolor='black',
+                linewidth=2,
+                label = 'Shuffled OAS Score'
+                )
+ax.vlines(np.mean(oas_scores),0,300, 
+                color='r', 
+                label = 'Mean OAS Score')
+ax.vlines(np.percentile(allShuffs, 95), 0, 300, color='k')
+
+ax.spines['top'].set_visible(False)
+ax.spines['right'].set_visible(False)
+ax.spines['left'].set_linewidth(MDef.spine_width)
+ax.spines['bottom'].set_linewidth(MDef.spine_width)
+ax.set_ylabel("Frequency",fontsize=MDef.ylabelsize)
+ax.set_xlabel("Orientation Alignment Score", fontsize=MDef.xlabelsize)
+ax.tick_params(axis='both', which='major', labelsize=MDef.ticksize)
+
+lgnd = plt.legend(prop={'size':MDef.legend_size})
+for lhand in lgnd.legendHandles:
+    lhand._legmarker.set_markersize(MDef.legend_marker_size)
+lgnd.get_frame().set_linewidth(MDef.legend_frame_width)
+
+
+
