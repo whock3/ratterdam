@@ -36,8 +36,6 @@ with open("E:\\Ratterdam\\R_data_repetition\\20220405-124315_superPopulationRepe
 
 #%% 
 
-#%% 
-
 maze_arm_organization = {'V':{'V1':[2,16],
                          'V2':[3,14],
                          'V3':[5,11],
