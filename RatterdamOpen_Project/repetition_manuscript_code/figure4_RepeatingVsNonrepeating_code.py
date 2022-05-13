@@ -4,7 +4,14 @@ Created on Mon Dec 20 15:29:12 2021
 
 @author: whockei1
 
-Figure 3 - Repeating versus Non-repeating Cells wrt Directionality
+Script to generate the panels for Figure 4 of repetition manuscript
+Each panel in the paper corresponds to a code cell here. Code cells in python
+begin with "#%%". They can be run independently. The whole script can be run to generate all panels.
+
+Figure 4 compares the directionality tuning between repeating and nonrepeating neurons
+A - violin plots showing distribution of normalized directionality scores for each group
+B - scatterplot of GLM results. Each axis is RMSE of indicated model. Point coloring is whether
+    the time model was associated with a significant improvement in fit as assessed by LRT
 """
 
 import numpy as np
@@ -19,7 +26,7 @@ import repetition_manuscript_defaults as MDef
 
 datapath  = "E:\\Ratterdam\\R_data_repetition\\2022-04-05_AlleySuperpopDirVisitFiltered.csv"
 df = pd.read_csv(datapath)
-
+plt.ion()
 #%% Figure 4A - Violins of Repeating vs Non-repeating directionality (abs mean diff)
 
 meanDiff = []
@@ -116,81 +123,3 @@ ax.set_ylabel("Base Model \n+ Current Direction RMSE",fontsize=MDef.ylabelsize)
 ax.set_xlabel("Base Model RMSE",fontsize=MDef.xlabelsize)
 ax.tick_params(axis='both', which='major', labelsize=MDef.ticksize)
 lgnd = plt.legend(prop={'size':MDef.legend_size})
-for lhand in lgnd.legendHandles:
-    lhand._legmarker.set_markersize(MDef.legend_marker_size)
-lgnd.get_frame().set_linewidth(MDef.legend_frame_width)
-
-#%% chi sq on proportions
-nonrep_sig = cdmodel[(cdmodel.repOrNot==0)&(cdmodel.sigP==1)].shape[0]
-nonrep_num = cdmodel[(cdmodel.repOrNot==0)].shape[0]
-
-rep_sig = cdmodel[(cdmodel.repOrNot==1)&(cdmodel.sigP==1)].shape[0]
-rep_num = cdmodel[(cdmodel.repOrNot==1)].shape[0]
-
-print(f"Repeating: {rep_sig} / {rep_num}")
-print(f"Nonrepeating: {nonrep_sig} / {nonrep_num}")
-
-from scipy.stats import chi2_contingency
-print(chi2_contingency([[nonrep_sig, nonrep_num],[rep_sig, rep_num]]))
-
-#%% Quantifying difference in model improvements
-
-# overall difference
-rep_improvements = cdmodel[cdmodel.repOrNot==True].m2_rmse - cdmodel[cdmodel.repOrNot==True].m1_rmse
-nonrep_improvements = cdmodel[cdmodel.repOrNot==False].m2_rmse - cdmodel[cdmodel.repOrNot==False].m1_rmse
-
-print(np.mean(rep_improvements))
-print(np.mean(nonrep_improvements))
-
-print(mannwhitneyu(rep_improvements,nonrep_improvements))
-
-# just looking at significant fields 
-
-rep_improvements = cdmodel[(cdmodel.repOrNot==True)&(cdmodel.sigP==True)].m2_rmse - cdmodel[(cdmodel.repOrNot==True)&(cdmodel.sigP==True)].m1_rmse
-nonrep_improvements = cdmodel[(cdmodel.repOrNot==False)&(cdmodel.sigP==True)].m2_rmse - cdmodel[(cdmodel.repOrNot==False)&(cdmodel.sigP==True)].m1_rmse
-
-print(np.mean(rep_improvements))
-print(np.mean(nonrep_improvements))
-
-print(mannwhitneyu(rep_improvements,nonrep_improvements))
-
-#%% Figure 3C - schematic of GLM LRT tests. No py code used here
-
-#%% Fig 3D - results of GLM LRTs 
-
-# Probably not using this 
-
-# #taken from R results 
-# rep = [31/128, 18/128, 9/128, 2/128]
-# nr_all = [18/75, 6/75, 6/75, 4/75]
-# nr_multi = [12/45, 6/45, 4/45, 2/45]
-# nr_single = [6/30, 0/30, 2/30, 2/30]
-
-# rows = ["+Current Dir", "+Previous Dir", "+Next Dir", "All Dirs"]
-
-# data = {'Repeating':rep,
-#         "Multi-field Non-repeating":nr_multi,
-#         "Single field Non-repeating":nr_single
-#        }
-
-# df = pd.DataFrame(data)
-
-# ax = df.plot(kind='bar',
-#         color=['red','navy','cornflowerblue','lightblue'],
-#         fontsize=MDef.xlabelsize
-#         )
-
-# ax.set_xticks([0,1,2,3])
-# ax.set_xticklabels(rows,rotation=0)
-# ax.set_ylabel("Proportion of Fields",fontsize=MDef.ylabelsize)
-# ax.spines['top'].set_visible(False)
-# ax.spines['right'].set_visible(False)
-# ax.spines['left'].set_linewidth(MDef.spine_width)
-# ax.spines['bottom'].set_linewidth(MDef.spine_width)
-# ax.hlines(0.05,-0.5,4,linestyle='--',color='k',linewidth=5)
-# plt.subplots_adjust(bottom=0.2)
-# lgnd = plt.legend(prop={'size':MDef.legend_size})
-# for lhand in lgnd.legendHandles:
-#     #for some reason, lgnd.legendHandles._legmarker doesnt work here? But does elsewhere?
-#     lhand._sizes = [MDef.legend_marker_size]
-# lgnd.get_frame().set_linewidth(MDef.legend_frame_width)

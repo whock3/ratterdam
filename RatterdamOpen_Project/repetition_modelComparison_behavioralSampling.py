@@ -76,7 +76,7 @@ for rat,day in zip(rat_list, day_list):
             begin += offset
         else:
             stop = True
-            
+        
             
     numpaths_time = []
     directionality_time = []
