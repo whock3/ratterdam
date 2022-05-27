@@ -157,12 +157,13 @@ for i,(dirtype, dirlabel, realprop, cax) in enumerate(zip(["total_current_respon
 #%% S5A-Field distances
 fig, ax = plt.subplots()
 cax = fig.axes[0]
+all_dists = {}
 for shareness, label,fcolor,ecolor,a in zip([0,1], 
                                     ["Different Corridor", "Same Corridor"],
                                     ['blue', 'red'],
                                     ['navy','firebrick'],
                                     [1,0.6]):
-    
+    all_dists[shareness] = []
     dists = []
     
     for pair in pair_info[arm_shareness==shareness]:
@@ -195,6 +196,7 @@ for shareness, label,fcolor,ecolor,a in zip([0,1],
         dist = np.linalg.norm(np.asarray(comA)-np.asarray(comB))
 
         dists.append(dist)
+        all_dists[shareness].append(dist)
             
     
     cax.hist(dists,

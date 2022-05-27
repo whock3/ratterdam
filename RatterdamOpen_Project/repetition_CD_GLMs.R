@@ -43,6 +43,8 @@ m2_aic <- c()
 
 failed_units <- c()
 
+fids <- c() # save fieldIDs to cross reference with other methods to see overlap in which are significant
+
 lrCurr_pvals <- c() # keep all pvalues from lrtest(base, base+cd) regardless
 # if thats the best model because want to plot rmse colored
 # by whether cd was helpful for fig 3 sfn2021. fig 5 then gets
@@ -68,6 +70,8 @@ for(o in c('V','H')){
      
       m1_rmse <- c(m1_rmse, sqrt(mean((field$Rate-m1$fitted.values)^2)))
       m2_rmse <- c(m2_rmse, sqrt(mean((field$Rate-m2$fitted.values)^2)))
+      
+      fids <- c(fids, fid)
       
       m1_aic <- c(m1_aic, m1$aic)
       m2_aic <- c(m2_aic, m2$aic)
