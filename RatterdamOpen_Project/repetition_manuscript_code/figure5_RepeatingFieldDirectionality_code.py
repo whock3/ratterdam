@@ -20,6 +20,7 @@ E - shuffling test showing significance of difference in correlation
 F - 
 
 """
+#%%
 
 import numpy as np, matplotlib.pyplot as plt, pandas as pd
 from statsmodels.formula.api import ols
@@ -36,6 +37,7 @@ from collections import Counter
 from matplotlib import cm
 from matplotlib import colors as mpl_colors
 import pickle 
+import repetition_manuscript_defaults as MDef 
 
 
 plt.ion()
@@ -139,6 +141,8 @@ maze_arm_organization = {'V':{'V1':[2,16],
 
 x = []
 y = []
+z = [] # unsigned diff between x and y 
+biasdiffs = []
 arm_shareness = []
 pair_info = []
 
@@ -157,6 +161,7 @@ for cellid, cell in alleydf.groupby("CellID"):
             signed_diffs = []
             alleys = []
             fids = []
+            biases = []
 
             for fid, field in ocell.groupby("FieldID"):
                 
@@ -172,10 +177,13 @@ for cellid, cell in alleydf.groupby("CellID"):
                         diff = (dirA.Rate.mean()-dirB.Rate.mean())/field.Rate.mean()
                     except:
                         diff = 0
+
+                    bias = max(dirA.shape[0], dirB.shape[0])/field.shape[0]
                     
                     signed_diffs.append(diff)
                     alleys.append(np.unique(field.Alleys)[0])
                     fids.append(fid)
+                    biases.append(bias)
                 
             combs = itertools.combinations(range(len(signed_diffs)),2)
             
@@ -184,9 +192,13 @@ for cellid, cell in alleydf.groupby("CellID"):
                 alleyA, alleyB = alleys[i], alleys[j]
                 fidA, fidB = fids[i], fids[j]
                 diffA, diffB = signed_diffs[i], signed_diffs[j]
+                biasA, biasB = biases[i], biases[j]
 
                 x.append(diffA)
                 y.append(diffB)
+
+                z.append(abs(diffA - diffB))
+                biasdiffs.append(abs(biasA - biasB))
                 
                 pair_info.append({'rat':rat, 
                                   'day':day, 
@@ -210,11 +222,13 @@ for cellid, cell in alleydf.groupby("CellID"):
 arm_shareness = np.asarray(arm_shareness)
 pair_info = np.asarray(pair_info)
 x = np.asarray(x)
-y = np.asarray(y)                    
+y = np.asarray(y)   
+z = np.asarray(z)
+biasdiffs = np.asarray(biasdiffs)                 
 
 olsAll = linregress(x,y)
-olsSame_shuff = linregress(x[arm_shareness==1], y[arm_shareness==1])
-olsDiff_shuff = linregress(x[arm_shareness==0], y[arm_shareness==0])
+olsSame = linregress(x[arm_shareness==1], y[arm_shareness==1])
+olsDiff = linregress(x[arm_shareness==0], y[arm_shareness==0])
 
 #%% Panel B 
 
@@ -259,7 +273,6 @@ ax.set_xlim([-3.5,4])
 
 
 #%% Panels C, D
-size=250
 tick_spacing = 0.5
 
 import matplotlib.ticker as ticker 
@@ -267,11 +280,14 @@ import matplotlib.ticker as ticker
 for shareness, colors, label, fit in zip([0,1], 
                                         [['cornflowerblue', 'navy'], ['lightcoral', 'firebrick']],
                                         ['Different Corridor', 'Same Corridor'],
-                                        [olsDiff_shuff, olsSame_shuff]):
+                                        [olsDiff, olsSame]):
     fig, ax = plt.subplots()
     ax.set_aspect('equal')
     
-    ax.scatter(x[arm_shareness==shareness], y[arm_shareness==shareness], color=colors[0], edgecolor=colors[1], s=size)
+    ax.scatter(x[arm_shareness==shareness], y[arm_shareness==shareness], 
+            color=colors[0], 
+            edgecolor=colors[1], 
+            s=MDef.scatter_size)
     
     ax.set_ylabel("Signed Normalized\n Directionality Field A", fontsize=MDef.ylabelsize)
     ax.set_xlabel("Signed Normalized\n Directionality Field B", fontsize=MDef.xlabelsize)
@@ -303,10 +319,20 @@ for shareness, colors, label, fit in zip([0,1],
 
 #%% Panels E, F
 
+downSample = True 
+
+nsame = len(arm_shareness[arm_shareness==1])
+ndiff = len(arm_shareness[arm_shareness==0])
+ndownsamp = min(nsame, ndiff) # nsame is smaller, but want to be safe. 
+
 arm_shareness_copy = copy.deepcopy(arm_shareness)
 
-real_olsfit_same = linregress(x[arm_shareness==1], y[arm_shareness==1])
-real_olsfit_diff = linregress(x[arm_shareness==0], y[arm_shareness==0])
+if not downsample:
+    real_olsfit_same = linregress(x[arm_shareness==1], y[arm_shareness==1])
+    real_olsfit_diff = linregress(x[arm_shareness==0], y[arm_shareness==0])
+else:
+    real_olsfit_same = linregress(x[np.random.choice()])
+
 real_yfit_same = [(real_olsfit_same.slope*i)+real_olsfit_same.intercept for i in np.linspace(min(x), max(x),100)]
 real_yfit_diff = [(real_olsfit_diff.slope*i)+real_olsfit_diff.intercept for i in np.linspace(min(x), max(x),100)]
 
@@ -320,10 +346,6 @@ shuff_r2_differences = [] # diff above means diff arms, here differences means t
 nsame = len(np.where(arm_shareness==1)[0])
 ndiff = len(np.where(arm_shareness==0)[0])
 
-# same always < diff, not by definition but bc its harder to be on same arm. but code it flexibly 
-
-ndownsample = min(nsame, ndiff)
-
 for s in range(nshuff):
     
     if s%10 == 0:
@@ -331,26 +353,26 @@ for s in range(nshuff):
     
     arm_shareness_copy = np.random.permutation(arm_shareness_copy)
     
-    same_shuff_x = x[np.random.choice(np.where(arm_shareness_copy==1)[0], ndownsample, replace=False)]
-    same_shuff_y = y[np.random.choice(np.where(arm_shareness_copy==1)[0], ndownsample, replace=False)]
+    same_shuff_x = x[arm_shareness_copy==1]
+    same_shuff_y = y[arm_shareness_copy==1]
 
-    diff_shuff_x = x[np.random.choice(np.where(arm_shareness_copy==0)[0], ndownsample, replace=False)] 
-    diff_shuff_y = y[np.random.choice(np.where(arm_shareness_copy==0)[0], ndownsample, replace=False)]
+    diff_shuff_x = x[arm_shareness_copy==0] 
+    diff_shuff_y = y[arm_shareness_copy==0]
     
     
-    olsSame_shuff = linregress(same_shuff_x, same_shuff_y)
-    yfit_same = [(olsSame_shuff.slope*i)+olsSame_shuff.intercept for i in np.linspace(min(x), max(x),100)]
+    olsSame = linregress(same_shuff_x, same_shuff_y)
+    yfit_same = [(olsSame.slope*i)+olsSame.intercept for i in np.linspace(min(x), max(x),100)]
     
-    olsDiff_shuff = linregress(diff_shuff_x, diff_shuff_y)
-    yfit_diff = [(olsDiff_shuff.slope*i)+olsDiff_shuff.intercept for i in np.linspace(min(x), max(x),100)]
+    olsDiff = linregress(diff_shuff_x, diff_shuff_y)
+    yfit_diff = [(olsDiff.slope*i)+olsDiff.intercept for i in np.linspace(min(x), max(x),100)]
     
     
-    shuff_r2_same.append(olsSame_shuff.rvalue**2)
+    shuff_r2_same.append(olsSame.rvalue**2)
     shuff_lines_same.append(yfit_same)
-    shuff_r2_diff.append(olsDiff_shuff.rvalue**2)
+    shuff_r2_diff.append(olsDiff.rvalue**2)
     shuff_lines_diff.append(yfit_diff)
     
-    shuff_r2_differences.append(olsSame_shuff.rvalue**2 - olsDiff_shuff.rvalue**2)
+    shuff_r2_differences.append(olsSame.rvalue**2 - olsDiff.rvalue**2)
 
 shuff_lines_same = np.asarray(shuff_lines_same)
 shuff_lines_diff = np.asarray(shuff_lines_diff)    
@@ -419,8 +441,8 @@ plt.hist(shuff_r2_differences,bins=25,
         label="Shuffled Difference in $R^2$",
         facecolor='grey',
         edgecolor='black')
-plt.vlines(shuffpercentile,0,400,color='k', label="$95^{th}$ Percentile of Shuffle")
-plt.vlines(realr2diff,0,400,color='r', label= 'Difference in $R^2$')
+plt.vlines(shuffpercentile,0,125,color='k', label="$95^{th}$ Percentile of Shuffle")
+plt.vlines(realr2diff,0,125,color='r', label= 'Difference in $R^2$')
 
 ax.tick_params(axis='both', which='major', labelsize=Def.ticksize)
 ax.spines['top'].set_visible(False)
@@ -430,9 +452,12 @@ ax.spines['bottom'].set_linewidth(3)
 ax.set_ylabel("Frequency",fontsize=Def.ylabelsize)
 ax.set_xlabel("Difference in $R^2$",fontsize=Def.xlabelsize)
 ax.set_xlim([-0.2,0.3])
+ax.set_aspect(1./ax.get_data_ratio())
+
 lgnd = plt.legend(prop={'size':44})
 #change the marker size manually for both lines
 lgnd.get_frame().set_linewidth(2)
+
 
 #%% Panel G 
 allcolors, allx, ally = [], [], []
@@ -531,7 +556,6 @@ dfprod = np.asarray(dfprod)
 dfshareness = np.asarray(dfshareness)
 
 
-
 corridordf = pd.DataFrame(data = {'fieldA':dfx,
                           'fieldB':dfy,
                           'prods':dfprod,
@@ -539,4 +563,42 @@ corridordf = pd.DataFrame(data = {'fieldA':dfx,
                         })
 
 corridordf.to_csv("E:\\Ratterdam\\repetition_manuscript\\Figure5_RepeatingFieldNonconservation\\corridordf.csv")
+# %% Correlate unsigned diff in sampling bias with unsigned diff in directionality
+
+fig, ax = plt.subplots(1,2)
+for cax,shareness, label,ecolor,fcolor in zip(fig.axes,
+                                [1,0], 
+                                ["Same Corridor", "Different Corridor"],
+                                ['firebrick','navy'],
+                                ['lightcoral', 'cornflowerblue']):
+    
+    olsfit = linregress(biasdiffs[arm_shareness==shareness], z[arm_shareness==shareness])
+    xfit = np.linspace(min(biasdiffs), max(biasdiffs), 50)
+    yfit = [(olsfit.slope*i)+olsfit.intercept for i in xfit]
+
+    cax.plot(xfit,yfit,color=fcolor,linewidth=3)
+    # cax.fill_between(xfit,yfit-olsfit.stderr,yfit+olsfit.stderr,
+    #             color=ecolor,
+    #             alpha=0.7)
+    cax.text(0.2,5,"$R^2$ ="+ f"{round(olsfit.rvalue**2,3)}",fontsize=30)
+    
+    cax.set_ylim([min(z)-0.25, max(z)+0.25]) # add a little cushion bc points are big 
+    cax.set_xlim([min(biasdiffs)-0.025, max(biasdiffs)+0.025])
+
+    cax.scatter(biasdiffs[arm_shareness==shareness],
+                z[arm_shareness==shareness],
+                s=MDef.scatter_size,
+                facecolor=fcolor,
+                edgecolor=ecolor,
+                linewidth=1)
+    cax.set_xlabel("Unsigned Difference in Sampling Bias", fontsize=25)
+    cax.set_ylabel("Unsigned Difference in Directionality Tuning", fontsize=25)
+    cax.set_title(label, fontsize=30)
+    cax.spines['top'].set_visible(False)
+    cax.spines['right'].set_visible(False)
+    cax.tick_params(axis='both', labelsize=MDef.ticksize)
+    cax.set_aspect(1./cax.get_data_ratio())
+    print(olsfit.pvalue)
+
+
 # %%

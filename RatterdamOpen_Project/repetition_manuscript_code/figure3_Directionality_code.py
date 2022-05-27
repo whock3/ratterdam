@@ -39,6 +39,7 @@ plt.ion()
 #%% Figure 3B - scatterplot of field directionality, colored by MW test result
 pvals = []
 meanDiff = []
+mw_fids = [] # field IDs from MW test
 for orien in ['V','H']:
     odf = df[df.Orientation==orien]
     for fname, fgroup in odf.groupby("FieldID"):
@@ -49,15 +50,17 @@ for orien in ['V','H']:
         try:
             pvals.append(mannwhitneyu(dirA.Rate, dirB.Rate).pvalue)
             meanDiff.append(abs(dirA.Rate.mean()-dirB.Rate.mean()))
+            mw_fids.append(fname)
         except:
             # pvals.append(1)
             # meanDiff.append(0)
             pass
-            
 alpha = 0.05/2            
 
 meanDiff = np.asarray(meanDiff)
 pvals = np.asarray(pvals)
+mw_fids = np.asarray(mw_fids)
+
 fig, _ax = plt.subplots()
 ax = fig.axes[0]
 ax.plot(np.where(pvals>=alpha)[0],meanDiff[pvals>=alpha],
@@ -87,7 +90,7 @@ lgnd.get_frame().set_linewidth(MDef.legend_frame_width)
 
 
 #%% Fig 3C - GLM LRT analysis for CD, whole pop
-cdmodel = pd.read_csv("E:\\Ratterdam\\repetition_manuscript\\Figure3_Directionality\\20220414_CDmodel.csv")
+cdmodel = pd.read_csv("E:\\Ratterdam\\repetition_manuscript\\Figure3_Directionality\\2022-05-25_CDmodel.csv")
 
 fig, ax = plt.subplots()
 ax.plot(cdmodel.m1_rmse[cdmodel.sigP==0],cdmodel.m2_rmse[cdmodel.sigP==0],

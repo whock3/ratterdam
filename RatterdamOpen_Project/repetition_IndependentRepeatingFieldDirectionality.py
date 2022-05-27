@@ -15,6 +15,7 @@ Now wrapping that in script here and doing further analysis to explore result
 As of 2/10/22 using this file for Figure 4 - will copy into a file
 called Fig 4... when I think the analysis is stable. 
 """
+#%%
 
 import numpy as np, matplotlib.pyplot as plt, statsmodels.api as sm, pandas as pd
 from statsmodels.formula.api import ols
@@ -29,10 +30,18 @@ from importlib import reload
 import itertools
 from scipy.stats import linregress 
 import pickle 
+import scipy.stats
 
 
 alleydatapath = "E:\\Ratterdam\\R_data_repetition\\2022-04-05_AlleySuperpopDirVisitFiltered.csv"
 alleydf = pd.read_csv(alleydatapath)
+
+if 'Code' not in alleydf.columns:
+    codes = []
+    for r, row in alleydf.iterrows():
+       code = f'{row["PrevDir"]}{row["CurrDir"]}{row["NextDir"]}'
+       codes.append(code)
+    alleydf = alleydf.assign(Code=codes)
 
 
 def fd_anova(ocell):
@@ -335,13 +344,15 @@ xlim, ylim = ax.get_xlim(), ax.get_ylim()
 
 alpha = 0.3
 
-widths = [xlim[1]-xlim[0],
+widths = [
+     xlim[1]-xlim[0],
      xlim[0],
      xlim[0],
      xlim[1]-xlim[0]
      ]
 
-heights = [ylim[1]-ylim[0],
+heights = [
+     ylim[1]-ylim[0],
      ylim[1]-ylim[0],
      ylim[0],
      ylim[0]  
@@ -706,3 +717,147 @@ for cellid, cell in alleydf.groupby("CellID"):
                     samearm_alleys.append([rat, day, alleyA, alleyB])
                 else:
                     diffarm_alleys.append([rat, day, alleyA, alleyB])
+
+
+#%% 2022-05-24 Correlating average response to each type of PCN route across field pairs
+# Question is maybe fields share tuning for route, but it's more complex and current dir doesn't capture it
+# but you don't have the power to say that this field likes this route and so forth bc you cant make enough
+# comparisons. So analogously to 5B, look at correlations across all field pairs 
+
+minPasses = 2
+minCommonPaths = 2
+
+def calcDirectionality(field, normalize=True):
+    """Input: single field's data from superpop csv dataframe
+    Calculate directionality score and return as a signed scalar
+    Direction labels are sorted alphabetically to maintain consistency in the sign 
+    "Normalize" True if you want to normalize directional score by mean FR of field
+    """
+    dirs = sorted(np.unique(field.CurrDir)) # sort alphabetically to keep signs consistent below 
+    if len(dirs) > 2:
+        print(f"dir error {np.unique(field.FieldID)[0]} {np.unique(field.Orientation)[0]}")
+        
+    dirA = field[field.CurrDir==dirs[0]]
+    dirB = field[field.CurrDir==dirs[1]]
+    
+    if normalize == True:
+        normFactor = field.Rate.mean()
+    else:
+        normFactor = 1
+
+    #this fails if all trials are 0
+    try:
+        diff = (dirA.Rate.mean()-dirB.Rate.mean())/normFactor
+    except:
+        diff = 0
+    
+    return diff 
+
+
+maze_arm_organization = {'V':{'V1':[2,16],
+                         'V2':[3,14],
+                         'V3':[5,11],
+                         'V4':[7,9],
+                         },
+                         'H':{
+                         'H1':[0,4,6],
+                         'H2':[1,12,8],
+                         'H3':[15,13,10]
+                         }
+                         }
+
+field_pair_pcn_correlations = []
+field_pair_absDirDiff = []
+arm_shareness = []
+
+for cellid, cell in alleydf.groupby("CellID"):
+
+    for oname, ocell in cell.groupby("Orientation"):
+
+        orientation_structure = maze_arm_organization[oname]
+        
+        nfields = len(np.unique(ocell.FieldID))
+        fields = np.unique(ocell.FieldID)
+
+        if nfields > 1: 
+            
+            combs = itertools.combinations(fields,2)
+            
+            for pair in combs:
+                i,j = pair
+                fieldA, fieldB = ocell[ocell.FieldID==i], ocell[ocell.FieldID==j]
+                alleyA, alleyB = np.unique(fieldA.Alleys)[0], np.unique(fieldB.Alleys)[0]
+                pcnA, pcnB = np.unique(fieldA.Code), np.unique(fieldB.Code)
+                common_pcn = np.intersect1d(pcnA, pcnB)
+
+                if len(common_pcn) >= minCommonPaths and \
+                                        np.unique(fieldA.Alleys).shape[0] == 1 \
+                                        and \
+                                        np.unique(fieldB.Alleys).shape[0] == 1:
+
+                    # calc abs difference in directionality
+                    dirA, dirB = calcDirectionality(fieldA, normalize=False), calcDirectionality(fieldB, normalize=False)
+                    dirDiff = abs(dirA - dirB)
+                    field_pair_absDirDiff.append(dirDiff)
+
+                    fieldA_code_responses = []
+                    fieldB_code_responses = []
+
+                    for cpcn in common_pcn:
+
+                        fieldA_path, fieldB_path = fieldA[fieldA.Code==cpcn], fieldB[fieldB.Code==cpcn]
+
+                        if fieldA_path.shape[0] >= minPasses and fieldB_path.shape[0] >= minPasses:
+                            try:
+                                fieldA_code_responses.append(fieldA[fieldA.Code==cpcn].Rate.mean())#/fieldA.Rate.mean())
+                            except:
+                                fieldA_code_responses.append(0)
+                            try:
+                                fieldB_code_responses.append(fieldB[fieldB.Code==cpcn].Rate.mean())#/fieldB.Rate.mean())
+                            except:
+                                fieldB_code_responses.append(0)
+
+                    if len(fieldA_code_responses) >= minCommonPaths: # you wil lose some common pcns from lack of sampling
+                                                                        # fieldB_code_responses will be same length
+                        field_pair_pcn_correlations.append(scipy.stats.pearsonr(fieldA_code_responses,
+                                                                            fieldB_code_responses)[0])
+
+
+                        for arm, armAlleys in orientation_structure.items():
+                            if alleyA in armAlleys:
+                                armA = arm        
+                        for arm, armAlleys in orientation_structure.items():
+                            if alleyB in armAlleys:
+                                armB = arm
+                        arm_shareness.append(int(armA==armB))
+
+
+arm_shareness = np.asarray(arm_shareness)
+field_pair_pcn_correlations = np.asarray(field_pair_pcn_correlations)
+field_pair_absDirDiff = np.asarray(field_pair_absDirDiff)
+#%%
+
+fig, ax = plt.subplots(1,2)
+for cax, shareness,label,ecolor,fcolor in zip(fig.axes,
+                                [1,0],
+                                ["Same Corridor", "Different Corridor"],
+                                ['firebrick', 'navy'],
+                                ['lightcoral', 'cornflowerblue']
+                                ):
+
+    cax.hist(field_pair_pcn_correlations[arm_shareness==shareness],
+                facecolor=fcolor,
+                edgecolor=ecolor,
+                linewidth=2)
+    cax.set_xlabel("Correlation Between Normalized FR \nof Common PCN Paths", fontsize=25)
+    cax.set_ylabel("Unsigned Difference between \nDirectionality Index", fontsize=25)
+    cax.set_title(label, fontsize=30)
+    cax.spines['top'].set_visible(False)
+    cax.spines['right'].set_visible(False)
+    cax.tick_params(axis='both', labelsize=MDef.ticksize)
+    cax.set_xlim([-1,1])
+    cax.set_yticks(np.linspace(0,18,4))
+    cax.set_aspect(1./cax.get_data_ratio())
+
+
+# %%
