@@ -11,6 +11,7 @@ and related analyses will be done here
 When mature, this will be moved to figure5_code for reptition manuscript code 
 
 """
+#%%
 
 import numpy as np, matplotlib.pyplot as plt, statsmodels.api as sm, pandas as pd
 from statsmodels.formula.api import ols
@@ -44,13 +45,15 @@ blowup_thresh = 50
 
 for rat, rdf in alleydf.groupby("Rat"):
     for day, ddf in rdf.groupby("Day"):
-        start = ddf.StartTimes.min()
-        end = ddf.StartTimes.max()
-        interp_ts = np.linspace(start,end, 100)
+
 
         for orien, oriendf in ddf.groupby("Orientation"):
             for cid,cell in oriendf.groupby("CellID"):
                 if np.unique(cell.Repeating)[0] == True:
+
+                    start = cell.StartTimes.min()
+                    end = cell.StartTimes.max()
+                    interp_ts = np.linspace(start,end, 100)
                     
                     field_timeseries = []
                                                             
@@ -95,7 +98,7 @@ ax.hist(fieldTimeCorrs,
         bins=25,
         color='grey',
         edgecolor='black',
-        linewidth=2)
+        linewidth=1)
 ylim = ax.get_ylim()
 xlim, ylim = ax.get_xlim(), ax.get_ylim()
 widths = [xlim[0],
@@ -104,26 +107,26 @@ widths = [xlim[0],
 heights = [ylim[1],
            ylim[1]]  
 
-colors = ['blue','red']
-alpha = 0.3
-for w,h,c in zip(widths, heights, colors):    
-    rect = patches.Rectangle((0,0),w,h,
-                             facecolor=c,
-                             alpha=alpha,
-                             zorder=0
-                            )
+# colors = ['blue','red']
+# alpha = 0.3
+# for w,h,c in zip(widths, heights, colors):    
+#     rect = patches.Rectangle((0,0),w,h,
+#                              facecolor=c,
+#                              alpha=alpha,
+#                              zorder=0
+#                             )
 
-    ax.add_patch(rect)
+#     ax.add_patch(rect)
     
-ax.set_ylabel("Frequency", fontsize=40)
-ax.set_xlabel("Pearson Correlation Between Interpolated Time Series", fontsize=40)
+ax.set_ylabel("Frequency", fontsize=MDef.ylabelsize)
+ax.set_xlabel("Pearson Correlation Between Interpolated Time Series", fontsize=MDef.xlabelsize)
 
 
-ax.tick_params(axis='both', which='major', labelsize=40, length=10)
+ax.tick_params(axis='both', which='major', labelsize=MDef.ticksize)
 ax.spines['right'].set_visible(False)
 ax.spines['top'].set_visible(False)
-ax.spines['left'].set_linewidth(2)
-ax.spines['bottom'].set_linewidth(2)
+ax.spines['left'].set_linewidth(MDef.spine_width)
+ax.spines['bottom'].set_linewidth(MDef.spine_width)
 
 
                         
@@ -134,12 +137,14 @@ cell_field_nums = []
 
 for rat, rdf in alleydf.groupby("Rat"):
     for day, ddf in rdf.groupby("Day"):
-        start = ddf.StartTimes.min()
-        end = ddf.StartTimes.max()
-        interp_ts = np.linspace(start,end, 100)
+
         for orien, oriendf in ddf.groupby("Orientation"):
             for cid,cell in oriendf.groupby("CellID"):
                 if np.unique(cell.Repeating)[0] == True:
+
+                    start = ddf.StartTimes.min()
+                    end = ddf.StartTimes.max()
+                    interp_ts = np.linspace(start,end, 100)
 
                     cell_field_nums.append(len(np.unique(cell.FieldID)))
                                                                                 

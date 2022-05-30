@@ -87,6 +87,7 @@ lgnd = plt.legend(prop={'size':MDef.legend_size})
 for lhand in lgnd.legendHandles:
     lhand._legmarker.set_markersize(MDef.legend_marker_size)
 lgnd.get_frame().set_linewidth(MDef.legend_frame_width)
+ax.set_ylim([0,7.5])
 
 
 #%% Fig 3C - GLM LRT analysis for CD, whole pop
@@ -117,6 +118,9 @@ lgnd = plt.legend(prop={'size':MDef.legend_size})
 for lhand in lgnd.legendHandles:
     lhand._legmarker.set_markersize(MDef.legend_marker_size)
 lgnd.get_frame().set_linewidth(MDef.legend_frame_width)
+ax.set_xlim([0.9,3.9])
+ax.set_ylim([0.9,3.9])
+ax.set_aspect(1./ax.get_data_ratio())
 
 #%% Fig 3D - Example classifier run. Example dataset: 22-02-21. R765 DFD4 horizontal alleys
 
@@ -218,11 +222,12 @@ ax.errorbar(range(len(naivepct5)),naivemids,yerr=np.asarray([naivemids-naivepct5
 ax.hlines(0.5,0,18,linestyle='--',color='k',label="Nominal Chance level")
 ax.spines['top'].set_visible(False)
 ax.spines['right'].set_visible(False)
-ax.spines['left'].set_linewidth(3)
-ax.spines['bottom'].set_linewidth(3)
-ax.set_ylabel("Decoder Performance",fontsize=Def.ylabelsize)
-ax.tick_params(axis='both', which='major', labelsize=Def.ticksize-10)
+ax.spines['left'].set_linewidth(MDef.spine_width)
+ax.spines['bottom'].set_linewidth(MDef.spine_width)
+ax.set_ylabel("Decoder Performance",fontsize=MDef.ylabelsize)
+ax.tick_params(axis='both', which='major', labelsize=Def.ticksize)
 ax.set_xticks(range(len(labels)))
-ax.set_xticklabels(labels,rotation=90)
+ax.set_xticklabels(labels,rotation=90,fontsize=MDef.ticksize)
 plt.legend(prop={'size':30})
 plt.subplots_adjust(bottom=0.3)
+# %%
