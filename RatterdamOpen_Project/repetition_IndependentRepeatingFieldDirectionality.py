@@ -861,3 +861,4 @@ for cax, shareness,label,ecolor,fcolor in zip(fig.axes,
 
 
 # %%
+# For pairs on same corridor, calculate directionality tuning diff vs mean number of interruptions

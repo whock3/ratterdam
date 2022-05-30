@@ -33,6 +33,7 @@ import repetition_manuscript_defaults as MDef
 from scipy.stats import linregress 
 import copy
 from collections import Counter 
+import scipy.stats
 
 from matplotlib import cm
 from matplotlib import colors as mpl_colors
@@ -43,6 +44,13 @@ import repetition_manuscript_defaults as MDef
 plt.ion()
 alleydatapath = "E:\\Ratterdam\\R_data_repetition\\2022-04-05_AlleySuperpopDirVisitFiltered.csv"
 alleydf = pd.read_csv(alleydatapath)
+
+if 'Code' not in alleydf.columns:
+    codes = []
+    for r, row in alleydf.iterrows():
+       code = f'{row["PrevDir"]}{row["CurrDir"]}{row["NextDir"]}'
+       codes.append(code)
+    alleydf = alleydf.assign(Code=codes)
 
 with open("E:\\Ratterdam\\R_data_repetition\\20220405-124315_superPopulationRepetition.pickle","rb") as f:
     superpop = pickle.load(f)  
@@ -80,10 +88,10 @@ for celldata in example_cell_list:
                       ax=fig.axes[i],
                       fontsize=24,
                       edgecolor='k',
-                      linewidth=2
+                      linewidth=1
                       )
-         bar.set_ylabel("Mean Rate +/- SEM",fontsize=36)
-         bar.set_title(f"Field {i-1}",fontsize=36)
+         bar.set_ylabel("Mean Rate +/- SEM",fontsize=MDef.ylabelsize)
+         bar.set_title(f"Field {i-1}",fontsize=MDef.titlesize)
          bar.spines['right'].set_visible(False)
          bar.spines['top'].set_visible(False)
          bar.spines['left'].set_linewidth(MDef.spine_width)
@@ -232,16 +240,15 @@ olsDiff = linregress(x[arm_shareness==0], y[arm_shareness==0])
 
 #%% Panel B 
 
-size=250
 fig, ax = plt.subplots()
-ax.set_aspect('equal')
-
 
 ax.scatter(x,y, 
             facecolor='grey',
             edgecolor='black',
             label='All Data',
-            linewidth=2)
+            linewidth=1,
+            s=MDef.scatter_size
+            )
 
 ax.text(2,-2,"$R^2_{all}$ ="+ f"{round(olsAll.rvalue**2,3)}",fontsize=45)
 
@@ -270,6 +277,8 @@ ax.spines['left'].set_linewidth(MDef.spine_width)
 ax.spines['bottom'].set_linewidth(MDef.spine_width)
 ax.set_ylim([-2.5,3])
 ax.set_xlim([-3.5,4])
+ax.set_aspect(1./ax.get_data_ratio())
+
 
 
 #%% Panels C, D
@@ -282,7 +291,6 @@ for shareness, colors, label, fit in zip([0,1],
                                         ['Different Corridor', 'Same Corridor'],
                                         [olsDiff, olsSame]):
     fig, ax = plt.subplots()
-    ax.set_aspect('equal')
     
     ax.scatter(x[arm_shareness==shareness], y[arm_shareness==shareness], 
             color=colors[0], 
@@ -316,10 +324,12 @@ for shareness, colors, label, fit in zip([0,1],
     xticks = np.arange(xlim[0], xlim[1], 0.5)
     yticks = np.arange(ylim[0], ylim[1], 0.5)
 
+    ax.set_aspect(1./ax.get_data_ratio())
+
 
 #%% Panels E, F
 
-downSample = True 
+downSample = False 
 
 nsame = len(arm_shareness[arm_shareness==1])
 ndiff = len(arm_shareness[arm_shareness==0])
@@ -327,11 +337,11 @@ ndownsamp = min(nsame, ndiff) # nsame is smaller, but want to be safe.
 
 arm_shareness_copy = copy.deepcopy(arm_shareness)
 
-if not downsample:
+if not downSample:
     real_olsfit_same = linregress(x[arm_shareness==1], y[arm_shareness==1])
     real_olsfit_diff = linregress(x[arm_shareness==0], y[arm_shareness==0])
 else:
-    real_olsfit_same = linregress(x[np.random.choice()])
+    pass
 
 real_yfit_same = [(real_olsfit_same.slope*i)+real_olsfit_same.intercept for i in np.linspace(min(x), max(x),100)]
 real_yfit_diff = [(real_olsfit_diff.slope*i)+real_olsfit_diff.intercept for i in np.linspace(min(x), max(x),100)]
@@ -444,15 +454,14 @@ plt.hist(shuff_r2_differences,bins=25,
 plt.vlines(shuffpercentile,0,125,color='k', label="$95^{th}$ Percentile of Shuffle")
 plt.vlines(realr2diff,0,125,color='r', label= 'Difference in $R^2$')
 
-ax.tick_params(axis='both', which='major', labelsize=Def.ticksize)
+ax.tick_params(axis='both', which='major', labelsize=MDef.ticksize)
 ax.spines['top'].set_visible(False)
 ax.spines['right'].set_visible(False)
-ax.spines['left'].set_linewidth(3)
-ax.spines['bottom'].set_linewidth(3)
-ax.set_ylabel("Frequency",fontsize=Def.ylabelsize)
-ax.set_xlabel("Difference in $R^2$",fontsize=Def.xlabelsize)
+ax.spines['left'].set_linewidth(MDef.spine_width)
+ax.spines['bottom'].set_linewidth(MDef.spine_width)
+ax.set_ylabel("Frequency",fontsize=MDef.ylabelsize)
+ax.set_xlabel("Difference in $R^2$",fontsize=MDef.xlabelsize)
 ax.set_xlim([-0.2,0.3])
-ax.set_aspect(1./ax.get_data_ratio())
 
 lgnd = plt.legend(prop={'size':44})
 #change the marker size manually for both lines
@@ -514,29 +523,29 @@ for i, (cax,label,xs,ys,col) in enumerate(zip(fig.axes,
                 c=np.asarray(col),
                 cmap = 'seismic',
                 norm=divnorm,
-                s=200,
+                s=MDef.scatter_size,
                 edgecolor='k',
-                linewidth=0.5)
+                linewidth=1)
     
     if i == 1:
 
         fig.colorbar(sc, ax=cax)
     
-    cax.set_xlabel("Field A Sampling Bias",fontsize=35)
-    cax.set_ylabel("Field B Sampling Bias",fontsize=35)
+    cax.set_xlabel("Field A Sampling Bias",fontsize=MDef.xlabelsize)
+    cax.set_ylabel("Field B Sampling Bias",fontsize=MDef.ylabelsize)
     # cax.set_ylim([-1,1])
     # cax.set_xlim([-1,1])
     ymin, ymax = cax.get_ylim()
     xmin, xmax = cax.get_xlim()
     cax.hlines(0,xmin, xmax,color='k',linestyle='--')
     cax.vlines(0,ymin, ymax,color='k',linestyle='--')
-    cax.set_title(label,fontsize=30)
+    cax.set_title(label,fontsize=MDef.titlesize)
     cax.spines['top'].set_visible(False)
     cax.spines['right'].set_visible(False)
-    cax.spines['left'].set_linewidth(1.5)
-    cax.spines['bottom'].set_linewidth(1.5)
-    cax.tick_params(axis='both', which='major', labelsize=35, length=8)
-    cax.set_aspect('equal')
+    cax.spines['left'].set_linewidth(MDef.spine_width)
+    cax.spines['bottom'].set_linewidth(MDef.spine_width)
+    cax.tick_params(axis='both', which='major', labelsize=MDef.ticksize)
+    cax.set_aspect(1./cax.get_data_ratio())
     
 
     
@@ -591,14 +600,151 @@ for cax,shareness, label,ecolor,fcolor in zip(fig.axes,
                 facecolor=fcolor,
                 edgecolor=ecolor,
                 linewidth=1)
-    cax.set_xlabel("Unsigned Difference in Sampling Bias", fontsize=25)
-    cax.set_ylabel("Unsigned Difference in Directionality Tuning", fontsize=25)
-    cax.set_title(label, fontsize=30)
+    cax.set_xlabel("Unsigned Difference in Sampling Bias", fontsize=MDef.xlabelsize)
+    cax.set_ylabel("Unsigned Difference in Directionality Tuning", fontsize=MDef.ylabelsize)
+    cax.set_title(label, fontsize=MDef.titlesize)
     cax.spines['top'].set_visible(False)
     cax.spines['right'].set_visible(False)
     cax.tick_params(axis='both', labelsize=MDef.ticksize)
     cax.set_aspect(1./cax.get_data_ratio())
     print(olsfit.pvalue)
 
+#%% 2022-05-24 Correlating average response to each type of PCN route across field pairs
+# Question is maybe fields share tuning for route, but it's more complex and current dir doesn't capture it
+# but you don't have the power to say that this field likes this route and so forth bc you cant make enough
+# comparisons. So analogously to 5B, look at correlations across all field pairs 
 
-# %%
+minPasses = 2
+minCommonPaths = 2
+
+def calcDirectionality(field, normalize=True):
+    """Input: single field's data from superpop csv dataframe
+    Calculate directionality score and return as a signed scalar
+    Direction labels are sorted alphabetically to maintain consistency in the sign 
+    "Normalize" True if you want to normalize directional score by mean FR of field
+    """
+    dirs = sorted(np.unique(field.CurrDir)) # sort alphabetically to keep signs consistent below 
+    if len(dirs) > 2:
+        print(f"dir error {np.unique(field.FieldID)[0]} {np.unique(field.Orientation)[0]}")
+        
+    dirA = field[field.CurrDir==dirs[0]]
+    dirB = field[field.CurrDir==dirs[1]]
+    
+    if normalize == True:
+        normFactor = field.Rate.mean()
+    else:
+        normFactor = 1
+
+    #this fails if all trials are 0
+    try:
+        diff = (dirA.Rate.mean()-dirB.Rate.mean())/normFactor
+    except:
+        diff = 0
+    
+    return diff 
+
+
+maze_arm_organization = {'V':{'V1':[2,16],
+                         'V2':[3,14],
+                         'V3':[5,11],
+                         'V4':[7,9],
+                         },
+                         'H':{
+                         'H1':[0,4,6],
+                         'H2':[1,12,8],
+                         'H3':[15,13,10]
+                         }
+                         }
+
+field_pair_pcn_correlations = []
+field_pair_absDirDiff = []
+arm_shareness = []
+
+for cellid, cell in alleydf.groupby("CellID"):
+
+    for oname, ocell in cell.groupby("Orientation"):
+
+        orientation_structure = maze_arm_organization[oname]
+        
+        nfields = len(np.unique(ocell.FieldID))
+        fields = np.unique(ocell.FieldID)
+
+        if nfields > 1: 
+            
+            combs = itertools.combinations(fields,2)
+            
+            for pair in combs:
+                i,j = pair
+                fieldA, fieldB = ocell[ocell.FieldID==i], ocell[ocell.FieldID==j]
+                alleyA, alleyB = np.unique(fieldA.Alleys)[0], np.unique(fieldB.Alleys)[0]
+                pcnA, pcnB = np.unique(fieldA.Code), np.unique(fieldB.Code)
+                common_pcn = np.intersect1d(pcnA, pcnB)
+
+                if len(common_pcn) >= minCommonPaths and \
+                                        np.unique(fieldA.Alleys).shape[0] == 1 \
+                                        and \
+                                        np.unique(fieldB.Alleys).shape[0] == 1:
+
+                    # calc abs difference in directionality
+                    dirA, dirB = calcDirectionality(fieldA, normalize=False), calcDirectionality(fieldB, normalize=False)
+                    dirDiff = abs(dirA - dirB)
+                    field_pair_absDirDiff.append(dirDiff)
+
+                    fieldA_code_responses = []
+                    fieldB_code_responses = []
+
+                    for cpcn in common_pcn:
+
+                        fieldA_path, fieldB_path = fieldA[fieldA.Code==cpcn], fieldB[fieldB.Code==cpcn]
+
+                        if fieldA_path.shape[0] >= minPasses and fieldB_path.shape[0] >= minPasses:
+                            try:
+                                fieldA_code_responses.append(fieldA[fieldA.Code==cpcn].Rate.mean())#/fieldA.Rate.mean())
+                            except:
+                                fieldA_code_responses.append(0)
+                            try:
+                                fieldB_code_responses.append(fieldB[fieldB.Code==cpcn].Rate.mean())#/fieldB.Rate.mean())
+                            except:
+                                fieldB_code_responses.append(0)
+
+                    if len(fieldA_code_responses) >= minCommonPaths: # you wil lose some common pcns from lack of sampling
+                                                                        # fieldB_code_responses will be same length
+                        field_pair_pcn_correlations.append(scipy.stats.pearsonr(fieldA_code_responses,
+                                                                            fieldB_code_responses)[0])
+
+
+                        for arm, armAlleys in orientation_structure.items():
+                            if alleyA in armAlleys:
+                                armA = arm        
+                        for arm, armAlleys in orientation_structure.items():
+                            if alleyB in armAlleys:
+                                armB = arm
+                        arm_shareness.append(int(armA==armB))
+
+
+arm_shareness = np.asarray(arm_shareness)
+field_pair_pcn_correlations = np.asarray(field_pair_pcn_correlations)
+field_pair_absDirDiff = np.asarray(field_pair_absDirDiff)
+#%%
+
+fig, ax = plt.subplots(1,2)
+for cax, shareness,label,ecolor,fcolor in zip(fig.axes,
+                                [1,0],
+                                ["Same Corridor", "Different Corridor"],
+                                ['firebrick', 'navy'],
+                                ['lightcoral', 'cornflowerblue']
+                                ):
+
+    cax.hist(field_pair_pcn_correlations[arm_shareness==shareness],
+                facecolor=fcolor,
+                edgecolor=ecolor,
+                linewidth=1)
+    cax.set_xlabel("Correlation Between Normalized FR \nof Common PCN Paths", fontsize=MDef.xlabelsize)
+    cax.set_ylabel("Unsigned Difference between \nDirectionality Index", fontsize=MDef.ylabelsize)
+    cax.set_title(label, fontsize=MDef.titlesize)
+    cax.spines['top'].set_visible(False)
+    cax.spines['right'].set_visible(False)
+    cax.tick_params(axis='both', labelsize=MDef.ticksize)
+    cax.set_xlim([-1,1])
+    cax.set_yticks(np.linspace(0,18,4))
+    cax.set_aspect(1./cax.get_data_ratio())

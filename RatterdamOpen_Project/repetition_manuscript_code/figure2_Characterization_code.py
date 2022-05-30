@@ -26,6 +26,8 @@ import pandas as pd
 from collections import Counter
 
 plt.ion()
+
+%matplotlib qt5
 #Load dict containing all recording day datasets
 # structure is rat > day > unit
 # unit is a Unit() class 
@@ -57,14 +59,13 @@ fig, ax = plt.subplots(figsize=(20,15))
 w=0.75
 ax.bar(range(len(rvals)),rvals,width=w, edgecolor='black',color='grey',linewidth=2)
 ax.set_xticks(range(len(rlabels)))
-ax.set_xticklabels(rlabels,rotation=90)
+ax.set_xticklabels(rlabels,rotation=90, fontsize=MDef.xlabelsize)
 ax.spines['top'].set_visible(False)
 ax.spines['right'].set_visible(False)
 ax.tick_params(axis='both', labelsize=MDef.ticksize)
-ax.hlines(0.05,-0.5,9,color='k',linestyle='--',linewidth=2)
+ax.hlines(0.05,-0.5,9,color='k',linestyle='--',linewidth=1)
 ax.set_ylabel("Proportion of Repeating Cells", fontsize=MDef.ylabelsize)
 plt.tight_layout()
-
 #%% Panel B - Number of fields per repeating cell
 
 nfields = []
@@ -77,7 +78,7 @@ for rat in superpop.keys():
 
 fig, _ax = plt.subplots(figsize=(20,15))
 ax = fig.axes[0]
-ax.hist(nfields,facecolor='grey',edgecolor='k',linewidth=2,bins=5)
+ax.hist(nfields,facecolor='grey',edgecolor='k',linewidth=1,bins=5)
 ax.spines['top'].set_visible(False)
 ax.spines['right'].set_visible(False)
 ax.tick_params(axis='both', labelsize=MDef.ticksize)
@@ -116,7 +117,7 @@ histout = ax.hist(orientationBias,bins=np.linspace(0,1,num=10), # save bins for 
         facecolor='grey',
         edgecolor='black',
         label = "Orientation Bias Score",
-        linewidth=2)
+        linewidth=1)
 ax.set_xticks([0,0.5,1])
 ax.set_xticklabels([0,0.5,1])
 ax.spines['top'].set_visible(False)
@@ -235,7 +236,7 @@ ax.hist(allShuffs,
                 bins=bins,
                 facecolor='grey',
                 edgecolor='black',
-                linewidth=2,
+                linewidth=1,
                 density=True,
                 label = 'Shuffled OAS'
                 )
@@ -258,3 +259,4 @@ lgnd = plt.legend(prop={'size':MDef.legend_size})
 
 
 plt.show()
+# %%

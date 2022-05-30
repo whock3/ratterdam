@@ -13,7 +13,7 @@ A - violin plots showing distribution of normalized directionality scores for ea
 B - scatterplot of GLM results. Each axis is RMSE of indicated model. Point coloring is whether
     the time model was associated with a significant improvement in fit as assessed by LRT
 """
-
+#%% 
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -123,3 +123,6 @@ ax.set_ylabel("Base Model \n+ Current Direction RMSE",fontsize=MDef.ylabelsize)
 ax.set_xlabel("Base Model RMSE",fontsize=MDef.xlabelsize)
 ax.tick_params(axis='both', which='major', labelsize=MDef.ticksize)
 lgnd = plt.legend(prop={'size':MDef.legend_size})
+ax.set_xlim([0.9,3.9])
+ax.set_ylim([0.9,3.9])
+# %%
