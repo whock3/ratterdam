@@ -8,14 +8,16 @@ All ratemaps figure
 Self-explanatory, have a ratemap for each unit
 
 """
+#%%
+%matplotlib qt5
 
 import matplotlib.pyplot as plt, numpy as np
 import utility_fx as util, williamDefaults as wmDef
 import pickle
 
 
-with open("E:\\Ratterdam\\R_data_repetition\\22-02-18_superPopulationRepetition.pickle","rb") as f:
-    superpop = pickle.load(f)   
+with open("E:\\Ratterdam\\R_data_repetition\\20220405-124315_superPopulationRepetition.pickle","rb") as f:
+    superpop = pickle.load(f)  
     
 # should be 178 neurons 
 cmap = util.makeCustomColormap()

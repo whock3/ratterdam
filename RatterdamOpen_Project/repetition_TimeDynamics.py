@@ -8,6 +8,7 @@ Created on Wed Mar 23 14:41:20 2022
 Quantifying time dynamics within CA1 neurons recorded on city-block maze (Ratterdam)
 
 """
+#%%
 
 import pandas as pd, numpy as np, matplotlib.pyplot as plt
 import json, pickle
@@ -16,7 +17,7 @@ import repetition_DfSamplingFiltering as DfFilt
 import repetition_manuscript_defaults as MDef 
 
 
-df = pd.read_csv("E:\\Ratterdam\\R_data_repetition\\2022-03-23_AlleySuperpopDirVisitFiltered.csv")
+df = pd.read_csv("E:\\Ratterdam\\R_data_repetition\\2022-04-05_AlleySuperpopDirVisitFiltered.csv")
 filtDf = DfFilt.filterAlleyDatasets(df, passThresh=1)
 
 

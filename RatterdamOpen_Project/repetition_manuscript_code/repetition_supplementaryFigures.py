@@ -4,6 +4,7 @@ WH 2022-05-10
 """
 #%%
 import numpy as np, matplotlib.pyplot as plt, statsmodels.api as sm, pandas as pd
+from yaml import MappingNode
 import utility_fx as util
 import ratterdam_RepetitionCoreFx as RepCore
 import ratterdam_Defaults as Def
@@ -219,41 +220,55 @@ plt.legend(fontsize=20)
 
 # %% S5B - Path length
 
+## Analysis changed 5/31/22 see stats file. basically now we are looking at average path length
+# from unique alley pairs. not all paths through alley pairs and do that each time the alley pair 
+# was encountered in data. purpose is making samples independent 
+
 samearm_interPairLength = []
 diffarm_interPairLength = []
 
-for entry in samearm_alleys:
-    rat, day, alleyA, alleyB = entry
-    
-    refturns = superpop[rat][day]['refturns']
-    
-    # logic is we are using turn df that is unfiltered so indices are each visit # in order
-    # so for each visit to Alley A, find min diff of that index to all the indices of alley B
-    # i.e. the number of visits (to any alley) between them
-    for visit in refturns[refturns['Alley+']==str(alleyA)].index:
-       lengthToPartner = np.min(abs(visit-refturns[refturns['Alley+']==str(alleyB)].index))
-       samearm_interPairLength.append(lengthToPartner)
-       
-       
-for entry in diffarm_alleys:
-    rat, day, alleyA, alleyB = entry
-    
-    refturns = superpop[rat][day]['refturns']
-    
-    # logic is we are using turn df that is unfiltered so indices are each visit # in order
-    # so for each visit to Alley A, find min diff of that index to all the indices of alley B
-    # i.e. the number of visits (to any alley) between them
-    for visit in refturns[refturns['Alley+']==str(alleyA)].index:
-       lengthToPartner = np.min(abs(visit-refturns[refturns['Alley+']==str(alleyB)].index))
-       diffarm_interPairLength.append(lengthToPartner)
+unique_samearm_alleys = [list(y) for y in set([tuple(x) for x in samearm_alleys])]
+unique_diffarm_alleys = [list(y) for y in set([tuple(x) for x in diffarm_alleys])]
 
+for entry in unique_samearm_alleys:
+    rat, day, alleyA, alleyB = entry
+    
+    pair_lengthToParner = []
+
+    refturns = superpop[rat][day]['refturns']
+    
+    # logic is we are using turn df that is unfiltered so indices are each visit # in order
+    # so for each visit to Alley A, find min diff of that index to all the indices of alley B
+    # i.e. the number of visits (to any alley) between them
+    for visit in refturns[refturns['Alley+']==str(alleyA)].index:
+       lengthToPartner = np.min(abs(visit-refturns[refturns['Alley+']==str(alleyB)].index))
+       pair_lengthToParner.append(lengthToPartner)
+    
+    samearm_interPairLength.append(np.nanmean(pair_lengthToParner))
+       
+       
+for entry in unique_diffarm_alleys:
+    rat, day, alleyA, alleyB = entry
+
+    pair_lengthToParner = []
+    
+    refturns = superpop[rat][day]['refturns']
+    
+    # logic is we are using turn df that is unfiltered so indices are each visit # in order
+    # so for each visit to Alley A, find min diff of that index to all the indices of alley B
+    # i.e. the number of visits (to any alley) between them
+    for visit in refturns[refturns['Alley+']==str(alleyA)].index:
+       lengthToPartner = np.min(abs(visit-refturns[refturns['Alley+']==str(alleyB)].index))
+       pair_lengthToParner.append(lengthToPartner-1)
+    diffarm_interPairLength.append(np.nanmean(pair_lengthToParner))
+#%%
 fig, ax = plt.subplots()
 
 mymax = max(max(samearm_interPairLength), max(diffarm_interPairLength))
 
 ax.hist(samearm_interPairLength,
-        density=True, 
-        bins=np.linspace(0,mymax,100),
+        density=False, 
+        bins=np.linspace(0,mymax,25),
         color='red',
         edgecolor='firebrick',
         linewidth=2,
@@ -261,9 +276,9 @@ ax.hist(samearm_interPairLength,
         )
 
 ax.hist(diffarm_interPairLength,
-        density=True,
-        stacked=True,
-        bins=np.linspace(0,mymax,100),
+        density=False,
+        stacked=False,
+        bins=np.linspace(0,mymax,25),
         color='blue',
         edgecolor='navy',
         linewidth=2,
@@ -272,12 +287,16 @@ ax.hist(diffarm_interPairLength,
         )
 
 
-ax.tick_params(axis='both', which='major', labelsize=22)
+ax.tick_params(axis='both', which='major', labelsize=MDef.ticksize)
 ax.spines['right'].set_visible(False)
 ax.spines['top'].set_visible(False)
-ax.set_xlim([0,40])
-ax.set_ylabel("Normalized, Stacked Frequency", fontsize=25)
-ax.set_xlabel("Distance in alley visits between visits to alleys in pair", fontsize=25)
-ax.set_title("Relationship between arms alleys are on and the path lengths between alleys", fontsize=30)
+#ax.set_xlim([0,40])
+ax.set_ylabel("Normalized, Stacked Frequency", fontsize=MDef.ylabelsize)
+ax.set_xlabel("Distance in alley visits between visits to alleys in pair", fontsize=MDef.xlabelsize)
+ax.set_title("Relationship between arms alleys are on and the path lengths between alleys", fontsize=MDef.titlesize)
 plt.legend(fontsize=20)
 # %%
+from scipy.stats import mannwhitneyu
+print(mannwhitneyu(samearm_interPairLength, diffarm_interPairLength))
+
+

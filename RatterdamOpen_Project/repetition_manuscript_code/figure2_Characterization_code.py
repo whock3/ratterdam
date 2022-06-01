@@ -78,7 +78,13 @@ for rat in superpop.keys():
 
 fig, _ax = plt.subplots(figsize=(20,15))
 ax = fig.axes[0]
-ax.hist(nfields,facecolor='grey',edgecolor='k',linewidth=1,bins=5)
+labels, counts = np.unique(nfields, return_counts=True)
+ax.bar(labels, counts, 
+                    align='center', 
+                    facecolor='grey',
+                    edgecolor='k',
+                    linewidth=1)
+#ax.hist(nfields,facecolor='grey',edgecolor='k',linewidth=1,bins=5)
 ax.spines['top'].set_visible(False)
 ax.spines['right'].set_visible(False)
 ax.tick_params(axis='both', labelsize=MDef.ticksize)
@@ -113,11 +119,19 @@ for rat in superpop.keys():
 # next cell has this graph plus the shuffle dist results on same plot 
 fig, ax = plt.subplots(figsize=(20,15))
 ax = fig.axes[0]
-histout = ax.hist(orientationBias,bins=np.linspace(0,1,num=10), # save bins for shuffling plot below 
-        facecolor='grey',
-        edgecolor='black',
-        label = "Orientation Bias Score",
-        linewidth=1)
+labels, counts = np.unique(orientationBias, return_counts = True)
+ax.bar(labels, counts, 
+                    facecolor='grey',
+                    edgecolor='black',
+                    label='Orientation Bias Score', 
+                    linewidth=1,
+                    align='center')
+
+# histout = ax.hist(orientationBias,bins=np.linspace(0,1,num=10), # save bins for shuffling plot below 
+#         facecolor='grey',
+#         edgecolor='black',
+#         label = "Orientation Bias Score",
+#         linewidth=1)
 ax.set_xticks([0,0.5,1])
 ax.set_xticklabels([0,0.5,1])
 ax.spines['top'].set_visible(False)
