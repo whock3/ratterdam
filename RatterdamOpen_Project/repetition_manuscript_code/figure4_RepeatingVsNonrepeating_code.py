@@ -125,4 +125,6 @@ ax.tick_params(axis='both', which='major', labelsize=MDef.ticksize)
 lgnd = plt.legend(prop={'size':MDef.legend_size})
 ax.set_xlim([0.9,3.9])
 ax.set_ylim([0.9,3.9])
+ax.set_aspect(1./ax.get_data_ratio())
+
 # %%

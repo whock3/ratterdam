@@ -7,6 +7,8 @@ will look at
 3) same arm diff arm analysis
 """
 
+#%% 
+
 import pickle, numpy as np, os, sys
 from matplotlib import pyplot as plt
 from scipy.stats import binom_test
@@ -185,25 +187,27 @@ olsDiff = linregress(x[arm_shareness==0], y[arm_shareness==0])
 
 size=250
 fig, ax = plt.subplots()
-ax.set_aspect('equal')
-
 
 #ax.scatter(x,y, c='black',label='All Data')
 ax.scatter(x[arm_shareness==0], y[arm_shareness==0], color='cornflowerblue', edgecolor='navy', s=size)
 ax.scatter(x[arm_shareness==1], y[arm_shareness==1], color='lightcoral', edgecolor='firebrick',s=size)
 
  
-ax.text(2,-2,"$R^2_{all}$ ="+ f"{round(olsAll.rvalue**2,3)}",fontsize=45)
-ax.text(2,-3,"$R^2_{same}$ =" + f"{round(olsSame.rvalue**2,3)}",fontsize=45)
-ax.text(2,-4,"$R^2_{diff}$ =" + f"{round(olsDiff.rvalue**2,3)}",fontsize=45)
+ax.text(2,-1,"$R^2_{all}$ ="+ f"{round(olsAll.rvalue**2,3)}",fontsize=32)
+ax.text(2,-2,"$R^2_{same}$ =" + f"{round(olsSame.rvalue**2,3)}",fontsize=32)
+ax.text(2,-3,"$R^2_{diff}$ =" + f"{round(olsDiff.rvalue**2,3)}",fontsize=32)
 
 ax.set_ylabel("Signed Normalized\n Directionality Field A", fontsize=MDef.ylabelsize)
 ax.set_xlabel("Signed Normalized\n Directionality Field B", fontsize=MDef.xlabelsize)
 ax.set_title("Pairwise Directionality Comparison of Aligned Repeating Fields \nwithin each Repeating Neuron",
              fontsize=MDef.titlesize)
-
+ax.set_ylim([-2.5,3])
+ax.set_xlim([-3.5,4])
 xlim, ylim = ax.get_xlim(), ax.get_ylim()
 xfit = np.linspace(xlim[0], xlim[1],100)
+ax.hlines(0, xlim[0], xlim[1], linestyle='--',color='k',linewidth=2)
+ax.vlines(0, ylim[0], ylim[1], linestyle='--',color='k',linewidth=2)
+
 
 for fit, linecolor, errcolor,label in zip([olsAll, olsSame, olsDiff], 
                                     ['black', 'red', 'blue'], 
@@ -213,15 +217,18 @@ for fit, linecolor, errcolor,label in zip([olsAll, olsSame, olsDiff],
     yfit = [(fit.slope*i)+fit.intercept for i in xfit]
     ax.plot(xfit,yfit,color=linecolor,linewidth=3)
     ax.fill_between(xfit,yfit-fit.stderr,yfit+fit.stderr,color=errcolor,alpha=0.7,label=label)
+    print(label)
+    print(fit.slope)
+    print(fit.pvalue)
 
 
 ax.tick_params(axis='both', which='major', labelsize=MDef.ticksize)
-ax.hlines(0, xlim[0], xlim[1], linestyle='--',color='k',linewidth=2)
-ax.vlines(0, ylim[0], ylim[1], linestyle='--',color='k',linewidth=2)
 ax.spines['right'].set_visible(False)
 ax.spines['top'].set_visible(False)
 ax.spines['left'].set_linewidth(MDef.spine_width)
 ax.spines['bottom'].set_linewidth(MDef.spine_width)
+ax.set_aspect(1./ax.get_data_ratio())
+
 
 lgnd = ax.legend(prop={'size':32})
 ax.set_title(ratsex_target)
