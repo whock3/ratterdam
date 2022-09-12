@@ -84,7 +84,6 @@ def loadRepeatingUnit(rat, day, clustName, smoothing=2, vthresh=Def.velocity_fil
     spikes = np.column_stack((clust,spikexy))
     
     includedFields = loadFieldInclusionList(df, clustName)
-
     unit = Unit(spikes,position, clustName, smoothing, df)
     unit.includedFields = includedFields
     unit.findFields()
@@ -265,6 +264,8 @@ class Unit():
         self.colors = cnames
         self.smoothing = smoothing
         self.df = df
+        #added 7-10-22 to remove offtrack firing. need to do before RateMapClass
+        removeOfftrackFiring(self)
         self.repUnit = RateMapClass.RateMap(self) # a different unit class from the pf alg someone else wrote
         # self.repUnit.PF is a list of pf objects. each object has pf.perimeter as an attribute which is the well-fitting but out of order [x,y] border lists
         self.alphaHullFactor = 1
@@ -412,6 +413,8 @@ def plotRoutine_RepPF_TempDyn(unit, nf=99, time='time', save=False, savepath=[])
     fig.axes[0].spines['right'].set_visible(False)
     fig.axes[0].spines['bottom'].set_visible(False)
     fig.axes[0].spines['left'].set_visible(False)
+    fig.axes[0].axis('equal')
+
 
     #option to not visualize garbage fields. 99 is an 'infinity' value as no cell will have 99 fields.
     if nf == 99:
@@ -438,7 +441,7 @@ def plotRoutine_RepPF_TempDyn(unit, nf=99, time='time', save=False, savepath=[])
                 xval = range(field.shape[0])
             
             fig.axes[1].plot(xval, field[:,1], color=unit.colors[i],alpha=0.8,label=f"Field {i}",linewidth=5)
-            fig.axes[0].plot(unit.perimeters[i][:,0], unit.perimeters[i][:,1],color=unit.colors[i],linewidth=5)
+            fig.axes[0].plot(unit.perimeters[i][:,0], unit.perimeters[i][:,1],color=unit.colors[i],linewidth=2)
             fig.axes[1].text(xval[0]-0.1,field[0,1]-0.1,i)
             fig.axes[1].tick_params(axis='y', labelsize=32)
             fig.axes[1].tick_params(axis='x', labelsize=32)
@@ -704,3 +707,42 @@ def readinRewards(rat, day):
     rr = np.asarray([float(i) for i in rr])
     
     return rr
+
+
+def removeOfftrackFiring(unit):
+    """
+    Takes: - rat as string
+           - day as string
+           - Unit() class object as input
+
+    Removes spiking and position samples that are not
+    contained within alley/intersection bounds
+
+    Reassigns to unit.position and unit.spikes, returns unit
+    """
+    rat, _, day = unit.df.split("\\")[-2].split("_")
+    ratborders = nab.loadAlleyBounds(rat, day)
+
+    ontrackSpikesIdx = np.empty((0), dtype=int)
+    ontrackPositionIdx = np.empty((0), dtype=int)
+
+    for regionName, b in ratborders.alleyInterBounds.items():
+        ul, ll, ur, lr = [b[0][0], b[1][1]], \
+                        [b[0][0], b[1][0]], \
+                        [b[0][1], b[1][1]], \
+                        [b[0][1], b[1][0]]
+
+        contour = path.Path([ll, lr, ur, ul])
+        posIdx = np.where(contour.contains_points(unit.position[:,1:]))[0]
+        spkIdx = np.where(contour.contains_points(unit.spikes[:,1:]))[0]
+
+        ontrackPositionIdx = np.concatenate((ontrackPositionIdx, 
+                                            posIdx.astype(int)))
+
+        ontrackSpikesIdx = np.concatenate((ontrackSpikesIdx, 
+                                            spkIdx.astype(int)))
+    ontrackPosition = unit.position[ontrackPositionIdx]
+    ontrackSpikes = unit.spikes[ontrackSpikesIdx]
+
+    unit.position = ontrackPosition
+    unit.spikes = ontrackSpikes

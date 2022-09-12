@@ -52,7 +52,11 @@ rvals = []
 rlabels = []
 for rat in rat_reps.keys():
     for day in rat_reps[rat].keys():
-        rvals.append(sum(rat_reps[rat][day])/len(rat_reps[rat][day]))
+        print(f"{rat}{day}")
+        perdayreps = sum(rat_reps[rat][day])
+        perdaycells = len(rat_reps[rat][day])
+        print(perdayreps, perdaycells)
+        rvals.append(perdayreps/perdaycells)
         rlabels.append(f"{rat}{day}")        
 
 fig, ax = plt.subplots(figsize=(20,15))
@@ -251,7 +255,7 @@ ax.hist(allShuffs,
                 facecolor='grey',
                 edgecolor='black',
                 linewidth=1,
-                density=True,
+                density=False,
                 label = 'Shuffled OAS'
                 )
 
@@ -273,4 +277,15 @@ lgnd = plt.legend(prop={'size':MDef.legend_size})
 
 
 plt.show()
+# %% calculate number of cells with single fields
+
+
+i = 0
+sf = 0
+for rat in superpop.keys():
+    for day in superpop[rat].keys():
+        for unit in superpop[rat][day]['units'].values():
+            if len(unit.fields) == 1:
+                sf += 1
+            i += 1
 # %%

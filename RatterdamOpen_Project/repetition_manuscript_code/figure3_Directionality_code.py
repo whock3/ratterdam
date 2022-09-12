@@ -133,11 +133,11 @@ with open("E:\\Ratterdam\\repetition_decoding\\2022-04-11_decoding\\naiveClassif
 real = rf_data['R765']['DFD4']['RS6']['oobs']['Real']
 shuffoob = rf_data['R765']['DFD4']['RS6']['oobs']['Shuffle']
 naive = naive_data['R765DFD4']['RS6']
-    
+bins = np.linspace(0.2,0.75,35)
 fig, ax = plt.subplots()
-plt.hist(shuffoob,bins=30,color='grey',linewidth=2,label='OOB Shuffle')
-plt.hist(naive,bins=30,color='blue',linewidth=2,label='Naive Classifier')
-plt.vlines(real,0,100,color='r',linewidth=3,label='Real OOB Score')
+plt.hist(shuffoob,bins=bins,color='grey',linewidth=2,label='OOB Shuffle')
+plt.hist(naive,bins=bins,color='blue',linewidth=2,label='Naive Classifier')
+plt.vlines(real,0,200,color='r',linewidth=3,label='Real OOB Score')
 ax.spines['top'].set_visible(False)
 ax.spines['right'].set_visible(False)
 ax.spines['left'].set_linewidth(MDef.spine_width)
@@ -185,10 +185,10 @@ for rat, day in zip(rat_list, day_list):
         labels.append(f"{rat}{day} {label}")
         
         real.append(rf_data[rat][day][regionset]['oobs']['Real'])
-        oobpct5.append(np.percentile(rf_data[rat][day][regionset]['oobs']['Shuffle'],5))
-        oobpct95.append(np.percentile(rf_data[rat][day][regionset]['oobs']['Shuffle'],95))
-        naivepct5.append(np.percentile(naive_data[f"{rat}{day}"][regionset],5))
-        naivepct95.append(np.percentile(naive_data[f"{rat}{day}"][regionset],95))
+        oobpct5.append(np.percentile(rf_data[rat][day][regionset]['oobs']['Shuffle'],2.5))
+        oobpct95.append(np.percentile(rf_data[rat][day][regionset]['oobs']['Shuffle'],97.5))
+        naivepct5.append(np.percentile(naive_data[f"{rat}{day}"][regionset],2.5))
+        naivepct95.append(np.percentile(naive_data[f"{rat}{day}"][regionset],97.5))
 
 
 fig, ax = plt.subplots()
