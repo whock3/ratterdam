@@ -22,12 +22,14 @@ import williamDefaults as wmDef
 import os, json
 import ratterdam_Defaults as Def
 
+%matplotlib qt5
+
 Def.includeAllDetectedFields = False  
 
-rat = 'R886'
-day = 'D2'
+rat = 'R859'
+day = 'D1'
 df = f'E:\\Ratterdam\\{rat}\\{rat}_RatterdamOpen_{day}\\'
-clustname = "TT12\\cl-maze1.1"
+clustname = "TT4\\cl-maze1.3"
 
 cmap = util.makeCustomColormap()
 
@@ -118,3 +120,4 @@ class FieldDrawer():
     
 fd = FieldDrawer(df, unit)
 fd.drawFields()
+# %%

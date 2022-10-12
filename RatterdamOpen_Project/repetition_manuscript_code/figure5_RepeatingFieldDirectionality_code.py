@@ -42,8 +42,8 @@ import repetition_manuscript_defaults as MDef
 
 
 plt.ion()
-alleydatapath = "E:\\Ratterdam\\R_data_repetition\\2022-04-05_AlleySuperpopDirVisitFiltered.csv"
-alleydf = pd.read_csv(alleydatapath)
+alleydf = df = pd.read_csv("E:\\Ratterdam\\R_data_repetition\\2022-09-17_AlleySuperpopDirVisitFiltered_IncludeRewards.csv")
+
 
 if 'Code' not in alleydf.columns:
     codes = []
@@ -748,3 +748,5 @@ for cax, shareness,label,ecolor,fcolor in zip(fig.axes,
     cax.set_xlim([-1,1])
     cax.set_yticks(np.linspace(0,18,4))
     cax.set_aspect(1./cax.get_data_ratio())
+
+# %%

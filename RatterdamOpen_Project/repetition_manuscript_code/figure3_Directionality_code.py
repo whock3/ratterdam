@@ -30,7 +30,7 @@ from scipy.stats import sem
 import repetition_manuscript_defaults as MDef
 import ratterdam_Defaults as Def
 
-df = pd.read_csv("E:\\Ratterdam\\R_data_repetition\\2022-04-05_AlleySuperpopDirVisitFiltered.csv")
+df = pd.read_csv("E:\\Ratterdam\\R_data_repetition\\2022-09-17_AlleySuperpopDirVisitFiltered_IncludeRewards.csv")
 
 plt.ion()
 

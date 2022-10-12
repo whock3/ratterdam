@@ -86,7 +86,7 @@ for q in np.unique(all_quals):
 plt.violinplot(qnfs)
 
 # %% based on JK suggestion, test avg difference in quality rep vs nonrep
-
+from scipy.stats import mannwhitneyu
 all_quals, rep = [], []
 for rat in list(superpop.keys()):
     for day in list(superpop[rat].keys()):
@@ -101,6 +101,12 @@ for rat in list(superpop.keys()):
 
 all_quals = np.asarray(all_quals)
 rep = np.asarray(rep)
+
+# 2022-10-12 running mann whitney test on repeating quality vs nonrepeating quality
+r = all_quals[rep==1]
+nr = all_quals[rep==0]
+mannwhitneyu(nr,r)
+# MannwhitneyuResult(statistic=3214.0, pvalue=0.10010263651193602)
 
 # %% Remove off track firing. roll this fx into RepCore when done
 # The bounds of alleys or intersections are in [[xmin, xmax],[ymin,ymax]] format 
