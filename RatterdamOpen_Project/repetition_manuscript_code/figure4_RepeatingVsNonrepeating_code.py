@@ -23,8 +23,8 @@ from scipy.stats import sem
 import ratterdam_Defaults as Def 
 import repetition_manuscript_defaults as MDef
 
-
-datapath  = "E:\\Ratterdam\\R_data_repetition\\2022-04-05_AlleySuperpopDirVisitFiltered.csv"
+path = '' # Your datapath
+datapath  = path + "2022-04-05_AlleySuperpopDirVisitFiltered.csv"
 df = pd.read_csv(datapath)
 plt.ion()
 #%% Figure 4A - Violins of Repeating vs Non-repeating directionality (abs mean diff)
@@ -75,7 +75,7 @@ ax.tick_params(axis='both', which='major', labelsize=MDef.ticksize)
 
 #%% Figure 4B - GLM LRT CD, rep vs nonrep 
 
-cdmodel = pd.read_csv("E:\\Ratterdam\\repetition_manuscript\\Figure3_Directionality\\20220414_CDmodel.csv")
+cdmodel = pd.read_csv(path+"20220414_CDmodel.csv")
 
 fig, ax = plt.subplots()
 
@@ -127,4 +127,4 @@ ax.set_xlim([0.9,3.9])
 ax.set_ylim([0.9,3.9])
 ax.set_aspect(1./ax.get_data_ratio())
 
-# %%
+# %% Panels C,D found in RatterdamOpen_Project/repetition_manuscript_code/figure6/Final_figures_WHcopy.ipynb

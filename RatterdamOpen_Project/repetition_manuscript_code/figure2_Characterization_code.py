@@ -27,14 +27,16 @@ from collections import Counter
 
 plt.ion()
 
+datapath = '' # Add your datapath here
+
 %matplotlib qt5
 #Load dict containing all recording day datasets
 # structure is rat > day > unit
 # unit is a Unit() class 
-with open("E:\\Ratterdam\\R_data_repetition\\20220405-124315_superPopulationRepetition.pickle","rb") as f:
+with open(datapath+"20220405-124315_superPopulationRepetition.pickle","rb") as f:
     superpop = pickle.load(f)   
     
-alleydf = pd.read_csv("E:\\Ratterdam\\R_data_repetition\\2022-04-05_AlleySuperpopDirVisitFiltered.csv")
+alleydf = pd.read_csv(datapath+"2022-04-05_AlleySuperpopDirVisitFiltered.csv")
 
 #%% Panel A - Proportion of Operationally-defined Repeating Neurons across datasets
 
@@ -280,12 +282,12 @@ plt.show()
 # %% calculate number of cells with single fields
 
 
-i = 0
-sf = 0
-for rat in superpop.keys():
-    for day in superpop[rat].keys():
-        for unit in superpop[rat][day]['units'].values():
-            if len(unit.fields) == 1:
-                sf += 1
-            i += 1
+# i = 0
+# sf = 0
+# for rat in superpop.keys():
+#     for day in superpop[rat].keys():
+#         for unit in superpop[rat][day]['units'].values():
+#             if len(unit.fields) == 1:
+#                 sf += 1
+#             i += 1
 # %%

@@ -1,0 +1,28 @@
+This folder contains the code necessary to reproduce the figures in Hockeimer et al., 2023. 
+If you have any issues please email the first author at wih38@upitt.edu
+------
+Dependencies:
+- python 3.1 or later
+- jupyter
+- matplotlib, numpy, pandas, scipy, and related scientific packages you would get from
+the anaconda distribution
+- put this repo on your python path as there are several py files outside this directory (but in the same
+repo) with code necessary for analysis. 
+------
+Figure 1 does not have any statistical analysis and therefore no code needed to generate the figures
+------
+Figures 2-5 have .py files with the figure number in the name, e.g. figure2_Characterization_code.py
+
+Each file contains a number of cell blocks (initiated with "#%%") that can be run separately
+
+Figures require the blocks to be run in order because later blocks often depend on calculations performed
+in earlier ones
+
+In each file there is a variable initialized early on called datapath or path that you should change 
+based on where you saved the data. You should download the data from the link provided to a new folder
+and have the datapath/path variable point there
+------
+Figure 6 has a directory within which is all the data you need and a jupyter notebook with the code
+Notebooks work similarly to code blocks and each cell should be run in order.
+Here, in addition to defining your datapath you need to define further down (cell 6, line 1) the path to your github where you cloned this repo
+------

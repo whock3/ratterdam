@@ -9,14 +9,13 @@ Each panel in the paper corresponds to a code cell here. Code cells in python
 begin with "#%%". They can be run independently. The whole script can be run to generate all panels.
 
 Panels:
-A - ratemaps from two example neurons with directional firing fields. No python code needed,
-    these ratemaps are saved with the data
+A - ratemaps from two example neurons with directional firing fields. 
 B - Distribution of normalized directional index across population, colored by whether it passes a Mann Whitney
     test 
 C - Distribution of GLM RMSEs for base model versus model including direction. Significance coloring corresponds to
     outcome of LRT. 
 D - Example random forest classifier run from one recoridng 
-
+E - Random forest results for all datasets
 """
 
 #%% Imports and load data
@@ -30,11 +29,13 @@ from scipy.stats import sem
 import repetition_manuscript_defaults as MDef
 import ratterdam_Defaults as Def
 
-df = pd.read_csv("E:\\Ratterdam\\R_data_repetition\\2022-09-17_AlleySuperpopDirVisitFiltered_IncludeRewards.csv")
+datapath = '' # Add your datapath here
+
+df = pd.read_csv(datapath+"2022-04-05_AlleySuperpopDirVisitFiltered.csv")
 
 plt.ion()
 
-#%% Figure 3A - directional ratemaps. Taken from saved files, no py code used here
+#%% Figure 3A - directional ratemaps. No py code used here
 
 #%% Figure 3B - scatterplot of field directionality, colored by MW test result
 pvals = []
@@ -91,7 +92,7 @@ ax.set_ylim([0,7.5])
 
 
 #%% Fig 3C - GLM LRT analysis for CD, whole pop
-cdmodel = pd.read_csv("E:\\Ratterdam\\repetition_manuscript\\Figure3_Directionality\\2022-05-25_CDmodel.csv")
+cdmodel = pd.read_csv(datapath+"2022-05-25_CDmodel.csv")
 
 fig, ax = plt.subplots()
 ax.plot(cdmodel.m1_rmse[cdmodel.sigP==0],cdmodel.m2_rmse[cdmodel.sigP==0],
@@ -124,10 +125,10 @@ ax.set_aspect(1./ax.get_data_ratio())
 
 #%% Fig 3D - Example classifier run. Example dataset: 22-02-21. R765 DFD4 horizontal alleys
 
-with open("E:\\Ratterdam\\repetition_decoding\\2022-04-11_decoding\\rfdata.json", "r") as f:
+with open(datapath+"rfdata.json", "r") as f:
     rf_data = json.load(f)
 
-with open("E:\\Ratterdam\\repetition_decoding\\2022-04-11_decoding\\naiveClassifierData.json", "r") as f:
+with open(datapath+"naiveClassifierData.json", "r") as f:
     naive_data = json.load(f)
     
 real = rf_data['R765']['DFD4']['RS6']['oobs']['Real']
