@@ -11,7 +11,7 @@ repo) with code necessary for analysis.
 ------
 Figure 1 does not have any statistical analysis and therefore no code needed to generate the figures
 ------
-Figures 2-5 have .py files with the figure number in the name, e.g. figure2_Characterization_code.py
+Figures 2-5, and supplement have .py files with the figure number in the name, e.g. figure2_Characterization_code.py
 
 Each file contains a number of cell blocks (initiated with "#%%") that can be run separately
 
@@ -21,6 +21,9 @@ in earlier ones
 In each file there is a variable initialized early on called datapath or path that you should change 
 based on where you saved the data. You should download the data from the link provided to a new folder
 and have the datapath/path variable point there
+
+For figures 4 and the supplement some panels are found in the figure 6 folder's jupyter notebook
+and these are indicated as such. 
 ------
 Figure 6 has a directory within which is all the data you need and a jupyter notebook with the code
 Notebooks work similarly to code blocks and each cell should be run in order.
