@@ -13,14 +13,29 @@ import repetition_manuscript_defaults as MDef
 import pickle
 import itertools
 
-alleydatapath = "E:\\Ratterdam\\R_data_repetition\\2022-04-05_AlleySuperpopDirVisitFiltered.csv"
+"""
+Supplementary Table 1 - Comparison of main statistical tests with and without rewards included
+                        (manuscript main text excludes them)
+Supplementary Figure 1 - Representative Histology
+Supplementary Figure 2 - Behavior sampling of maze
+Supplementary Figure 3 - All ratemaps
+Supplementary Figure 4 - No significant evidence of prospective/retrospective coding
+Supplementary Figure 5 - Corridor analysis controls
+Supplementary Figure 6 - Temporal drift, repeating versus nonrepeating neurons
+Supplementary Figure 7 - Male vs female rats 
+
+"""
+
+
+path = '' # your path to data here 
+alleydatapath = path + "2022-04-05_AlleySuperpopDirVisitFiltered.csv"
 alleydf = pd.read_csv(alleydatapath)
 
-with open("E:\\Ratterdam\\R_data_repetition\\20220405-124315_superPopulationRepetition.pickle","rb") as f:
+with open(path + "20220405-124315_superPopulationRepetition.pickle","rb") as f:
     superpop = pickle.load(f)   
 
 
-#%% Process data 
+#%% Process data, not for a specific panel 
 maze_arm_organization = {'V':{'V1':[2,16],
                          'V2':[3,14],
                          'V3':[5,11],
@@ -119,10 +134,15 @@ for cellid, cell in alleydf.groupby("CellID"):
 arm_shareness = np.asarray(arm_shareness)
 pair_info = np.asarray(pair_info)
 x = np.asarray(x)
-y = np.asarray(y)           
+y = np.asarray(y)      
 
-#%% Fig S4 - Supplementary . Shuffled GLM Emmeans analysis of retrospective/prospective/current direction
-df = pd.read_csv("E:\\Ratterdam\\repetition_manuscript\\Supplementary_Figures\\shuffle_nonlocalDirection\\2022-05-10_shuffle_emmeans.csv")
+#%% STable 1 - The reward versus nonreward analysis can be performed by repeating the indicated analysis
+# using the following csv: 2022-09-17_AlleySuperpopDirVisitFiltered_IncludeRewards.csv
+#%% SFig 1 - No python code
+#%% SFig 2 - No python code
+#%% SFig 3 - No python code
+#%% SFig S4 - Supplementary . Shuffled GLM Emmeans analysis of retrospective/prospective/current direction
+df = pd.read_csv(path + "2022-05-10_shuffle_emmeans.csv")
 
 bins = np.linspace(0,0.3,20)
 
@@ -137,7 +157,7 @@ for i,(dirtype, dirlabel, realprop, cax) in enumerate(zip(["total_current_respon
                                "Retrospective Direction",
                                "Prospective Direction"
                               ],
-                              [32/127,
+                              [32/127, #these are the real values
                               27/160,
                               20/151],
                               fig.axes
@@ -299,4 +319,5 @@ plt.legend(fontsize=20)
 from scipy.stats import mannwhitneyu
 print(mannwhitneyu(samearm_interPairLength, diffarm_interPairLength))
 
+#%% SFig 6 can be found in C:\Users\whock\Documents\GitHub\ratterdam\RatterdamOpen_Project\repetition_manuscript_code\figure6\Final_figures_WHcopy.ipynb
 
