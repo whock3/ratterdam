@@ -15,8 +15,8 @@ import matplotlib.pyplot as plt, numpy as np
 import utility_fx as util, williamDefaults as wmDef
 import pickle
 
-
-with open("E:\\Ratterdam\\R_data_repetition\\20220405-124315_superPopulationRepetition.pickle","rb") as f:
+path = '' # Your path to data 
+with open(path + "20220405-124315_superPopulationRepetition.pickle","rb") as f:
     superpop = pickle.load(f)  
 
 #%%

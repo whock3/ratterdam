@@ -18,7 +18,7 @@ Supplementary Table 1 - Comparison of main statistical tests with and without re
                         (manuscript main text excludes them)
 Supplementary Figure 1 - Representative Histology
 Supplementary Figure 2 - Behavior sampling of maze
-Supplementary Figure 3 - All ratemaps
+Supplementary Figure 3 - All ratemaps. See file: allratemaps_code.py.
 Supplementary Figure 4 - No significant evidence of prospective/retrospective coding
 Supplementary Figure 5 - Corridor analysis controls
 Supplementary Figure 6 - Temporal drift, repeating versus nonrepeating neurons
@@ -321,3 +321,9 @@ print(mannwhitneyu(samearm_interPairLength, diffarm_interPairLength))
 
 #%% SFig 6 can be found in C:\Users\whock\Documents\GitHub\ratterdam\RatterdamOpen_Project\repetition_manuscript_code\figure6\Final_figures_WHcopy.ipynb
 
+#%% SFig 7 - the indicated analyses should be run separately based on rat sex
+# Rat 765 - M
+# Rat 781 - M
+# Rat 808 - F
+# Rat 859 - F
+# Rat 886 - M 

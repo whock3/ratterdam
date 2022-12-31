@@ -9,6 +9,9 @@ the anaconda distribution
 - put this repo on your python path as there are several py files outside this directory (but in the same
 repo) with code necessary for analysis. 
 ------
+All data files are available at: https://drive.google.com/drive/folders/1W4BKht6AXN1RS5Xxz2u_ksZhX5ZgZUiY?usp=sharing
+Please download that folder and, as mentioned below, each file contains locations to define your local directory as a variable the analysis scripts will use. 
+------
 Figure 1 does not have any statistical analysis and therefore no code needed to generate the figures
 ------
 Figures 2-5, and supplement have .py files with the figure number in the name, e.g. figure2_Characterization_code.py
