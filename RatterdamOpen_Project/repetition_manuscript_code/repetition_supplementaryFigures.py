@@ -300,3 +300,16 @@ from scipy.stats import mannwhitneyu
 print(mannwhitneyu(samearm_interPairLength, diffarm_interPairLength))
 
 
+#%% 9/17/2022 Create csv with rewards and non-rewards, but also apply visit thresholding
+import pandas as pd, numpy as np
+import repetition_DfSamplingFiltering as Filt
+
+alleydatapath = "E:\\Ratterdam\\R_data_repetition\\20220404-210901_superPopAlleyBehaviorResponse_1.5vfilt_FieldNormedTrue.csv"
+alleydf = pd.read_csv(alleydatapath)
+
+filtDf = Filt.filterAlleyDatasets(alleydf, 
+                                    passThresh=2, 
+                                    filterR = False,
+                                    filterT = True)
+
+# %%

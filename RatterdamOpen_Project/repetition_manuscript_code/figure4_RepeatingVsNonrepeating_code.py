@@ -24,8 +24,8 @@ import ratterdam_Defaults as Def
 import repetition_manuscript_defaults as MDef
 
 
-datapath  = "E:\\Ratterdam\\R_data_repetition\\2022-04-05_AlleySuperpopDirVisitFiltered.csv"
-df = pd.read_csv(datapath)
+df = pd.read_csv("E:\\Ratterdam\\R_data_repetition\\2022-09-17_AlleySuperpopDirVisitFiltered_IncludeRewards.csv")
+
 plt.ion()
 #%% Figure 4A - Violins of Repeating vs Non-repeating directionality (abs mean diff)
 
