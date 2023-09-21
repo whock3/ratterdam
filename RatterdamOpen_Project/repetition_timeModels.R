@@ -55,61 +55,91 @@ rmse <- c()
 rmse_base <- c()
 rmse_alt <- c()
 
+shuffle <- TRUE
+nshuffles <- 1000
+
 set.seed(123)
-for(o in c("V","H")){
-  oriendf <- subset(alleydf, Orientation==o)
+
+total_time_responsive <- c()
+
+for(s in 1:nshuffles){
   
-  for(fid in unique(oriendf$FieldID)){
-    u<-try({
-      run <- run + 1
-      
-      field <- subset(oriendf, FieldID==fid)
-      basemod <- glm(Rate + 1 ~ CurrDir,family='Gamma',data=field)
-      mod <- glm(Rate + 1 ~ CurrDir + ns(StartTimes,3),family='Gamma',data=field)
-      s<-summary(mod)
-      anysig <- FALSE
-      
-      if(unique(field$Repeating)=="True"){
-        nreps <- nreps + 1
-      }
-      else if(unique(field$Repeating)=="False"){
-        nnonreps <- nnonreps + 1
-      }
-      
-      s <- summary(mod)
-      
-      p1 <- s$coefficients["ns(StartTimes, 3)1","Pr(>|t|)"]
-      p2 <- s$coefficients["ns(StartTimes, 3)2","Pr(>|t|)"]
-      p3 <- s$coefficients["ns(StartTimes, 3)3","Pr(>|t|)"]
-      
-      # save labels
-      
-      orientation <- c(orientation, o)
-      
-      if((p1<alpha)|(p2<alpha)|(p3<alpha)){
+  print(s)
+  for(o in c("V","H")){
+    oriendf <- subset(alleydf, Orientation==o)
+    
+    for(fid in unique(oriendf$FieldID)){
+      u<-try({
+        run <- run + 1
         
-        sigs <- c(sigs, TRUE)
+        # shuffle or not 
+        field_ <- subset(oriendf, FieldID == fid)
         
-      }
-      else{
-        sigs <- c(sigs, FALSE)
-      }
-      
-      if(unique(field$Repeating)==TRUE){
-        repOrNot <- c(repOrNot, TRUE)
-      }
-      else if(unique(field$Repeating)==FALSE){
-        repOrNot <- c(repOrNot, FALSE)
-      }
-      
-      rmse_base <- c(rmse_base, sqrt(mean((field$Rate-basemod$fitted.values)^2)))
-      rmse_alt <- c(rmse_alt, sqrt(mean((field$Rate-mod$fitted.values)^2)))
-      
-      
-      
-      
-    },silent=FALSE)
+        n <- sample(nrow(field_))
+        shuff.field <- data.frame(field_)
+        shuff.field$CurrDir <- shuff.field$CurrDir[n]
+        shuff.field$PrevDir <- shuff.field$PrevDir[n]
+        shuff.field$NextDir <- shuff.field$NextDir[n]
+        
+        if(shuffle==TRUE){
+          field <- shuff.field
+          
+        }
+        else if(shuffle==FALSE){
+          field <- field_
+        }
+        
+        
+        basemod <- glm(Rate + 1 ~ CurrDir,family='Gamma',data=field)
+        mod <- glm(Rate + 1 ~ CurrDir + ns(StartTimes,3),family='Gamma',data=field)
+        s<-summary(mod)
+        anysig <- FALSE
+        
+        if(unique(field$Repeating)=="True"){
+          nreps <- nreps + 1
+        }
+        else if(unique(field$Repeating)=="False"){
+          nnonreps <- nnonreps + 1
+        }
+        
+        s <- summary(mod)
+        
+        p1 <- s$coefficients["ns(StartTimes, 3)1","Pr(>|t|)"]
+        p2 <- s$coefficients["ns(StartTimes, 3)2","Pr(>|t|)"]
+        p3 <- s$coefficients["ns(StartTimes, 3)3","Pr(>|t|)"]
+        
+        # save labels
+        
+        orientation <- c(orientation, o)
+        
+        if((p1<alpha)|(p2<alpha)|(p3<alpha)){
+          
+          sigs <- c(sigs, 1)
+          
+        }
+        else{
+          sigs <- c(sigs, 0)
+        }
+        
+        if(unique(field$Repeating)==TRUE){
+          repOrNot <- c(repOrNot, TRUE)
+        }
+        else if(unique(field$Repeating)==FALSE){
+          repOrNot <- c(repOrNot, FALSE)
+        }
+        
+        rmse_base <- c(rmse_base, sqrt(mean((field$Rate-basemod$fitted.values)^2)))
+        rmse_alt <- c(rmse_alt, sqrt(mean((field$Rate-mod$fitted.values)^2)))
+        
+        
+        
+        
+      },silent=FALSE)
+    }
+    
   }
+  
+  total_time_responsive <- c(total_time_responsive, sum(sigs)/length(sigs))
   
 }
 

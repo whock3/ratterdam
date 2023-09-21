@@ -52,62 +52,91 @@ lrCurr_pvals <- c() # keep all pvalues from lrtest(base, base+cd) regardless
 
 startTimeKnots = 3
 
+shuffle <- TRUE
+nshuffles <- 1000
+
+
 sigP <- c() # save whether CD is sig, for figures
 
 repOrNot <- c()
 
-for(o in c('V','H')){
-  oriendf <- subset(alleydf, Orientation==o)
-  
-  for(fid in unique(oriendf$FieldID)){
-    
-    field <- subset(oriendf, FieldID == fid)
-    
-    mrun <- tryCatch({
-       
-      m1 <- glm(Rate+1 ~ ns(StartTimes,startTimeKnots), family='Gamma', data=field)
-      m2 <- glm(Rate+1 ~ CurrDir + ns(StartTimes,startTimeKnots), family = 'Gamma', data=field)
-     
-      m1_rmse <- c(m1_rmse, sqrt(mean((field$Rate-m1$fitted.values)^2)))
-      m2_rmse <- c(m2_rmse, sqrt(mean((field$Rate-m2$fitted.values)^2)))
-      
-      fids <- c(fids, fid)
-      
-      m1_aic <- c(m1_aic, m1$aic)
-      m2_aic <- c(m2_aic, m2$aic)
-     
-      lrCurr <- lrtest(m1,m2)
-      
-      lrCurr_pvals <- c(lrCurr_pvals, lrCurr[2,"Pr(>Chisq)"])
-      
-      #dropping pvalue to 0.05/2 2022-04-14
-      if((lrCurr[2,"Pr(>Chisq)"] < 0.05/2)&(!is.nan(lrCurr[2,"Pr(>Chisq)"]))){
-        
-        sigP <- c(sigP, 1)
-      }
-      else{
-        sigP <- c(sigP, 0)
-      }
-      
-      if(unique(field$Repeating)=='TRUE'){
-        
-        repOrNot <- c(repOrNot,TRUE)
-      }
-      else if(unique(field$Repeating)=='FALSE'){
-        repOrNot <- c(repOrNot, FALSE)
-      }
+total_current_responsive <- c()
 
-      
-      
-    },
-    error=function(e){
-      failed_units <<- c(failed_units, c(fid, o))
-      
-    }
-    ,silent=FALSE) 
-    
+
+for(s in 1:nshuffles){
   
+  print(s)
+
+  for(o in c('V','H')){
+    oriendf <- subset(alleydf, Orientation==o)
+    
+    for(fid in unique(oriendf$FieldID)){
+      
+      field_ <- subset(oriendf, FieldID == fid)
+      
+      n <- sample(nrow(field_))
+      shuff.field <- data.frame(field_)
+      shuff.field$CurrDir <- shuff.field$CurrDir[n]
+      shuff.field$PrevDir <- shuff.field$PrevDir[n]
+      shuff.field$NextDir <- shuff.field$NextDir[n]
+      
+      if(shuffle==TRUE){
+        field <- shuff.field
+        
+      }
+      else if(shuffle==FALSE){
+        field <- field_
+      }
+      
+      mrun <- tryCatch({
+         
+        m1 <- glm(Rate+1 ~ ns(StartTimes,startTimeKnots), family='Gamma', data=field)
+        m2 <- glm(Rate+1 ~ CurrDir + ns(StartTimes,startTimeKnots), family = 'Gamma', data=field)
+       
+        m1_rmse <- c(m1_rmse, sqrt(mean((field$Rate-m1$fitted.values)^2)))
+        m2_rmse <- c(m2_rmse, sqrt(mean((field$Rate-m2$fitted.values)^2)))
+        
+        fids <- c(fids, fid)
+        
+        m1_aic <- c(m1_aic, m1$aic)
+        m2_aic <- c(m2_aic, m2$aic)
+       
+        lrCurr <- lrtest(m1,m2)
+        
+        lrCurr_pvals <- c(lrCurr_pvals, lrCurr[2,"Pr(>Chisq)"])
+        
+        #dropping pvalue to 0.05/2 2022-04-14
+        if((lrCurr[2,"Pr(>Chisq)"] < 0.05/2)&(!is.nan(lrCurr[2,"Pr(>Chisq)"]))){
+          
+          sigP <- c(sigP, 1)
+        }
+        else{
+          sigP <- c(sigP, 0)
+        }
+        
+        if(unique(field$Repeating)=='TRUE'){
+          
+          repOrNot <- c(repOrNot,TRUE)
+        }
+        else if(unique(field$Repeating)=='FALSE'){
+          repOrNot <- c(repOrNot, FALSE)
+        }
+  
+        
+        
+      },
+      error=function(e){
+        failed_units <<- c(failed_units, c(fid, o))
+        
+      }
+      ,silent=FALSE) 
+      
+    
+    }
   }
+  
+  total_current_responsive <- c(total_current_responsive, sum(sigP)/length(sigP))
+  
 }
 
 
