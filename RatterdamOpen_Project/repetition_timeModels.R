@@ -62,9 +62,9 @@ set.seed(123)
 
 total_time_responsive <- c()
 
-for(s in 1:nshuffles){
+for(siter in 1:nshuffles){
   
-  print(s)
+  print(siter)
   for(o in c("V","H")){
     oriendf <- subset(alleydf, Orientation==o)
     
@@ -77,9 +77,8 @@ for(s in 1:nshuffles){
         
         n <- sample(nrow(field_))
         shuff.field <- data.frame(field_)
-        shuff.field$CurrDir <- shuff.field$CurrDir[n]
-        shuff.field$PrevDir <- shuff.field$PrevDir[n]
-        shuff.field$NextDir <- shuff.field$NextDir[n]
+        shuff.field$Rate <- shuff.field$Rate[n]
+
         
         if(shuffle==TRUE){
           field <- shuff.field
