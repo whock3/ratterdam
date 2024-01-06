@@ -11,13 +11,13 @@ These mostly relate to plotting params, like tick sizes and so forth
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 
-ylabelsize = 54
-xlabelsize = 54
+ylabelsize = 24
+xlabelsize = 24
 spine_width = 1
 
-ticksize =42 # this is label not tick itself
+ticksize =  16 # this is label not tick itself
 
-titlesize = 40
+titlesize = 30
 
 legend_size = 44
 legend_marker_size = 30

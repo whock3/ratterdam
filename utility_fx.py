@@ -356,13 +356,16 @@ def getClustList(datafile,quals=True):
     for subdir, dirs, fs in os.walk(datafile):
         for f in fs:
             if 'cl-maze1' in f and 'OLD' not in f and 'Undefined' not in f and "manuallyRedrawnFields" not in f:
-                #get name and add to list
-                clustname = subdir[subdir.index("TT"):] + "\\" + f
-                clustList.append(clustname)
-                if quals:
-                # get quality 1-5(best) and add to list
-                    qual = cellQuality(subdir+"\\")[clustname.split('.')[1]]
-                    clustQuals.append(qual)
+                try:
+                    #get name and add to list
+                    clustname = subdir[subdir.index("TT"):] + "\\" + f
+                    clustList.append(clustname)
+                    if quals:
+                    # get quality 1-5(best) and add to list
+                        qual = cellQuality(subdir+"\\")[clustname.split('.')[1]]
+                        clustQuals.append(qual)
+                except:
+                    pass
                 
     return clustList, clustQuals
 
