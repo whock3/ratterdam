@@ -81,6 +81,31 @@ for(s in 1:nshuffles){
       shuff.field$NextDir <- shuff.field$NextDir[n]
       
       if(shuffle==TRUE){
+        
+        naiveShuff = c()
+        for(ff in 1:length(field_$CurrDir)){
+          rr = runif(1)
+          if(rr>=0.5){
+            if(o=="V"){
+              naiveShuff = c(naiveShuff, "N")
+            }
+            else if(o=="H"){
+              naiveShuff = c(naiveShuff, "E")
+            }
+          }
+          else if(rr<0.5){
+            if(o=="V"){
+              naiveShuff = c(naiveShuff, "S")
+            }
+            else if(o=="H"){
+              naiveShuff = c(naiveShuff, "W")
+            }
+          }
+          
+        }
+          
+        # field_$CurrDir <- naiveShuff
+        # field = field_
         field <- shuff.field
         
       }
